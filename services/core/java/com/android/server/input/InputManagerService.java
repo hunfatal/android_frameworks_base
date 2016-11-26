@@ -556,16 +556,20 @@ public class InputManagerService extends IInputManager.Stub
      */
     public void setInputFilter(IInputFilter filter) {
         synchronized (mInputFilterLock) {
-
             final IInputFilter oldFilter = mInputFilter;
             if (oldFilter == filter) {
                 return; // nothing to do
             }
 
-            if (mInputFilterHost != null) {
+            if (oldFilter != null) {
                 mInputFilterHost.disconnectLocked();
                 mInputFilterChain.remove(mInputFilterHost);
                 mInputFilterHost = null;
+                try {
+                    oldFilter.uninstall();
+                } catch (RemoteException re) {
+                    /* ignore */
+                }
             }
 
             if (filter != null) {

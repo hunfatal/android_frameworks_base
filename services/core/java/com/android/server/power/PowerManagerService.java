@@ -756,8 +756,8 @@ public final class PowerManagerService extends SystemService
             resolver.registerContentObserver(CMSettings.Global.getUriFor(
                     CMSettings.Global.DEV_FORCE_SHOW_NAVBAR),
                     false, mSettingsObserver, UserHandle.USER_ALL);
-            resolver.registerContentObserver(CMSettings.System.getUriFor(
-                    CMSettings.System.PROXIMITY_ON_WAKE),
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.PROXIMITY_ON_WAKE),
                     false, mSettingsObserver, UserHandle.USER_ALL);
 
             // Go.
@@ -827,11 +827,11 @@ public final class PowerManagerService extends SystemService
         mSupportsDoubleTapWakeConfig = resources.getBoolean(
                 com.android.internal.R.bool.config_supportDoubleTapWake);
         mProximityWakeSupported = resources.getBoolean(
-                org.cyanogenmod.platform.internal.R.bool.config_proximityCheckOnWake);
+                 com.android.internal.R.bool.config_proximityCheckOnWake);
         mProximityWakeEnabledByDefaultConfig = resources.getBoolean(
-                org.cyanogenmod.platform.internal.R.bool.config_proximityCheckOnWakeEnabledByDefault);
+                 com.android.internal.R.bool.config_proximityCheckOnWakeEnabledByDefault);
         mProximityTimeOut = resources.getInteger(
-                org.cyanogenmod.platform.internal.R.integer.config_proximityCheckTimeout);
+                com.android.internal.R.integer.config_proximityCheckTimeout);
         if (mProximityWakeSupported) {
             mProximityWakeLock = ((PowerManager) mContext.getSystemService(Context.POWER_SERVICE))
                     .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "ProximityWakeLock");
@@ -925,8 +925,8 @@ public final class PowerManagerService extends SystemService
                 UserHandle.USER_CURRENT);
         mForceNavbar = CMSettings.Global.getIntForUser(resolver,
                 CMSettings.Global.DEV_FORCE_SHOW_NAVBAR, 0, UserHandle.USER_CURRENT) == 1;
-        mProximityWakeEnabled = CMSettings.System.getInt(resolver,
-                CMSettings.System.PROXIMITY_ON_WAKE,
+        mProximityWakeEnabled = Settings.System.getInt(resolver,
+                Settings.System.PROXIMITY_ON_WAKE,
                 mProximityWakeEnabledByDefaultConfig ? 1 : 0) == 1;
 
         mDirty |= DIRTY_SETTINGS;
