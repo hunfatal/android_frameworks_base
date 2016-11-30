@@ -219,6 +219,7 @@ import android.os.UserHandle;
 import android.os.UserManager;
 import android.provider.Downloads;
 import android.provider.Settings;
+import android.provider.Downloads;
 import android.telecom.TelecomManager;
 import android.text.format.DateUtils;
 import android.text.format.Time;
