@@ -41,6 +41,7 @@ import com.android.settingslib.BatteryInfo;
 import com.android.settingslib.graph.UsageView;
 import com.android.systemui.BatteryMeterDrawable;
 import com.android.systemui.R;
+import com.android.systemui.qs.QSIconView;
 import com.android.systemui.qs.QSTile;
 import com.android.systemui.statusbar.policy.BatteryController;
 
@@ -59,6 +60,7 @@ public class BatteryTile extends QSTile<QSTile.State> implements BatteryControll
     private boolean mDetailShown;
     private boolean mPluggedIn;
     private int mBatteryStyle;
+    private int mBatteryStyleTile;
 
     public static final int BATTERY_STYLE_HIDDEN    = 4;
     public static final int BATTERY_STYLE_TEXT      = 6;
@@ -68,9 +70,20 @@ public class BatteryTile extends QSTile<QSTile.State> implements BatteryControll
         mBatteryController = host.getBatteryController();
         mBatteryStyle = CMSettings.System.getInt(host.getContext().getContentResolver(),
                 CMSettings.System.STATUS_BAR_BATTERY_STYLE, 0);
-        if (mBatteryStyle == BATTERY_STYLE_HIDDEN || mBatteryStyle == BATTERY_STYLE_TEXT) {
+        mBatteryStyleTile = Settings.Secure.getInt(host.getContext().getContentResolver(),
+                Settings.Secure.STATUS_BAR_BATTERY_STYLE_TILE, 1);
+        if (mBatteryStyle == BATTERY_STYLE_HIDDEN || mBatteryStyle == BATTERY_STYLE_TEXT || mBatteryStyleTile == 0) {
             mBatteryStyle = 0;
         }
+    }
+
+    @Override
+    public QSIconView createTileView(Context context) {
+        QSIconView view = new QSIconView(context);
+        // The BatteryMeterDrawable wants to use the clear xfermode,
+        // put it on its own layer to not make it clear the background with it.
+        view.getIconView().setLayerType(View.LAYER_TYPE_HARDWARE, null);
+        return view;
     }
 
     @Override
@@ -130,12 +143,14 @@ public class BatteryTile extends QSTile<QSTile.State> implements BatteryControll
             public Drawable getDrawable(Context context) {
                 mBatteryStyle = CMSettings.System.getInt(context.getContentResolver(),
                         CMSettings.System.STATUS_BAR_BATTERY_STYLE, 0);
-                if (mBatteryStyle == BATTERY_STYLE_HIDDEN || mBatteryStyle == BATTERY_STYLE_TEXT) {
+                mBatteryStyleTile = Settings.Secure.getInt(context.getContentResolver(),
+                        Settings.Secure.STATUS_BAR_BATTERY_STYLE_TILE, 1);
+                if (mBatteryStyle == BATTERY_STYLE_HIDDEN || mBatteryStyle == BATTERY_STYLE_TEXT || mBatteryStyleTile == 0) {
                     mBatteryStyle = 0;
                 }
                 BatteryMeterDrawable drawable =
                         new BatteryMeterDrawable(context, new Handler(Looper.getMainLooper()),
-                        context.getColor(R.color.batterymeter_frame_color), mBatteryStyle, true);
+                        context.getColor(R.color.batterymeter_frame_color), mBatteryStyle);
                 drawable.onBatteryLevelChanged(mLevel, mPluggedIn, mCharging);
                 drawable.onPowerSaveChanged(mPowerSave);
                 return drawable;
@@ -181,7 +196,7 @@ public class BatteryTile extends QSTile<QSTile.State> implements BatteryControll
     private final class BatteryDetail implements DetailAdapter, OnClickListener,
             OnAttachStateChangeListener {
         private final BatteryMeterDrawable mDrawable = new BatteryMeterDrawable(mHost.getContext(),
-                new Handler(), mHost.getContext().getColor(R.color.batterymeter_frame_color), mBatteryStyle, true);
+                new Handler(), mHost.getContext().getColor(R.color.batterymeter_frame_color), mBatteryStyle);
         private View mCurrentView;
 
         @Override

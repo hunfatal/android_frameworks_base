@@ -181,7 +181,6 @@ import com.android.systemui.stackdivider.Divider;
 import com.android.systemui.stackdivider.WindowManagerProxy;
 import com.android.systemui.statusbar.ActivatableNotificationView;
 import com.android.systemui.statusbar.BackDropView;
-import com.android.systemui.statusbar.AppSidebar;
 import com.android.systemui.statusbar.BaseStatusBar;
 import com.android.systemui.statusbar.CommandQueue;
 import com.android.systemui.statusbar.DismissView;
@@ -208,12 +207,14 @@ import com.android.systemui.statusbar.policy.BatteryController.BatteryStateChang
 import com.android.systemui.statusbar.policy.BatteryControllerImpl;
 import com.android.systemui.statusbar.policy.BluetoothControllerImpl;
 import com.android.systemui.statusbar.policy.CastControllerImpl;
+import com.android.systemui.statusbar.policy.EncryptionHelper;
 import com.android.systemui.statusbar.policy.FlashlightController;
 import com.android.systemui.statusbar.policy.HeadsUpManager;
 import com.android.systemui.statusbar.policy.HotspotControllerImpl;
 import com.android.systemui.statusbar.policy.KeyguardMonitor;
 import com.android.systemui.statusbar.policy.KeyguardUserSwitcher;
 import com.android.systemui.statusbar.policy.LocationControllerImpl;
+import com.android.systemui.statusbar.policy.NetworkController;
 import com.android.systemui.statusbar.policy.NetworkControllerImpl;
 import com.android.systemui.statusbar.policy.NextAlarmController;
 import com.android.systemui.statusbar.policy.PreviewInflater;
@@ -350,6 +351,21 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
      */
     private static final int REMOTE_INPUT_KEPT_ENTRY_AUTO_CANCEL_DELAY = 200;
 
+    /**
+     * Never let the alpha become zero for surfaces that draw with SRC - otherwise the RenderNode
+     * won't draw anything and uninitialized memory will show through
+     * if mScrimSrcModeEnabled. Note that 0.001 is rounded down to 0 in
+     * libhwui.
+     */
+    private static final float SRC_MIN_ALPHA = 0.002f;
+
+    private static final String SCREEN_BRIGHTNESS_MODE =
+            "system:" + Settings.System.SCREEN_BRIGHTNESS_MODE;
+    private static final String STATUS_BAR_BRIGHTNESS_CONTROL =
+            "cmsystem:" + CMSettings.System.STATUS_BAR_BRIGHTNESS_CONTROL;
+    private static final String NAVBAR_LEFT_IN_LANDSCAPE =
+            "cmsystem:" + CMSettings.System.NAVBAR_LEFT_IN_LANDSCAPE;
+
     static {
         boolean onlyCoreApps;
         boolean freeformWindowManagement;
@@ -434,9 +450,10 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     // DT2L camera vibration config
     private int mDt2lCameraVibrateConfig;
 
+    private int mQsLayoutColumns;
+
     // settings
     private QSPanel mQSPanel;
-
     // top bar
     BaseStatusBarHeader mHeader;
     protected KeyguardStatusBarView mKeyguardStatusBar;
@@ -606,9 +623,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     false, this, UserHandle.USER_ALL);
     		resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.SHOW_THREEG),
-            		false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.APP_SIDEBAR_POSITION),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.LOCKSCREEN_MAX_NOTIF_CONFIG),
@@ -627,18 +641,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             		false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.BATTERY_SAVER_MODE_COLOR),
-                    false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.QS_ROWS_PORTRAIT),
-                    false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.QS_COLUMNS_PORTRAIT),
-                    false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.QS_ROWS_LANDSCAPE),
-                    false, this, UserHandle.USER_ALL);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.QS_COLUMNS_LANDSCAPE),
                     false, this, UserHandle.USER_ALL);
             resolver.registerContentObserver(Settings.System.getUriFor(
             		Settings.System.STATUS_BAR_RR_LOGO_COLOR),
@@ -680,7 +682,22 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                     Settings.System.NAVBAR_BUTTON_COLOR),
                     false, this, UserHandle.USER_ALL);
-		    update();
+           resolver.registerContentObserver(Settings.System.getUriFor(
+                  Settings.System.QS_LAYOUT_COLUMNS),
+                  false, this, UserHandle.USER_ALL);
+           resolver.registerContentObserver(Settings.System.getUriFor(
+                  Settings.System.QS_ROWS_PORTRAIT),
+                  false, this, UserHandle.USER_ALL);
+           resolver.registerContentObserver(Settings.System.getUriFor(
+                  Settings.System.QS_ROWS_LANDSCAPE),
+                  false, this, UserHandle.USER_ALL);
+           resolver.registerContentObserver(Settings.System.getUriFor(
+                  Settings.System.BATTERY_LARGE_TEXT),
+                  false, this, UserHandle.USER_ALL);
+           resolver.registerContentObserver(Settings.System.getUriFor(
+                  Settings.System.NAV_BAR_DYNAMIC),
+                  false, this, UserHandle.USER_ALL);
+		  update();
         }
 
         @Override
@@ -699,7 +716,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                             mContext.getContentResolver(),
                             Settings.System.SHOW_FOURG,
                             0, UserHandle.USER_CURRENT) == 1;
-                        	mNetworkController.onConfigurationChanged();
+                    mNetworkController.onConfigurationChanged();
             } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.SHOW_THREEG))) {
                     mShow3G = Settings.System.getIntForUser(
@@ -732,13 +749,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
            } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.QS_ROWS_PORTRAIT))
                     || uri.equals(Settings.System.getUriFor(
-                    Settings.System.QS_COLUMNS_PORTRAIT))) {
-                	updateQSRowsColumnsPortrait();
-           } else if (uri.equals(Settings.System.getUriFor(
-                    Settings.System.QS_ROWS_LANDSCAPE))
-                    || uri.equals(Settings.System.getUriFor(
-                    Settings.System.QS_COLUMNS_LANDSCAPE))) {
-                	updateQSRowsColumnsLandscape();
+                    Settings.System.QS_ROWS_LANDSCAPE))) {
+                    updateResources();
            } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.STATUS_BAR_SHOW_TICKER))) {
                 mTickerEnabled = Settings.System.getIntForUser(
@@ -748,6 +760,9 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
                     initTickerView();
            } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.SHOW_SU_INDICATOR))) {
+                    UpdateSomeViews();
+           } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.BATTERY_LARGE_TEXT))) {
                     UpdateSomeViews();
            }  else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.CLEAR_RECENTS_STYLE))
@@ -764,8 +779,11 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
            } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.NAVBAR_BUTTON_COLOR))) {
                     mNavigationController.updateNavbarOverlay(mContext.getResources());
-           } 
-            update();
+           } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.NAV_BAR_DYNAMIC))) {
+                    mNavigationController.updateNavbarOverlay(mContext.getResources());
+           }
+           update();
         }
 
         @Override
@@ -840,12 +858,11 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
             mDt2lCameraVibrateConfig = Settings.System.getIntForUser(resolver,
                     Settings.System.DT2L_CAMERA_VIBRATE_CONFIG, 1, mCurrentUserId);
 
-            int sidebarPosition = Settings.System.getInt(
-                    resolver, Settings.System.APP_SIDEBAR_POSITION, AppSidebar.SIDEBAR_POSITION_LEFT);
-            if (sidebarPosition != mSidebarPosition) {
-                mSidebarPosition = sidebarPosition;
-                removeSidebarView();
-                addSidebarView();
+            mQsLayoutColumns = Settings.System.getIntForUser(resolver,
+                    Settings.System.QS_LAYOUT_COLUMNS, 3, mCurrentUserId);
+
+            if (mHeader != null) {
+                mHeader.updateSettings();
             }
         }
     }
@@ -1217,6 +1234,15 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
     private boolean mNoAnimationOnNextBarModeChange;
     private FalsingManager mFalsingManager;
 
+    private KeyguardUpdateMonitorCallback mUpdateCallback = new KeyguardUpdateMonitorCallback() {
+        @Override
+        public void onDreamingStateChanged(boolean dreaming) {
+            if (dreaming) {
+                maybeEscalateHeadsUp();
+            }
+        }
+    };
+
     @Override
     public void start() {
         mDisplay = ((WindowManager)mContext.getSystemService(Context.WINDOW_SERVICE))
@@ -1242,7 +1268,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         addNavigationBar();
 
-
         SettingsObserver observer = new SettingsObserver(mHandler);
         observer.observe();
 
@@ -1267,8 +1292,8 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         mUnlockMethodCache.addListener(this);
         startKeyguard();
 
+        KeyguardUpdateMonitor.getInstance(mContext).registerCallback(mUpdateCallback);
         mDozeServiceHost = new DozeServiceHost();
-        KeyguardUpdateMonitor.getInstance(mContext).registerCallback(mDozeServiceHost);
         putComponent(DozeHost.class, mDozeServiceHost);
         putComponent(PhoneStatusBar.class, this);
 
@@ -1356,7 +1381,6 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
         }
 
         addGestureAnywhereView();
-        addSidebarView();
         addAppCircleSidebar();
 
         mAssistManager = SystemUIFactory.getInstance().createAssistManager(this, context);
@@ -1483,6 +1507,7 @@ public class PhoneStatusBar extends BaseStatusBar implements DemoMode,
 
         initSignalCluster(mStatusBarView);
         initSignalCluster(mKeyguardStatusBar);
+        initEmergencyCryptkeeperText();
 
         mFlashlightController = new FlashlightController(mContext);
         mKeyguardBottomArea.setFlashlightController(mFlashlightController);
@@ -1602,7 +1627,6 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
 
         // receive broadcasts
         IntentFilter filter = new IntentFilter();
-        filter.addAction(Intent.ACTION_CONFIGURATION_CHANGED);
         filter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
         filter.addAction(Intent.ACTION_SCREEN_OFF);
         filter.addAction(Intent.ACTION_SCREEN_ON);
@@ -1645,6 +1669,24 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
             observer.update();
         }
       }
+
+    private void initEmergencyCryptkeeperText() {
+        View emergencyViewStub = mStatusBarWindow.findViewById(R.id.emergency_cryptkeeper_text);
+        if (mNetworkController.hasEmergencyCryptKeeperText()) {
+            if (emergencyViewStub != null) {
+                ((ViewStub) emergencyViewStub).inflate();
+            }
+            mNetworkController.addSignalCallback(new NetworkController.SignalCallback() {
+                @Override
+                public void setIsAirplaneMode(NetworkController.IconState icon) {
+                    recomputeDisableFlags(true /* animate */);
+                }
+            });
+        } else if (emergencyViewStub != null) {
+            ViewGroup parent = (ViewGroup) emergencyViewStub.getParent();
+            parent.removeView(emergencyViewStub);
+        }
+    }
 
     protected BatteryController createBatteryController() {
         return new BatteryControllerImpl(mContext);
@@ -2081,8 +2123,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                     | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
                     | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
                     | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH
-                    | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED
-                    | WindowManager.LayoutParams.FLAG_SLIPPERY,
+                    | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
                 PixelFormat.TRANSLUCENT);
         // this will allow the navbar to run in an overlay on devices that support this
 /*        if (ActivityManager.isHighEndGfx()) {
@@ -2316,7 +2357,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
     protected void performRemoveNotification(StatusBarNotification n, boolean removeView) {
         Entry entry = mNotificationData.get(n.getKey());
         if (mRemoteInputController.isRemoteInputActive(entry)) {
-            mRemoteInputController.removeRemoteInput(entry);
+            mRemoteInputController.removeRemoteInput(entry, null);
         }
         super.performRemoveNotification(n, removeView);
     }
@@ -2597,6 +2638,18 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         updateNotifications();
     }
 
+ protected boolean hasActiveVisibleNotifications() {
+        return mNotificationData.hasActiveVisibleNotifications();
+    }
+
+    protected boolean hasActiveOngoingNotifications() {
+        return mNotificationData.hasActiveOngoingNotifications();
+    }
+
+    protected boolean hasActiveClearableNotifications() {
+        return mNotificationData.hasActiveClearableNotifications();
+    }
+
     @Override
     protected void setAreThereNotifications() {
 
@@ -2868,17 +2921,13 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
             if (mBackdrop.getVisibility() != View.VISIBLE) {
                 mBackdrop.setVisibility(View.VISIBLE);
                 if (allowEnterAnimation) {
-                    mBackdrop.animate().alpha(1f).withEndAction(new Runnable() {
-                        @Override
-                        public void run() {
-                            mStatusBarWindowManager.setBackdropShowing(true);
-                        }
-                    });
+                    mBackdrop.setAlpha(SRC_MIN_ALPHA);
+                    mBackdrop.animate().alpha(1f);
                 } else {
                     mBackdrop.animate().cancel();
                     mBackdrop.setAlpha(1f);
-                    mStatusBarWindowManager.setBackdropShowing(true);
                 }
+                mStatusBarWindowManager.setBackdropShowing(true);
                 metaDataChanged = true;
                 if (DEBUG_MEDIA) {
                     Log.v(TAG, "DEBUG_MEDIA: Fading in album artwork");
@@ -2941,11 +2990,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                 } else {
                     mStatusBarWindowManager.setBackdropShowing(false);
                     mBackdrop.animate()
-                            // Never let the alpha become zero - otherwise the RenderNode
-                            // won't draw anything and uninitialized memory will show through
-                            // if mScrimSrcModeEnabled. Note that 0.001 is rounded down to 0 in
-                            // libhwui.
-                            .alpha(0.002f)
+                            .alpha(SRC_MIN_ALPHA)
                             .setInterpolator(Interpolators.ACCELERATE_DECELERATE)
                             .setDuration(300)
                             .setStartDelay(0)
@@ -2960,7 +3005,6 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                             });
                     if (mKeyguardFadingAway) {
                         mBackdrop.animate()
-
                                 // Make it disappear faster, as the focus should be on the activity
                                 // behind.
                                 .setDuration(mKeyguardFadingAwayDuration / 2)
@@ -2982,25 +3026,19 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                 && mFalsingManager.isReportingEnabled() ? View.VISIBLE : View.INVISIBLE);
     }
 
-    private void updateQSRowsColumnsPortrait() {
-        Resources res = mContext.getResources();
-        if (res.getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-            updateResources();
-        }
-    }
-
-    private void updateQSRowsColumnsLandscape() {
-        Resources res = mContext.getResources();
-        if (res.getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            updateResources();
-        }
-    }
-
     protected int adjustDisableFlags(int state) {
         if (!mLaunchTransitionFadingAway && !mKeyguardFadingAway
                 && (mExpandedVisible || mBouncerShowing || mWaitingForKeyguardExit)) {
             state |= StatusBarManager.DISABLE_NOTIFICATION_ICONS;
             state |= StatusBarManager.DISABLE_SYSTEM_INFO;
+        }
+        if (mNetworkController != null && EncryptionHelper.IS_DATA_ENCRYPTED) {
+            if (mNetworkController.hasEmergencyCryptKeeperText()) {
+                state |= StatusBarManager.DISABLE_NOTIFICATION_ICONS;
+            }
+            if (!mNetworkController.isRadioOn()) {
+                state |= StatusBarManager.DISABLE_SYSTEM_INFO;
+            }
         }
         return state;
     }
@@ -3107,6 +3145,15 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         if ((diff2 & StatusBarManager.DISABLE2_QUICK_SETTINGS) != 0) {
             updateQsExpansionEnabled();
         }
+    }
+
+    /**
+     * Reapplies the disable flags as last requested by StatusBarManager.
+     *
+     * This needs to be called if state used by {@link #adjustDisableFlags} changes.
+     */
+    private void recomputeDisableFlags(boolean animate) {
+        disable(mDisabledUnmodified1, mDisabledUnmodified2, animate);
     }
 
     @Override
@@ -3302,7 +3349,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
     private void removeRemoteInputEntriesKeptUntilCollapsed() {
         for (int i = 0; i < mRemoteInputEntriesToRemoveOnCollapse.size(); i++) {
             Entry entry = mRemoteInputEntriesToRemoveOnCollapse.valueAt(i);
-            mRemoteInputController.removeRemoteInput(entry);
+            mRemoteInputController.removeRemoteInput(entry, null);
             removeNotification(entry.key, mLatestRankingMap);
         }
         mRemoteInputEntriesToRemoveOnCollapse.clear();
@@ -3366,7 +3413,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
     public void handleSystemNavigationKey(int key) {
         if (SPEW) Log.d(TAG, "handleSystemNavigationKey: " + key);
         if (!panelsEnabled() || !mKeyguardMonitor.isDeviceInteractive()
-                || mKeyguardMonitor.isShowing()) {
+                || mKeyguardMonitor.isShowing() && !mKeyguardMonitor.isOccluded()) {
             return;
         }
 
@@ -3410,7 +3457,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
             visibilityChanged(true);
         }
         mWaitingForKeyguardExit = false;
-        disable(mDisabledUnmodified1, mDisabledUnmodified2, !force /* animate */);
+        recomputeDisableFlags(!force /* animate */);
         setInteracting(StatusBarManager.WINDOW_STATUS_BAR, true);
     }
 
@@ -3553,7 +3600,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         runPostCollapseRunnables();
         setInteracting(StatusBarManager.WINDOW_STATUS_BAR, false);
         showBouncer();
-        disable(mDisabledUnmodified1, mDisabledUnmodified2, true /* animate */);
+        recomputeDisableFlags(true /* animate */);
 
         // Trimming will happen later if Keyguard is showing - doing it here might cause a jank in
         // the bouncer appear animation.
@@ -3577,7 +3624,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                     ServiceManager.getService("power"));
             if (power != null) {
                 if (mAutomaticBrightness) {
-                    float adj = (value * 100) / (BRIGHTNESS_ADJ_RESOLUTION / 2f) - 1;
+                    float adj = (2 * value) - 1;
                     adj = Math.max(adj, -1);
                     adj = Math.min(adj, 1);
                     final float val = adj;
@@ -3699,19 +3746,8 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         }
         if (mBrightnessChanged && upOrCancel) {
             mBrightnessChanged = false;
-            if (mJustPeeked) {
-                /**
-                 * if we were just peeking, eat the event and collapse the status bar, otherwise
-                 * the event gets passed down and a full expand might happen.
-                 */
+            if (mJustPeeked && mExpandedVisible) {
                 mNotificationPanel.fling(10, false);
-                if (mExpandedVisible) {
-                    mExpandedVisible = false;
-                    visibilityChanged(false);
-                    setInteracting(StatusBarManager.WINDOW_STATUS_BAR, false);
-                }
-                disable(mDisabledUnmodified1, mDisabledUnmodified2, true /* animate */);
-                return true;
             }
         }
         return false;
@@ -3790,10 +3826,6 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                 Integer.toHexString(diff)));
         boolean sbModeChanged = false;
         if (diff != 0) {
-            // we never set the recents bit via this method, so save the prior state to prevent
-            // clobbering the bit below
-            final boolean wasRecentsVisible = (mSystemUiVisibility & View.RECENT_APPS_VISIBLE) > 0;
-
             mSystemUiVisibility = newVal;
 
             // update low profile
@@ -3850,11 +3882,6 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
 
             if ((vis & View.NAVIGATION_BAR_UNHIDE) != 0) {
                 mSystemUiVisibility &= ~View.NAVIGATION_BAR_UNHIDE;
-            }
-
-            // restore the recents bit
-            if (wasRecentsVisible) {
-                mSystemUiVisibility |= View.RECENT_APPS_VISIBLE;
             }
 
             // send updated sysui visibility to window manager
@@ -4289,6 +4316,9 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         if (KeyguardUpdateMonitor.getInstance(mContext) != null) {
             KeyguardUpdateMonitor.getInstance(mContext).dump(fd, pw, args);
         }
+        if (mFlashlightController != null) {
+            mFlashlightController.dump(fd, pw, args);
+        }
 
         FalsingManager.getInstance(mContext).dump(pw);
         FalsingLog.dump(pw);
@@ -4452,24 +4482,6 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                 resetUserExpandedStates();
                 // detach PA Pie when screen is turned off
                 if (mPieController != null) mPieController.detachPie();
-            }
-            else if (Intent.ACTION_CONFIGURATION_CHANGED.equals(action)) {
-                Configuration config = mContext.getResources().getConfiguration();
-                try {
-                    // position app sidebar on left if in landscape orientation and device has a navbar
-                    if (mWindowManagerService.hasNavigationBar() &&
-                            config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                        mWindowManager.updateViewLayout(mAppSidebar,
-                                getAppSidebarLayoutParams(AppSidebar.SIDEBAR_POSITION_LEFT));
-                        mHandler.postDelayed(new Runnable() {
-                            @Override
-                            public void run() {
-                                mAppSidebar.setPosition(AppSidebar.SIDEBAR_POSITION_LEFT);
-                            }
-                        }, 500);
-                    }
-                } catch (RemoteException e) {
-                }
             }
             else if (Intent.ACTION_SCREEN_ON.equals(action)) {
                 mScreenOn = true;
@@ -5246,6 +5258,15 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
     }
 
     /**
+     * Plays the animation when an activity that was occluding Keyguard goes away.
+     */
+    public void animateKeyguardUnoccluding() {
+        mScrimController.animateKeyguardUnoccluding(500);
+        mNotificationPanel.setExpandedFraction(0f);
+        animateExpandNotificationsPanel();
+    }
+
+    /**
      * Starts the timeout when we try to start the affordances on Keyguard. We usually rely that
      * Keyguard goes away via fadeKeyguardAfterLaunchTransition, however, that might not happen
      * because the launched app crashed or something else went wrong.
@@ -5308,7 +5329,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         }
         updateKeyguardState(staying, false /* fromShadeLocked */);
 
-        if (viewToClick != null) {
+        if (viewToClick != null && viewToClick.isAttachedToWindow()) {
             viewToClick.callOnClick();
         }
 
@@ -5367,7 +5388,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                 startTime + fadeoutDuration
                         - StatusBarIconController.DEFAULT_TINT_ANIMATION_DURATION,
                 StatusBarIconController.DEFAULT_TINT_ANIMATION_DURATION);
-        disable(mDisabledUnmodified1, mDisabledUnmodified2, fadeoutDuration > 0 /* animate */);
+        recomputeDisableFlags(fadeoutDuration > 0 /* animate */);
     }
 
     public boolean isKeyguardFadingAway() {
@@ -5432,7 +5453,8 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         checkBarModes();
         updateMediaMetaData(false, mState != StatusBarState.KEYGUARD);
         mKeyguardMonitor.notifyKeyguardState(mStatusBarKeyguardViewManager.isShowing(),
-                mStatusBarKeyguardViewManager.isSecure());
+                mStatusBarKeyguardViewManager.isSecure(),
+                mStatusBarKeyguardViewManager.isOccluded());
         Trace.endSection();
     }
 
@@ -5565,6 +5587,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         }
         if (state == StatusBarState.KEYGUARD) {
             removeRemoteInputEntriesKeptUntilCollapsed();
+            maybeEscalateHeadsUp();
         }
         mState = state;
         mVisualizerView.setStatusBarState(state);
@@ -5855,7 +5878,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
     public void setBouncerShowing(boolean bouncerShowing) {
         super.setBouncerShowing(bouncerShowing);
         mStatusBarView.setBouncerShowing(bouncerShowing);
-        disable(mDisabledUnmodified1, mDisabledUnmodified2, true /* animate */);
+        recomputeDisableFlags(true /* animate */);
     }
 
     public void onStartedGoingToSleep() {
@@ -5934,16 +5957,6 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
             Log.d(TAG, "Unable to reach activity manager", e);
         }
         return false;
-    }
-
-    public void updateRecentsVisibility(boolean visible) {
-        // Update the recents visibility flag
-        if (visible) {
-            mSystemUiVisibility |= View.RECENT_APPS_VISIBLE;
-        } else {
-            mSystemUiVisibility &= ~View.RECENT_APPS_VISIBLE;
-        }
-        notifyUiVisibilityChanged(mSystemUiVisibility);
     }
 
     @Override
@@ -6026,7 +6039,9 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
             pm.wakeUp(SystemClock.uptimeMillis(), "com.android.systemui:CAMERA_GESTURE");
             mStatusBarKeyguardViewManager.notifyDeviceWakeUpRequested();
         }
-        vibrateForCameraGesture();
+        if (source != StatusBarManager.CAMERA_LAUNCH_SOURCE_SCREEN_GESTURE) {
+            vibrateForCameraGesture();
+        }
         if (!mStatusBarKeyguardViewManager.isShowing()) {
             startActivity(KeyguardBottomAreaView.INSECURE_CAMERA_INTENT,
                     true /* dismissShade */);
@@ -6098,7 +6113,7 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
         }
     }
 
-    private final class DozeServiceHost extends KeyguardUpdateMonitorCallback implements DozeHost  {
+    private final class DozeServiceHost implements DozeHost {
         // Amount of time to allow to update the time shown on the screen before releasing
         // the wakelock.  This timeout is design to compensate for the fact that we don't
         // currently have a way to know when time display contents have actually been

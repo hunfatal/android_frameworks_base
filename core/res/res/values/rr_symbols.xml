@@ -155,7 +155,13 @@
   <java-symbol type="string" name="adb_not_connected_notification_title" />
   <java-symbol type="string" name="adb_active_custom_tile_not_connected" />
 
- <!-- Hardware keys on/off option -->
-  <java-symbol type="bool" name="config_hwKeysPref" />
+  <!-- Hardware keys keep back always on -->
+  <java-symbol type="bool" name="config_hwKeysBackAlwaysOn" />
+
+  <!-- Quick settings tiles columns and rows config -->
+  <java-symbol type="integer" name="config_qs_num_rows_landscape_default"/>
+
+  <!-- Dyanamic Navbar -->
+  <java-symbol type="color" name="input_method_navigation_guard_dyanamic" />
 
 </resources>

@@ -16,19 +16,6 @@
 -->
 <resources>
 
-    <!-- App side bar -->
-    <style name="AppSidebarItemText" >
-        <item name="android:textColor">@color/sidebar_item_text_color</item>
-        <item name="android:textSize">@dimen/item_title_text_size</item>
-        <item name="android:singleLine">true</item>
-        <item name="android:ellipsize">end</item>
-        <item name="android:gravity">center</item>
-        <item name="android:shadowColor">@color/sidebar_item_text_shadow_color</item>
-        <item name="android:shadowRadius">1.0</item>
-        <item name="android:shadowDx">2.0</item>
-        <item name="android:shadowDy">2.0</item>
-    </style>
-
     <style name="TextAppearance.StatusBar.WeatherTemp" parent="@*android:style/TextAppearance.StatusBar">
         <item name="android:textStyle">normal</item>
     </style>
@@ -57,18 +44,13 @@
         <item name="android:textStyle">normal</item>
     </style>
 
-    <!-- Base battery metter drawable style -->
-    <style name="BatteryMeterViewDrawable">
-        <!-- Gravity used for positioning text within the battery meter -->
-        <item name="android:gravity">center</item>
-        <item name="blendMode">clear</item>
+    <!-- Screenshot Crop & Share -->
+    <style name="CropDialogAnimations">
+        <item name="android:windowEnterAnimation">@anim/crop_in</item>
+        <item name="android:windowExitAnimation">@anim/crop_out</item>
     </style>
 
-    <!-- Battery meter drawable styles -->
-    <style name="BatteryMeterViewDrawable.Portrait"/>
-    <style name="BatteryMeterViewDrawable.Landscape"/>
-    <style name="BatteryMeterViewDrawable.Circle">
-        <item name="blendMode">overlay</item>
+    <style name="ScreenshotEditorStyle" parent="@android:style/Theme.Material" >
     </style>
 
 </resources>

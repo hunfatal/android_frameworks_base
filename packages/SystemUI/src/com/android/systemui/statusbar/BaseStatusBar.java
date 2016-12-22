@@ -136,8 +136,11 @@ import com.android.systemui.statusbar.stack.NotificationStackScrollLayout;
 import com.android.systemui.statusbar.stack.StackStateAnimator;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import static android.service.notification.NotificationListenerService.Ranking.IMPORTANCE_HIGH;
 import static android.service.notification.NotificationListenerService.Ranking.IMPORTANCE_MIN;
@@ -277,9 +280,6 @@ public abstract class BaseStatusBar extends SystemUI implements
 
     protected int mZenMode;
 
-    protected AppSidebar mAppSidebar;
-    protected int mSidebarPosition;
-
     protected AppCircleSidebar mAppCircleSidebar;
 
     @ChaosLab(name="GestureAnywhere", classification=Classification.NEW_FIELD)
@@ -307,6 +307,8 @@ public abstract class BaseStatusBar extends SystemUI implements
     protected AssistManager mAssistManager;
 
     protected boolean mVrMode;
+
+    private Set<String> mNonBlockablePkgs;
 
     @Override  // NotificationData.Environment
     public boolean isDeviceProvisioned() {
@@ -883,6 +885,10 @@ public abstract class BaseStatusBar extends SystemUI implements
             Slog.e(TAG, "Failed to register VR mode state listener: " + e);
         }
 
+        mNonBlockablePkgs = new ArraySet<String>();
+        Collections.addAll(mNonBlockablePkgs, mContext.getResources().getStringArray(
+                com.android.internal.R.array.config_nonBlockableNotificationPackages));
+
         mPieSettingsObserver.onChange(false);
         mContext.getContentResolver().registerContentObserver(Settings.System.getUriFor(
                 Settings.System.PA_PIE_STATE), false, mPieSettingsObserver);
@@ -1246,7 +1252,8 @@ public abstract class BaseStatusBar extends SystemUI implements
             settingsButton.setVisibility(View.GONE);
         }
 
-        guts.bindImportance(pmUser, sbn, mNotificationData.getImportance(sbn.getKey()));
+        guts.bindImportance(pmUser, sbn, mNonBlockablePkgs,
+                mNotificationData.getImportance(sbn.getKey()));
 
         final TextView doneButton = (TextView) guts.findViewById(R.id.done);
         doneButton.setText(R.string.notification_done);
@@ -1923,28 +1930,28 @@ public abstract class BaseStatusBar extends SystemUI implements
                         sbn.getPackageContext(mContext),
                         contentContainerPublic, mOnClickHandler);
             }
+
+            if (contentViewLocal != null) {
+                contentViewLocal.setIsRootNamespace(true);
+                contentContainer.setContractedChild(contentViewLocal);
+            }
+            if (bigContentViewLocal != null) {
+                bigContentViewLocal.setIsRootNamespace(true);
+                contentContainer.setExpandedChild(bigContentViewLocal);
+            }
+            if (headsUpContentViewLocal != null) {
+                headsUpContentViewLocal.setIsRootNamespace(true);
+                contentContainer.setHeadsUpChild(headsUpContentViewLocal);
+            }
+            if (publicViewLocal != null) {
+                publicViewLocal.setIsRootNamespace(true);
+                contentContainerPublic.setContractedChild(publicViewLocal);
+            }
         }
         catch (RuntimeException e) {
             final String ident = sbn.getPackageName() + "/0x" + Integer.toHexString(sbn.getId());
             Log.e(TAG, "couldn't inflate view for notification " + ident, e);
             return false;
-        }
-
-        if (contentViewLocal != null) {
-            contentViewLocal.setIsRootNamespace(true);
-            contentContainer.setContractedChild(contentViewLocal);
-        }
-        if (bigContentViewLocal != null) {
-            bigContentViewLocal.setIsRootNamespace(true);
-            contentContainer.setExpandedChild(bigContentViewLocal);
-        }
-        if (headsUpContentViewLocal != null) {
-            headsUpContentViewLocal.setIsRootNamespace(true);
-            contentContainer.setHeadsUpChild(headsUpContentViewLocal);
-        }
-        if (publicViewLocal != null) {
-            publicViewLocal.setIsRootNamespace(true);
-            contentContainerPublic.setContractedChild(publicViewLocal);
         }
 
         // Extract target SDK version.
@@ -2170,9 +2177,18 @@ public abstract class BaseStatusBar extends SystemUI implements
                                             .getIdentifier();
                                     if (mLockPatternUtils.isSeparateProfileChallengeEnabled(userId)
                                             && mKeyguardManager.isDeviceLocked(userId)) {
-                                        if (startWorkChallengeIfNecessary(userId,
-                                                intent.getIntentSender(), notificationKey)) {
-                                            // Show work challenge, do not run pendingintent and
+                                        boolean canBypass = false;
+                                        try {
+                                            canBypass = ActivityManagerNative.getDefault()
+                                                    .canBypassWorkChallenge(intent);
+                                        } catch (RemoteException e) {
+                                        }
+                                        // For direct-boot aware activities, they can be shown when
+                                        // the device is still locked without triggering the work
+                                        // challenge.
+                                        if ((!canBypass) && startWorkChallengeIfNecessary(userId,
+                                                    intent.getIntentSender(), notificationKey)) {
+                                            // Show work challenge, do not run PendingIntent and
                                             // remove notification
                                             return;
                                         }
@@ -2914,36 +2930,6 @@ public abstract class BaseStatusBar extends SystemUI implements
         lp.privateFlags |= WindowManager.LayoutParams.PRIVATE_FLAG_NO_MOVE_ANIMATION;
         lp.gravity = Gravity.TOP | gravity;
         lp.setTitle("GestureAnywhereView");
-
-        return lp;
-    }
-
-    protected void addSidebarView() {
-        mAppSidebar = (AppSidebar)View.inflate(mContext, R.layout.app_sidebar, null);
-        mWindowManager.addView(mAppSidebar, getAppSidebarLayoutParams(mSidebarPosition));
-    }
-
-    protected void removeSidebarView() {
-        if (mAppSidebar != null)
-            mWindowManager.removeView(mAppSidebar);
-    }
-
-    protected WindowManager.LayoutParams getAppSidebarLayoutParams(int position) {
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_STATUS_BAR_SUB_PANEL,
-                0
-                | WindowManager.LayoutParams.FLAG_TOUCHABLE_WHEN_WAKING
-                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                | WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH
-                | WindowManager.LayoutParams.FLAG_SPLIT_TOUCH,
-                PixelFormat.TRANSLUCENT);
-        lp.privateFlags |= WindowManager.LayoutParams.PRIVATE_FLAG_NO_MOVE_ANIMATION;
-        lp.gravity = Gravity.TOP;// | Gravity.FILL_VERTICAL;
-        lp.gravity |= position == AppSidebar.SIDEBAR_POSITION_LEFT ? Gravity.LEFT : Gravity.RIGHT;
-        lp.setTitle("AppSidebar");
 
         return lp;
     }

@@ -90,9 +90,9 @@ public class PagedTileLayout extends ViewPager implements QSTileLayout {
         if (mListening == listening) return;
         mListening = listening;
         if (mListening) {
-            mPages.get(mPosition).setListening(listening);
+            setPageListening(mPosition, true);
             if (mOffPage) {
-                mPages.get(mPosition + 1).setListening(listening);
+                setPageListening(mPosition + 1, true);
             }
         } else {
             // Make sure no pages are listening.
@@ -133,6 +133,9 @@ public class PagedTileLayout extends ViewPager implements QSTileLayout {
 
     private void setPageListening(int position, boolean listening) {
         if (position >= mPages.size()) return;
+        if (isLayoutRtl()) {
+            position = mPages.size() - 1 - position;
+        }
         mPages.get(position).setListening(listening);
     }
 
@@ -287,7 +290,7 @@ public class PagedTileLayout extends ViewPager implements QSTileLayout {
                     Settings.System.QS_ROWS_PORTRAIT, 3);
             final int columnsLandscape = Settings.System.getInt(resolver,
                     Settings.System.QS_ROWS_LANDSCAPE, res.getInteger(
-                    R.integer.config_qs_num_rows_landscape_default));
+                    com.android.internal.R.integer.config_qs_num_rows_landscape_default));
             final int columns = Math.max(1, isPortrait ? columnsPortrait : columnsLandscape);
             return Math.max(1, isPortrait ? columnsPortrait : columnsLandscape);
         }
@@ -330,5 +333,13 @@ public class PagedTileLayout extends ViewPager implements QSTileLayout {
 
     public interface PageListener {
         void onPageChanged(boolean isFirst);
+    }
+
+    @Override
+    public void updateSettings() {
+        for (int i = 0; i < mPages.size(); i++) {
+            mPages.get(i).updateSettings();
+        }
+        postDistributeTiles();
     }
 }

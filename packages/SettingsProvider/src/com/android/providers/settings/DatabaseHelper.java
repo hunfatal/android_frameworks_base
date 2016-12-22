@@ -1497,7 +1497,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
                             Settings.Global.CALL_AUTO_RETRY,
                             Settings.Global.DEBUG_APP,
                             Settings.Global.WAIT_FOR_DEBUGGER,
-                            Settings.Global.SHOW_PROCESSES,
                             Settings.Global.ALWAYS_FINISH_ACTIVITIES,
                     };
                     String[] secureToGlobal = {
@@ -2528,6 +2527,8 @@ class DatabaseHelper extends SQLiteOpenHelper {
                     com.android.internal.R.string.config_dreamsDefaultComponent);
             loadStringSetting(stmt, Settings.Secure.SCREENSAVER_DEFAULT_COMPONENT,
                     com.android.internal.R.string.config_dreamsDefaultComponent);
+            loadBooleanSetting(stmt, Settings.Secure.DOZE_ENABLED,
+                                     R.bool.def_dozeEnabledByDefault);
 
             loadBooleanSetting(stmt, Settings.Secure.ACCESSIBILITY_DISPLAY_MAGNIFICATION_ENABLED,
                     R.bool.def_accessibility_display_magnification_enabled);
