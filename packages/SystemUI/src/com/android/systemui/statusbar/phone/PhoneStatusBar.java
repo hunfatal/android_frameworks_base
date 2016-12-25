@@ -3892,6 +3892,13 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
                 mask, fullscreenStackBounds, dockedStackBounds, sbModeChanged, mStatusBarMode);
     }
 
+    @Override  // CommandQueue
+    public void setAutoRotate(boolean enabled) {
+        Settings.System.putInt(mContext.getContentResolver(),
+                Settings.System.ACCELEROMETER_ROTATION,
+                enabled ? 1 : 0);
+    }
+
     private int computeBarMode(int oldVis, int newVis, BarTransitions transitions,
             int transientFlag, int translucentFlag, int transparentFlag) {
         final int oldMode = barMode(oldVis, transientFlag, translucentFlag, transparentFlag);
@@ -5630,10 +5637,12 @@ mWeatherTempSize, mWeatherTempFontStyle, mWeatherTempColor);
     }
 
     public void onCameraHintStarted(String hint) {
+        mFalsingManager.onCameraHintStarted();
         mKeyguardIndicationController.showTransientIndication(hint);
     }
 
     public void onLeftHintStarted(String hint) {
+        mFalsingManager.onLeftAffordanceHintStarted();
         mKeyguardIndicationController.showTransientIndication(hint);
     }
 
