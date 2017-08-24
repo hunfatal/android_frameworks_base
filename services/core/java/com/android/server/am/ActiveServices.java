@@ -372,7 +372,7 @@ public final class ActiveServices {
         // we do not start the service and launch a review activity if the calling app
         // is in the foreground passing it a pending intent to start the service when
         // review is completed.
-        if (Build.PERMISSIONS_REVIEW_REQUIRED) {
+        if (mAm.mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED) {
             if (!requestStartTargetPermissionsReviewIfNeededLocked(r, callingPackage,
                     callingUid, service, callerFg, userId)) {
                 return null;
@@ -916,7 +916,7 @@ public final class ActiveServices {
         // we schedule binding to the service but do not start its process, then
         // we launch a review activity to which is passed a callback to invoke
         // when done to start the bound service's process to completing the binding.
-        if (Build.PERMISSIONS_REVIEW_REQUIRED) {
+        if (mAm.mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED) {
             if (mAm.getPackageManagerInternalLocked().isPermissionsReviewRequired(
                     s.packageName, s.userId)) {
 
@@ -2747,6 +2747,7 @@ public final class ActiveServices {
                 if (r.processName.equals(app.processName) &&
                         r.serviceInfo.applicationInfo.uid == app.info.uid) {
                     mRestartingServices.remove(i);
+                    r.resetRestartCounter();
                     clearRestartingIfNeededLocked(r);
                 }
             }
@@ -2816,17 +2817,28 @@ public final class ActiveServices {
         return info;
     }
 
+    static boolean checkIntractAcrossUsersFullPermission() {
+        final int uid = Binder.getCallingUid();
+        return ActivityManager.checkUidPermission(
+                    android.Manifest.permission.INTERACT_ACROSS_USERS_FULL,
+                    uid) == PackageManager.PERMISSION_GRANTED;
+    }
+
     List<ActivityManager.RunningServiceInfo> getRunningServiceInfoLocked(int maxNum,
             int flags) {
+        boolean granted = checkIntractAcrossUsersFullPermission();
+        return getRunningServiceInfoLocked(maxNum, flags, granted);
+    }
+
+    List<ActivityManager.RunningServiceInfo> getRunningServiceInfoLocked(int maxNum,
+            int flags, boolean granted) {
         ArrayList<ActivityManager.RunningServiceInfo> res
                 = new ArrayList<ActivityManager.RunningServiceInfo>();
 
         final int uid = Binder.getCallingUid();
         final long ident = Binder.clearCallingIdentity();
         try {
-            if (ActivityManager.checkUidPermission(
-                    android.Manifest.permission.INTERACT_ACROSS_USERS_FULL,
-                    uid) == PackageManager.PERMISSION_GRANTED) {
+            if (granted) {
                 int[] users = mAm.mUserController.getUsers();
                 for (int ui=0; ui<users.length && res.size() < maxNum; ui++) {
                     ArrayMap<ComponentName, ServiceRecord> alls = getServices(users[ui]);

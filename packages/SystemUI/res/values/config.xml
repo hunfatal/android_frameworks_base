@@ -108,7 +108,7 @@
      </string>
 
     <!-- Tiles native to System UI. Order should match "quick_settings_tiles_default" -->
-    <string name="quick_settings_tiles_stock" translatable="false">      wifi,cell,battery,dnd,flashlight,rotation,bt,airplane,location,gps,hotspot,inversion,saver,work,cast,screenshot,sound,volume,adb_network,sync,app_picker,heads_up,reboot,usb_tether,music,ime,configurations,caffeine,lte,nfc,screenrecord,expanded_desktop,navigation_bar,app_side_bar,app_circle_bar,pie,gesture_anywhere,pulse,ambient_display
+    <string name="quick_settings_tiles_stock" translatable="false"> wifi,cell,battery,dnd,flashlight,rotation,bt,airplane,gps,location,hotspot,inversion,saver,performance,work,cast,screenshot,sound,volume,adb_network,sync,night,app_picker,pie,locale,heads_up,suspend_actions,reboot,weather,hwkeys,usb_tether,music,ime,configurations,caffeine,lte,nfc,screenrecord,expanded_desktop,navigation_bar,compass,app_circle_bar,gesture_anywhere,pulse,ambient_display
     </string>
 
     <!-- The tiles to display in QuickSettings -->
@@ -287,7 +287,16 @@
 
     <bool name="quick_settings_show_full_alarm">false</bool>
 
+    <!-- Whether to show a warning notification when the device reaches a certain temperature. -->
+    <integer name="config_showTemperatureWarning">0</integer>
+
+    <!-- Temp at which to show a warning notification if config_showTemperatureWarning is true.
+         If < 0, uses the value from HardwarePropertiesManager#getDeviceTemperatures. -->
+    <integer name="config_warningTemperature">-1</integer>
+
     <bool name="config_show4gForIWlan">false</bool>
     <bool name="config_showSignalForIWlan">false</bool>
 
+    <!-- When true,show the AutoBrightness checkbox -->
+    <bool name="config_show_auto_brightness">false</bool>
 </resources>

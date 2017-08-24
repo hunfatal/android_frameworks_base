@@ -21,18 +21,18 @@
   <string name="system_error_vendorprint">제조사 이미지가 시스템과 일치하지 않습니다. 해당 기기에 맞는 <xliff:g id="string">%s</xliff:g> 제조사 이미지를 플래싱해 주십시오.</string>
   <string name="global_action_screenrecord">화면 녹화</string>
   <!-- AOKP custom system animations -->
-  <string name="animation_fade">페이드</string>
+  <string name="animation_fade">서서히 사라지기</string>
   <string name="animation_slide_right">오른쪽으로 슬라이드</string>
   <string name="animation_slide_left">왼쪽으로 슬라이드</string>
-  <string name="animation_slide_right_no_fade">오른쪽으로 슬라이드 (페이드 없음)</string>
-  <string name="animation_slide_left_no_fade">왼쪽으로 슬라이드 (페이드 없음)</string>
-  <string name="animation_slide_up">아래쪽으로 슬라이드</string>
-  <string name="animation_slide_down">위쪽으로 슬라이드</string>
+  <string name="animation_slide_right_no_fade">오른쪽에서 슬라이드 (페이드 없음)</string>
+  <string name="animation_slide_left_no_fade">왼쪽에서 슬라이드 (페이드 없음)</string>
+  <string name="animation_slide_up">아래쪽에서 슬라이드</string>
+  <string name="animation_slide_down">위쪽에서 슬라이드</string>
   <string name="animation_default">기본값</string>
   <string name="animation_translucent">반투명</string>
-  <string name="animation_grow_shrink">커지기 (위쪽에서)</string>
-  <string name="animation_grow_shrink_center">커지기 (가운데에서)</string>
-  <string name="animation_grow_shrink_bottom">커지기 (아래쪽에서)</string>
+  <string name="animation_grow_shrink">커지기 (상단에서)</string>
+  <string name="animation_grow_shrink_center">커지기 (중앙에서)</string>
+  <string name="animation_grow_shrink_bottom">커지기 (하단에서)</string>
   <string name="animation_grow_shrink_left">커지기 (왼쪽에서)</string>
   <string name="animation_grow_shrink_right">커지기 (오른쪽에서)</string>
   <string name="action_null">비어 있음</string>
@@ -44,4 +44,17 @@
   <!-- ADB enabled, but not connected notification title -->
   <string name="adb_not_connected_notification_title">ADB 비활성화됨</string>
   <string name="adb_active_custom_tile_not_connected">비활성화됨</string>
+  <string name="singlehandmode_slide_hint_message">내비게이션 바 위로 손가락을 슬라이드를 하면 표준 및 미니 스크린 뷰어로 전환 됩니다</string>
+  <!-- [CHAR LIMIT=NONE] Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_resetBatteryStats">배터리 통계 다시 설정</string>
+  <!-- [CHAR LIMIT=NONE] Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_resetBatteryStats">앱이 현재의 로우-레벨 배터리 사용 정보를 초기화할 수 있도록 허락합니다.</string>
+  <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_restartUI">시스템 바 다시 시작</string>
+  <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_restartUI">시스템바가 테마리소스를 로드하기 위하여 SystemUI서비스를 재시작합니다.</string>
+  <!-- Pocket Lock -->
+  <string name="pocket_lock_message_long_press">전원 버튼을 길게 눌러 사용</string>
+  <!-- Defines the sysfs attribute path used by pocket bridge
+        to communicate pocket state to the pocket judge kernel driver. -->
 </resources>

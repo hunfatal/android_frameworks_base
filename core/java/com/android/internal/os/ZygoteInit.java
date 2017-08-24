@@ -80,6 +80,7 @@ public class ZygoteInit {
     private static final String TAG = "Zygote";
 
     private static final String PROPERTY_DISABLE_OPENGL_PRELOADING = "ro.zygote.disable_gl_preload";
+    private static final String PROPERTY_GFX_DRIVER = "ro.gfx.driver.0";
     private static final String PROPERTY_RUNNING_IN_CONTAINER = "ro.boot.container";
 
     private static final String ANDROID_SOCKET_PREFIX = "ANDROID_SOCKET_";
@@ -108,7 +109,7 @@ public class ZygoteInit {
     private static final String PRELOADED_CLASSES = "/system/etc/preloaded-classes";
 
     /** Controls whether we should preload resources during zygote init. */
-    public static final boolean PRELOAD_RESOURCES = true;
+    public static final boolean PRELOAD_RESOURCES = false;
 
     /**
      * Registers a server socket for zygote command connections
@@ -243,7 +244,9 @@ public class ZygoteInit {
     }
 
     private static void preloadOpenGL() {
-        if (!SystemProperties.getBoolean(PROPERTY_DISABLE_OPENGL_PRELOADING, false)) {
+        String driverPackageName = SystemProperties.get(PROPERTY_GFX_DRIVER);
+        if (!SystemProperties.getBoolean(PROPERTY_DISABLE_OPENGL_PRELOADING, false) &&
+                (driverPackageName == null || driverPackageName.isEmpty())) {
             EGL14.eglGetDisplay(EGL14.EGL_DEFAULT_DISPLAY);
         }
     }
@@ -437,6 +440,8 @@ public class ZygoteInit {
                     Log.i(TAG, "...preloaded " + N + " resource in "
                             + (SystemClock.uptimeMillis() - startTime) + "ms.");
                 }
+            } else {
+                Log.i(TAG, "Preload resources disabled, skipped.");
             }
             mResources.finishPreloading();
         } catch (RuntimeException e) {
@@ -641,7 +646,7 @@ public class ZygoteInit {
             OsConstants.CAP_NET_RAW,
             OsConstants.CAP_SYS_MODULE,
             OsConstants.CAP_SYS_NICE,
-            OsConstants.CAP_SYS_RESOURCE,
+            OsConstants.CAP_SYS_PTRACE,
             OsConstants.CAP_SYS_TIME,
             OsConstants.CAP_SYS_TTY_CONFIG
         );

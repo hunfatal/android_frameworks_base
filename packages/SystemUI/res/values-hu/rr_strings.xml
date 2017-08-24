@@ -102,39 +102,106 @@
   <string name="quick_settings_screenrecord">Képernyőfelvétel</string>
   <string name="quick_settings_screenrecord_on">Felvétel \u2026</string>
   <string name="quick_settings_navigation_bar">Navigációs sáv</string>
-  <string name="quick_settings_smartbar">SmartBar</string>
-  <string name="quick_settings_smartbar_off">SmartBar ki</string>
+  <string name="quick_settings_smartbar">Smart bar</string>
+  <string name="quick_settings_smartbar_off">Smart bar ki</string>
   <string name="quick_settings_fling">Fling</string>
   <string name="quick_settings_fling_off">Fling ki</string>
-  <string name="quick_settings_appcirclebar_title">Alkalmazás körsáv</string>
-  <string name="quick_settings_appcirclebar_on">Alkalmazás körsáv be</string>
-  <string name="quick_settings_appcirclebar_off">Alkalmazás körsáv ki</string>
+  <string name="quick_settings_appcirclebar_title">Kerek alkalmazássáv</string>
+  <string name="quick_settings_appcirclebar_on">Kerek alkalmazássáv Be</string>
+  <string name="quick_settings_appcirclebar_off">Kerek alkalmazássáv Ki</string>
   <string name="quick_settings_gesture_anywhere_label">Gesztus bárhol</string>
   <string name="quick_settings_gesture_anywhere_on">Gesztusok be</string>
   <string name="quick_settings_gesture_anywhere_off">Gesztusok ki</string>
   <string name="quick_settings_appsidebar_title">Alkalmazás oldalsáv</string>
-  <string name="quick_settings_appsidebar_on">Alkalmazás oldalsáv be</string>
-  <string name="quick_settings_appsidebar_off">Alkalmazás oldalsáv ki</string>
+  <string name="quick_settings_appsidebar_on">Alkalmazás oldalsáv Be</string>
+  <string name="quick_settings_appsidebar_off">Alkalmazás oldalsáv Ki</string>
+  <!-- Pulse Tile -->
   <string name="quick_settings_pulse_enabled">Pulse engedélyezve</string>
   <string name="quick_settings_pulse_disabled">Vizualizáló ki</string>
+  <string name="quick_settings_pulse_label">Pulse</string>
+  <string name="accessibility_quick_settings_pulse_off">Pulse ki</string>
+  <string name="accessibility_quick_settings_pulse_on">Pulse be</string>
+  <string name="accessibility_quick_settings_pulse_changed_off">Pulse kikapcsolva</string>
+  <string name="accessibility_quick_settings_pulse_changed_on">Pulse bekapcsolva</string>
   <string name="quick_settings_pulse_label">Navigációs sáv vizualizáló</string>
-  <string name="quick_settings_pie">Pie</string>
   <string name="quick_settings_ambient_display_label">Környezeti kijelző</string>
-  <string name="accessibility_quick_settings_ambient_display_off">Környezeti kijelző ki.</string>
-  <string name="accessibility_quick_settings_ambient_display_on">Környezeti kijelző be.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_off">Környezeti kijelző kikapcsolva.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_on">Környezeti kijelző bekapcsolva.</string>
+  <string name="accessibility_quick_settings_ambient_display_off">Környezeti kijelző ki</string>
+  <string name="accessibility_quick_settings_ambient_display_on">Környezeti kijelző be</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_off">Környezeti kijelző kikapcsolva</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_on">Környezeti kijelző bekapcsolva</string>
   <string name="quick_settings_heads_up_label">Lebegő értesítések</string>
-  <string name="accessibility_quick_settings_heads_up_off">Lebegő értesítések ki.</string>
-  <string name="accessibility_quick_settings_heads_up_on">Lebegő értesítések be.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_off">Lebegő értesítések kikapcsolva.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_on">Lebegő értesítések bekapcsolva.</string>
-  <!-- PA Pie controls -->
+  <string name="accessibility_quick_settings_heads_up_off">Lebegő értesítések ki</string>
+  <string name="accessibility_quick_settings_heads_up_on">Lebegő értesítések be</string>
+  <string name="accessibility_quick_settings_heads_up_changed_off">Lebegő értesítések kikapcsolva</string>
+  <string name="accessibility_quick_settings_heads_up_changed_on">Lebegő értesítések bekapcsolva</string>
+  <!-- Location Tile -->
+  <string name="accessibility_quick_settings_location_battery_saving">Helymeghatározás: energiatakarékos mód.</string>
+  <string name="accessibility_quick_settings_location_gps_only">Helymeghatározás: csak GPS.</string>
+  <string name="accessibility_quick_settings_location_high_accuracy">Helymeghatározás: nagy pontosságú.</string>
+  <string name="accessibility_quick_settings_location_changed_battery_saving">Helymeghatározás energiatakarékos módra váltva.</string>
+  <string name="accessibility_quick_settings_location_changed_gps_only">Helymeghatározás csak GPS módra váltva.</string>
+  <string name="accessibility_quick_settings_location_changed_high_accuracy">Helymeghatározás nagy pontosságú módra váltva.</string>
+  <string name="quick_settings_location_detail_title">Helymeghatározási mód</string>
+  <string name="quick_settings_location_battery_saving_label">Energiatakarékos</string>
+  <string name="quick_settings_location_gps_only_label">Csak GPS</string>
+  <string name="quick_settings_location_high_accuracy_label">Nagy pontosság</string>
+  <string name="quick_settings_location_off_label">Hely ki</string>
+  <string name="quick_settings_location_off_custom_label">Hely</string>
+  <!-- Language\Locale Tile -->
+  <string name="quick_settings_locale_label">Nyelv</string>
+  <string name="quick_settings_locale_more_locales_toast">Kérjük, állítson be több nyelvet a váltás engedélyezéséhez</string>
+  <!-- Suspend Actions Tile -->
+  <string name="accessibility_quick_settings_suspend_actions_on">Felfüggesztett műveletek bekapcsolva</string>
+  <string name="accessibility_quick_settings_suspend_actions_off">Felfüggesztett műveletek kikapcsolva</string>
+  <string name="quick_settings_suspend_actions_label">Felfüggesztett műveletek</string>
+  <!-- Perf Profile Tile -->
+  <string name="qs_tile_performance">Akkumulátor mód</string>
+  <!-- Content description of the battery mode tile in quick settings when on, power save mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_pwrsv">Akkumulátor mód: energiatakarékos.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, balanced mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bal">Akkumulátor mód: kiegyensúlyozott.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, performance mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_perf">Akkumulátor mód: teljesítmény.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, efficiency mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_power">Akkumulátor mód: hatékonyság.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, quick mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_perf">Akkumulátor mód: gyors.</string>
+  <!-- Announcement made when the battery mode tile changes to power save (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_pwrsv">Akkumulátor mód energiatakarékosra változtatva.</string>
+  <!-- Announcement made when the battery mode tile changes to balanced (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bal">Akkumulátor mód kiegyensúlyozottra változtatva.</string>
+  <!-- Announcement made when the battery mode tile changes to performance (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_perf">Akkumulátor mód teljesítményre változtatva.</string>
+  <!-- Announcement made when the battery mode tile changes to efficiency (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_power">Akkumulátor mód hatékonyságra változtatva.</string>
+  <!-- Announcement made when the battery mode tile changes to quick (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_perf">Akkumulátor mód gyorsra változtatva.</string>
+  <string name="quick_settings_performance_profile_detail_title">Akkumulátor mód</string>
+  <!-- Compass QS Tile -->
+  <string name="quick_settings_compass_label">Iránytű</string>
+  <string name="quick_settings_compass_value"><xliff:g id="degrees">%1$.0f</xliff:g>\u00b0 <xliff:g id="direction">%2$s</xliff:g></string>
+  <string name="quick_settings_compass_init">Inicializálás\u2026</string>
+  <string name="accessibility_quick_settings_compass_off">Iránytű ki.</string>
+  <string name="accessibility_quick_settings_compass_on">Iránytű be.</string>
+  <string name="accessibility_quick_settings_compass_changed_off">Iránytű kikapcsolva.</string>
+  <string name="accessibility_quick_settings_compass_changed_on">Iránytű bekapcsolva.</string>
+  <string name="quick_settings_compass_N">É</string>
+  <string name="quick_settings_compass_NE">ÉK</string>
+  <string name="quick_settings_compass_E">K</string>
+  <string name="quick_settings_compass_SE">DK</string>
+  <string name="quick_settings_compass_S">D</string>
+  <string name="quick_settings_compass_SW">DNy</string>
+  <string name="quick_settings_compass_W">Ny</string>
+  <string name="quick_settings_compass_NW">ÉNy</string>
+  <!-- HW Keys Tile -->
+  <string name="accessibility_quick_settings_hwkeys_on">Hardveres gombok bekapcsolása</string>
+  <string name="accessibility_quick_settings_hwkeys_off">Hardveres gombok kikapcsolása</string>
+  <string name="quick_settings_hwkeys_label">Hardveres gombok</string>
   <!-- Kill app toast -->
   <string name="app_killed_message">Alkalmazás kilőve</string>
   <!-- Heads up snooze toast -->
-  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s</xliff:g> lebegő értesítései 1 percig szundiznak</string>
-  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> lebegő értesítései <xliff:g id="number">%d</xliff:g> percig szundiznak</string>
+  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s</xliff:g> • Lebegő értesítései 1 percig szundiznak.</string>
+  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> • Lebegő értesítései <xliff:g id="number">%d</xliff:g> percig szundiznak.</string>
   <!-- Screenshot action -->
   <string name="screenshot_abort_title">Képernyőmentés nem történt</string>
   <string name="screenshot_abort_text">Művelet megszakítva</string>
@@ -158,4 +225,56 @@
   <string name="recents_custom_android_n">ÖSSZES TÖRLÉSE</string>
   <string name="recents_free_ram">Szabad RAM: %1$d MB</string>
   <!-- Path data for Solid battery -->
+  <!-- Task Manager -->
+  <string name="task_manager_title">Feladatkezelő</string>
+  <string name="message_switch_fail">Erre a feladatra nem lehet váltani, mert nincs felülete.</string>
+  <string name="tasklist_killall">Összes kilövése</string>
+  <string name="tasklist_memory_usage">"Szabad • Összes memória : <xliff:g id="number">%s</xliff:g> • <xliff:g id="name">%s</xliff:g>"</string>
+  <string name="message_keep_one_launcher">Legalább egy kezdő tevékenységet meg kell tartania!</string>
+  <string name="tm_clear_task">TÖRLÉS</string>
+  <!-- Slim Recents -->
+  <string name="recents_multiwin_warning">A többablakos munkamenet már aktív.\nCsak érintsen meg egy alkalmazást, ha rögzíteni szeretné azt.</string>
+  <string name="recents_multiwin_nolastapp">Eltávolította az összes előzményt, kérjük, válasszon egy alkalmazást az indítóból vagy a fiókból.</string>
+  <string name="slim_recent_keyguard">Oldja fel eszközét az előzmények megtekintéséhez</string>
+  <string name="slim_recent_pinned">Képernyő rögzítésének feloldása az előzmények megtekintéséhez</string>
+  <!-- Slim recents app sidebar queue app toast -->
+  <string name="toast_recents_queue_app">%s indítása az előzmények bezárása után</string>
+  <string name="toast_recents_cancel_queued_app">Alkalmazás indításának megszakítása</string>
+  <!-- Kill button in notification guts -->
+  <string name="force_stop_dlg_title">Kényszeríti a leállítást?</string>
+  <string name="force_stop_dlg_text">Ha egy alkalmazást leállásra kényszerít, instabilan viselkedhet.</string>
+  <string name="dlg_ok">OK</string>
+  <string name="dlg_cancel">Mégse</string>
+  <string name="kill">Alkalmazás leállítása</string>
+  <!-- OmniJAWS -->
+  <string name="omnijaws_service_error">Hiba</string>
+  <string name="omnijaws_service_unkown">Nincsenek időjárási adatok</string>
+  <string name="omnijaws_detail_header">Időjárás</string>
+  <string name="omnijaws_label_default">Időjárás</string>
+  <string name="omnijaws_current_text">Most</string>
+  <string name="omnijaws_package_not_available">OmniJaws nem elérhető</string>
+  <string name="omnijaws_service_error_long">Hiba az időjárási adatok betöltésekor</string>
+  <string name="omnijaws_service_disabled">Szolgáltatás letiltva</string>
+  <!-- Weather string format in expanded statusbar header -->
+  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> <xliff:g id="condition">%2$s</xliff:g></string>
+  <!-- volte icon switch -->
+  <string name="status_bar_volte">VOLTE</string>
+  <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
+  <string name="keyguard_indication_dash_charging_time">Dash töltés (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> a teljes töltöttségig)</string>
+  <string name="keyguard_plugged_in_dash_charging">Dash töltés</string>
+  <!-- vpn icon switch -->
+  <string name="status_bar_vpn">VPN</string>
+  <!-- data saver icon switch -->
+  <string name="status_bar_datasaver">Adatforgalom-csökkentő</string>
+  <!-- No navigation warning notification -->
+  <string name="no_navigation_warning_title">Minden navigációs módszer letiltva</string>
+  <string name="no_navigation_warning_text">Engedélyezéshez érintse meg</string>
+  <!-- Pie controls -->
+  <string name="pie_date_format">EEEE, yyyy MMMM dd</string>
+  <string name="pie_state_name">Pie vezérlő</string>
+  <string name="pie_state_summary">Pie vezérlő használata teljes képernyős üzemmódban</string>
+  <string name="pie_battery_level">"AKKUMULÁTOR SZINTJE "</string>
+  <string name="quick_settings_pie">Pie</string>
+  <string name="accessibility_data_sim">Jelenlegi adat SIM</string>
+  <string name="data_switch_started">Váltás az adatforgalomhoz használt SIM-kártyák között, ez legfeljebb egy percet vesz igénybe\u2026</string>
 </resources>

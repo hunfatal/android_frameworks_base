@@ -76,10 +76,8 @@ public class Ringtone {
     private Uri mUri;
     private String mTitle;
 
-    private AudioAttributes mAudioAttributes = new AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-            .build();
+    private AudioAttributes mAudioAttributes;
+
     // playback properties, use synchronized with mPlaybackSettingsLock
     private boolean mIsLooping = false;
     private float mVolume = 1.0f;
@@ -92,6 +90,7 @@ public class Ringtone {
         mAllowRemote = allowRemote;
         mRemotePlayer = allowRemote ? mAudioManager.getRingtonePlayer() : null;
         mRemoteToken = allowRemote ? new Binder() : null;
+        setCustomAudioAttributes();
     }
 
     /**
@@ -270,6 +269,38 @@ public class Ringtone {
         return title;
     }
 
+    public void setCustomAudioAttributes() {
+        int focusmode = getWiredRingtoneFocusMode();
+        switch (focusmode) {
+            case 0: //play ringtone only from headset if music playing, otherwise from speakerphone
+                if (mAudioManager.isWiredHeadsetOn() && mAudioManager.isMusicActive()) {
+                    mAudioAttributes = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                } else {
+                    mAudioAttributes = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                }
+                break;
+            default:
+            case 1: //aosp behavior, ringtone always from both headset and speakerphone
+                    mAudioAttributes = new AudioAttributes.Builder()
+                            .setUsage(AudioAttributes.USAGE_NOTIFICATION_RINGTONE)
+                            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                            .build();
+                break;
+        }
+    }
+
+    private int getWiredRingtoneFocusMode() {
+        int mode = Settings.Global.getInt(mContext.getContentResolver(),
+                Settings.Global.WIRED_RINGTONE_FOCUS_MODE, 1);
+        return mode;
+    }
+
     /**
      * Set {@link Uri} to be used for ringtone playback. Attempts to open
      * locally, otherwise will delegate playback to remote
@@ -368,6 +399,7 @@ public class Ringtone {
 
     private void destroyLocalPlayer() {
         if (mLocalPlayer != null) {
+            mLocalPlayer.setOnCompletionListener(null);
             mLocalPlayer.reset();
             mLocalPlayer.release();
             mLocalPlayer = null;
@@ -464,8 +496,8 @@ public class Ringtone {
     }
 
     class MyOnCompletionListener implements MediaPlayer.OnCompletionListener {
-        public void onCompletion(MediaPlayer mp)
-        {
+        @Override
+        public void onCompletion(MediaPlayer mp) {
             synchronized (sActiveRingtones) {
                 sActiveRingtones.remove(Ringtone.this);
             }

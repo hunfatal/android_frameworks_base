@@ -69,7 +69,6 @@ public class NavigationBarView extends LinearLayout {
     boolean mVertical;
     boolean mScreenOn;
     boolean mLeftInLandscape;
-
     private int mCurrentRotation = -1;
 
     boolean mShowMenu;
@@ -363,7 +362,7 @@ public class NavigationBarView extends LinearLayout {
         }
 
         final boolean showImeButton = ((hints & StatusBarManager.NAVIGATION_HINT_IME_SHOWN) != 0);
-        getImeSwitchButton().setVisibility(showImeButton ? View.VISIBLE : View.INVISIBLE);
+        getImeSwitchButton().setVisibility(showImeButton ? View.INVISIBLE : View.INVISIBLE);
         getImeSwitchButton().setImageDrawable(mImeIcon);
 
         // Update menu button in case the IME state has changed.
@@ -425,7 +424,7 @@ public class NavigationBarView extends LinearLayout {
     }
 
     public void setWakeAndUnlocking(boolean wakeAndUnlocking) {
-        setUseFadingAnimations(wakeAndUnlocking);
+        setUseFadingAnimations(!wakeAndUnlocking);
         mWakeAndUnlocking = wakeAndUnlocking;
         updateLayoutTransitionsEnabled();
     }
@@ -586,6 +585,8 @@ public class NavigationBarView extends LinearLayout {
 
         updateTaskSwitchHelper();
         setNavigationIconHints(mNavigationIconHints, true);
+
+        getHomeButton().setVertical(mVertical);
     }
 
     private void updateTaskSwitchHelper() {

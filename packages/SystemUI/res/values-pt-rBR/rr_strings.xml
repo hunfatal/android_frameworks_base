@@ -27,11 +27,11 @@
   <string name="screenrecord_notif_pointer_off">Ocultar ponteiro</string>
   <!-- Screen record notification error title -->
   <string name="screenrecord_notif_error">Não é possível gravar tela</string>
-  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> - <xliff:g id="condition">%2$s</xliff:g></string>
+  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> <xliff:g id="condition">%2$s</xliff:g></string>
   <!-- Screenshot Delete Toast -->
   <string name="delete_screenshot_toast">A captura de tela foi apagada</string>
   <string name="gestures_message">Desenhe seu gesto aqui</string>
-  <string name="rr_sys_tuner">Sistema UI Tuner</string>
+  <string name="rr_sys_tuner">Sintonizador System UI</string>
   <!-- Strings for lockscreen shortcut hints -->
   <string name="left_shortcut_hint">Deslizar para a direita para %1$s</string>
   <string name="right_shortcut_hint">Deslizar para a esquerda para %1$s</string>
@@ -99,42 +99,109 @@
   <string name="quick_settings_nfc">NFC</string>
   <string name="quick_settings_nfc_label">NFC</string>
   <string name="quick_settings_nfc_off">NFC desligado</string>
-  <string name="quick_settings_screenrecord">Gravar tela</string>
+  <string name="quick_settings_screenrecord">Gravação de tela</string>
   <string name="quick_settings_screenrecord_on">Gravando ...</string>
   <string name="quick_settings_navigation_bar">Barra de Navegação</string>
-  <string name="quick_settings_smartbar">SmartBar</string>
-  <string name="quick_settings_smartbar_off">SmartBar desligada</string>
+  <string name="quick_settings_smartbar">Barra Inteligente</string>
+  <string name="quick_settings_smartbar_off">Barra Inteligente desligada</string>
   <string name="quick_settings_fling">Fling</string>
   <string name="quick_settings_fling_off">Fling desligado</string>
-  <string name="quick_settings_appcirclebar_title">AppCircleBar</string>
-  <string name="quick_settings_appcirclebar_on">AppCircleBar ligado</string>
-  <string name="quick_settings_appcirclebar_off">AppCircleBar desligado</string>
+  <string name="quick_settings_appcirclebar_title">Barra circular de aplicativos</string>
+  <string name="quick_settings_appcirclebar_on">Barra circular de aplicativos ativada</string>
+  <string name="quick_settings_appcirclebar_off">Barra circular de aplicativos desativada</string>
   <string name="quick_settings_gesture_anywhere_label">Gestos em Qualquer Lugar</string>
   <string name="quick_settings_gesture_anywhere_on">Gestos Ativados</string>
   <string name="quick_settings_gesture_anywhere_off">Gestos Desativados</string>
-  <string name="quick_settings_appsidebar_title">AppSideBar</string>
-  <string name="quick_settings_appsidebar_on">AppSideBar ligado</string>
-  <string name="quick_settings_appsidebar_off">AppSideBar desligado</string>
+  <string name="quick_settings_appsidebar_title">Barra lateral de App</string>
+  <string name="quick_settings_appsidebar_on">Barra lateral de aplicativos ativada</string>
+  <string name="quick_settings_appsidebar_off">Barra lateral de aplicativos desativada</string>
+  <!-- Pulse Tile -->
   <string name="quick_settings_pulse_enabled">Pulse Habilitado</string>
-  <string name="quick_settings_pulse_disabled">Nenhum Visualizador</string>
+  <string name="quick_settings_pulse_disabled">Nenhum visualizador</string>
+  <string name="quick_settings_pulse_label">Pulso</string>
+  <string name="accessibility_quick_settings_pulse_off">Pulso Desligado </string>
+  <string name="accessibility_quick_settings_pulse_on">Pulso Ligado</string>
+  <string name="accessibility_quick_settings_pulse_changed_off">Pulso está Desligado</string>
+  <string name="accessibility_quick_settings_pulse_changed_on">Pulso está Ligado</string>
   <string name="quick_settings_pulse_label">Visualizador da Barra de Navegação</string>
-  <string name="quick_settings_pie">Controle Pie</string>
   <string name="quick_settings_ambient_display_label">Tela ambiente</string>
   <string name="accessibility_quick_settings_ambient_display_off">Tela Ambiente desligada.</string>
-  <string name="accessibility_quick_settings_ambient_display_on">Tela Ambiente ligada.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_off">Tela Ambiente foi desligada.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_on">Tela Ambiente foi ligado.</string>
+  <string name="accessibility_quick_settings_ambient_display_on">Tela Ambiente ligada</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_off">Tela Ambiente foi desligada</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_on">Tela Ambiente foi ligada</string>
   <string name="quick_settings_heads_up_label">Notificações pop-up</string>
-  <string name="accessibility_quick_settings_heads_up_off">Notificações pop-up desativadas.</string>
-  <string name="accessibility_quick_settings_heads_up_on">Notificações pop-up ativadas.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_off">Notificações pop-up desativadas.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_on">As notificações pop-up foram ativadas.</string>
-  <!-- PA Pie controls -->
+  <string name="accessibility_quick_settings_heads_up_off">Notificações pop-up desativadas</string>
+  <string name="accessibility_quick_settings_heads_up_on">Notificações pop-up ativadas</string>
+  <string name="accessibility_quick_settings_heads_up_changed_off">As notificações pop-up foram desativadas</string>
+  <string name="accessibility_quick_settings_heads_up_changed_on">As notificações pop-up foram ativadas</string>
+  <!-- Location Tile -->
+  <string name="accessibility_quick_settings_location_battery_saving">Modo de localização: economia de bateria.</string>
+  <string name="accessibility_quick_settings_location_gps_only">Modo de localização: somente no dispositivo.</string>
+  <string name="accessibility_quick_settings_location_high_accuracy">Modo de localização: alta precisão.</string>
+  <string name="accessibility_quick_settings_location_changed_battery_saving">Modo de localização alterado para economia de bateria.</string>
+  <string name="accessibility_quick_settings_location_changed_gps_only">Modo de localização alterado para somente no dispositivo.</string>
+  <string name="accessibility_quick_settings_location_changed_high_accuracy">Modo de localização alterado para alta precisão.</string>
+  <string name="quick_settings_location_detail_title">Modos de localização</string>
+  <string name="quick_settings_location_battery_saving_label">Economia de bateria</string>
+  <string name="quick_settings_location_gps_only_label">Somente no dispositivo</string>
+  <string name="quick_settings_location_high_accuracy_label">Alta precisão</string>
+  <string name="quick_settings_location_off_label">Localização desativada</string>
+  <string name="quick_settings_location_off_custom_label">Localização</string>
+  <!-- Language\Locale Tile -->
+  <string name="quick_settings_locale_label">Idioma</string>
+  <string name="quick_settings_locale_more_locales_toast">Por favor, configure vários idiomas para habilitar a funcionalidade de ativar/desativar</string>
+  <!-- Suspend Actions Tile -->
+  <string name="accessibility_quick_settings_suspend_actions_on">Suspensão de ações ativada</string>
+  <string name="accessibility_quick_settings_suspend_actions_off">Suspensão de ações desativada</string>
+  <string name="quick_settings_suspend_actions_label">Suspender as ações</string>
+  <!-- Perf Profile Tile -->
+  <string name="qs_tile_performance">Modo de bateria</string>
+  <!-- Content description of the battery mode tile in quick settings when on, power save mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_pwrsv">Modo de bateria: economia de energia.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, balanced mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bal">Modo de bateria: modo equilibrado.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, performance mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_perf">Modo de bateria: modo de desempenho.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, efficiency mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_power">Modo de bateria: modo de eficiência.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, quick mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_perf">Modo de bateria: modo rápido.</string>
+  <!-- Announcement made when the battery mode tile changes to power save (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_pwrsv">Modo de bateria alterado para o modo de economia de energia.</string>
+  <!-- Announcement made when the battery mode tile changes to balanced (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bal">Modo de bateria alterado para o modo equilibrado.</string>
+  <!-- Announcement made when the battery mode tile changes to performance (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_perf">Modo de bateria alterado para o modo de desempenho.</string>
+  <!-- Announcement made when the battery mode tile changes to efficiency (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_power">Modo de bateria alterado para o modo de eficiência.</string>
+  <!-- Announcement made when the battery mode tile changes to quick (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_perf">Modo de bateria alterado para o modo rápido.</string>
+  <string name="quick_settings_performance_profile_detail_title">Modo de bateria</string>
+  <!-- Compass QS Tile -->
+  <string name="quick_settings_compass_label">Bússola</string>
+  <string name="quick_settings_compass_value"><xliff:g id="degrees">%1$.0f</xliff:g>\u00b0 <xliff:g id="direction">%2$s</xliff:g></string>
+  <string name="quick_settings_compass_init">Inicializando\u2026</string>
+  <string name="accessibility_quick_settings_compass_off">Bússola desligada.</string>
+  <string name="accessibility_quick_settings_compass_on">Bússola ligada.</string>
+  <string name="accessibility_quick_settings_compass_changed_off">A bússola foi desligada.</string>
+  <string name="accessibility_quick_settings_compass_changed_on">A bússola foi ligada.</string>
+  <string name="quick_settings_compass_N">N</string>
+  <string name="quick_settings_compass_NE">NE</string>
+  <string name="quick_settings_compass_E">E</string>
+  <string name="quick_settings_compass_SE">SE</string>
+  <string name="quick_settings_compass_S">S</string>
+  <string name="quick_settings_compass_SW">SO</string>
+  <string name="quick_settings_compass_W">O</string>
+  <string name="quick_settings_compass_NW">NO</string>
+  <!-- HW Keys Tile -->
+  <string name="accessibility_quick_settings_hwkeys_on">Teclas físicas ativadas</string>
+  <string name="accessibility_quick_settings_hwkeys_off">Teclas físicas desativadas</string>
+  <string name="quick_settings_hwkeys_label">Teclas físicas</string>
   <!-- Kill app toast -->
   <string name="app_killed_message">Aplicativo encerrado</string>
   <!-- Heads up snooze toast -->
-  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s </xliff:g> - As notificações estão cochilando durante 1 minuto.</string>
-  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> - As notificações estão cochilando por <xliff:g id="number">%d</xliff:g> minutos.</string>
+  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s </xliff:g> • As notificações flutuantes vão adormecer durante 1 minuto.</string>
+  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> • As notificações estão cochilando por <xliff:g id="number">%d</xliff:g> minutos.</string>
   <!-- Screenshot action -->
   <string name="screenshot_abort_title">Nenhuma captura de tela tirada</string>
   <string name="screenshot_abort_text">Operação abortada</string>
@@ -151,11 +218,66 @@
   <string name="pref_crop_behavior_summary">Usar a imagem recortada, mesmo que o original na verdade ainda não foi cortada com a ação de cortar</string>
   <string name="action_ok">Ok</string>
   <string name="action_delete_success">Excluído</string>
-  <string name="action_delete_fault">Operação não teve sucesso.</string>
+  <string name="action_delete_fault">Falha ao deletar</string>
   <string name="action_save_success">Salvo</string>
-  <string name="action_save_fault">Operação não teve sucesso.</string>
+  <string name="action_save_fault">Falha ao salvar</string>
   <string name="action_edit">Editar</string>
   <string name="recents_custom_android_n">LIMPAR TUDO</string>
   <string name="recents_free_ram">RAM Livre: %1$d MB</string>
   <!-- Path data for Solid battery -->
+  <!-- Task Manager -->
+  <string name="task_manager_title">Gerenciador de Tarefas</string>
+  <string name="message_switch_fail">Não é possível mudar para esta tarefa, porque ela não tem nenhuma interface.</string>
+  <string name="tasklist_killall">Terminar tudo</string>
+  <string name="tasklist_memory_usage">"Memória Livre/Total: <xliff:g id="number">%s</xliff:g> • <xliff:g id="name">%s</xliff:g>"</string>
+  <string name="message_keep_one_launcher">Deve manter pelo menos uma atividade!</string>
+  <string name="tm_clear_task">LIMPAR</string>
+  <!-- Slim Recents -->
+  <string name="recents_multiwin_warning">Uma sessão de multi-janelas já está ativa.\nBasta tocar no aplicativo que deseja ancorá-lo agora.</string>
+  <string name="recents_multiwin_nolastapp">Todas as aplicações recentes foram removidas. Por favor, escolha um app da launcher ou da gaveta de aplicativos.</string>
+  <string name="slim_recent_keyguard">Desbloqueie o dispositivo para ver as aplicações recentes</string>
+  <string name="slim_recent_pinned">Desafixar a tela para ver os recentes</string>
+  <!-- Slim recents app sidebar queue app toast -->
+  <string name="toast_recents_queue_app">Abrir %s após fechar os recentes</string>
+  <string name="toast_recents_cancel_queued_app">Cancelar execução do app</string>
+  <!-- Kill button in notification guts -->
+  <string name="force_stop_dlg_title">Forçar parada?</string>
+  <string name="force_stop_dlg_text">Se você forçar a interrupção de um app, ele pode apresentar mau funcionamento.</string>
+  <string name="dlg_ok">Ok</string>
+  <string name="dlg_cancel">Cancelar</string>
+  <string name="kill">Fechar aplicativo</string>
+  <!-- OmniJAWS -->
+  <string name="omnijaws_service_error">Erro</string>
+  <string name="omnijaws_service_unkown">Sem informações meteorológicas</string>
+  <string name="omnijaws_detail_header">Previsão do Tempo</string>
+  <string name="omnijaws_label_default">Previsão do Tempo</string>
+  <string name="omnijaws_current_text">Agora</string>
+  <string name="omnijaws_package_not_available">OmniJaws não disponível</string>
+  <string name="omnijaws_service_error_long">Erro ao carregar as informações meteorológicas</string>
+  <string name="omnijaws_service_disabled">Serviço desativado</string>
+  <!-- Weather string format in expanded statusbar header -->
+  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> <xliff:g id="condition">%2$s</xliff:g></string>
+  <!-- volte icon switch -->
+  <string name="status_bar_volte">VOLTE</string>
+  <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
+  <string name="keyguard_indication_dash_charging_time">Carregamento Rápido (<xliff:g id="charging_time_left">%s</xliff:g> até concluir)</string>
+  <string name="keyguard_plugged_in_dash_charging">Carregamento Rápido</string>
+  <!-- vpn icon switch -->
+  <string name="status_bar_vpn">VPN</string>
+  <!-- data saver icon switch -->
+  <string name="status_bar_datasaver">Economia de dados</string>
+  <!-- No navigation warning notification -->
+  <string name="no_navigation_warning_title">Todos os métodos de navegação desativados</string>
+  <string name="no_navigation_warning_text">Toque para ativar</string>
+  <!-- Pie controls -->
+  <string name="pie_date_format">EEEE, dd MMMM yyyy</string>
+  <string name="pie_hour_format_12">hh:mm</string>
+  <string name="pie_hour_format_24">HH:mm</string>
+  <string name="pie_am_pm">a</string>
+  <string name="pie_state_name">Controles Pie</string>
+  <string name="pie_state_summary">Use controles de torta durante o modo envolvente</string>
+  <string name="pie_battery_level">"NÍVEL DA BATERIA "</string>
+  <string name="quick_settings_pie">Controle Pie</string>
+  <string name="accessibility_data_sim">SIM de dados atual</string>
+  <string name="data_switch_started">Trocando dados SIM, isto pode demorar até um minuto...</string>
 </resources>

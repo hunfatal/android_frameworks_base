@@ -1,12 +1,11 @@
 /*
- * Copyright (C) 2014-2015 ParanoidAndroid Project.
- * Portions Copyright (C) 2015 Fusion & Cyanidel Project
+ * Copyright 2014-2017 ParanoidAndroid Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,623 +17,902 @@
 package com.android.systemui.statusbar.pie;
 
 import android.animation.Animator;
-import android.animation.Animator.AnimatorListener;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
-import android.animation.ValueAnimator.AnimatorUpdateListener;
-import android.content.ContentResolver;
+import android.app.ActivityManagerNative;
+import android.app.Notification;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
-import android.database.ContentObserver;
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Paint;
-import android.graphics.Paint.Style;
+import android.graphics.drawable.Icon;
+import android.graphics.LinearGradient;
+import android.graphics.Outline;
 import android.graphics.Path;
+import android.graphics.Paint;
 import android.graphics.Point;
-import android.graphics.PorterDuff.Mode;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.Rect;
-import android.graphics.RectF;
 import android.graphics.Typeface;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
+import android.graphics.Path.Direction;
+import android.graphics.Rect;
+import android.graphics.Shader;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.net.wifi.WifiConfiguration;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.RemoteException;
+import android.os.UserHandle;
 import android.os.Vibrator;
 import android.provider.Settings;
-import android.view.animation.AccelerateInterpolator;
+import android.service.notification.StatusBarNotification;
+import android.telephony.TelephonyManager;
+import android.telephony.SubscriptionInfo;
+import android.text.format.DateFormat;
+import android.util.Log;
+import android.util.Pair;
 import android.view.animation.DecelerateInterpolator;
 import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
-import android.view.SoundEffectConstants;
 import android.view.View;
+import android.view.ViewOutlineProvider;
 import android.view.WindowManager;
-import android.widget.FrameLayout;
+import android.view.WindowManagerGlobal;
 import android.widget.ImageView;
+import android.widget.ImageView.ScaleType;
+import android.widget.RelativeLayout;
 
-import com.android.internal.util.pa.PieConstants;
+import com.android.internal.app.AssistUtils;
+import com.android.internal.statusbar.StatusBarIcon;
+
 import com.android.systemui.R;
+import com.android.systemui.statusbar.AnimatedImageView;
+import com.android.systemui.statusbar.BaseStatusBar;
+import com.android.systemui.statusbar.CommandQueue;
+import com.android.systemui.statusbar.StatusBarIconView;
+import com.android.systemui.statusbar.policy.NetworkController;
+import com.android.systemui.statusbar.policy.NetworkController.IconState;
+import com.android.systemui.statusbar.policy.NetworkController.SignalCallback;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Pie menu
  * Handles creating, drawing, animations and touch eventing for pie.
  */
-public class PieMenu extends FrameLayout {
+public class PieMenu extends RelativeLayout {
+    private static final String TAG = PieMenu.class.getSimpleName();
+    private static final boolean DEBUG = false;
 
-    private static final String FONT_FAMILY_CONDENSED = "sans-serif-condensed";
     private static final String FONT_FAMILY_LIGHT = "sans-serif-light";
+    private static final String FONT_FAMILY_MEDIUM = "sans-serif-medium";
 
-    // Linear
-    private static int ANIMATOR_DEC_SPEED15 = 1;
-    private static int ANIMATOR_ACC_SPEED15 = 2;
+    private static final String SETTINGS_FRAGMENT_INTENT = ":settings:show_fragment_as_subsetting";
 
-    // Cascade
-    private static int ANIMATOR_ACC_INC_1 = ANIMATOR_ACC_SPEED15 + 1;
-    private static int ANIMATOR_ACC_INC_15 = ANIMATOR_ACC_INC_1 + 15;
-
-    // Special purpose
-    private static int ANIMATOR_BATTERY_METER = ANIMATOR_ACC_INC_15 + 1;
-    private static int ANIMATOR_SNAP_GROW = ANIMATOR_ACC_INC_15 + 2;
-    private static int ANIMATOR_END = ANIMATOR_SNAP_GROW;
-
-    private static final int COLOR_OPAQUE_MASK = 0xff000000;
-    private static final int COLOR_SNAP_BACKGROUND = 0xaaffffff;
-    private static final int COLOR_PIE_BACKGROUND = 0x65000000;
-    private static final int COLOR_PIE_BUTTON = 0xb2ffffff;
-    private static final int COLOR_PIE_SELECT = 0xaaffffff;
-    private static final int COLOR_PIE_OUTLINES = 0x55ffffff;
-    private static final int COLOR_CHEVRON = 0xaaffffff;
-    private static final int COLOR_BATTERY_JUICE = 0xaaffffff;
-    private static final int COLOR_BATTERY_BACKGROUND = 0xaaffffff;
-    private static final int COLOR_STATUS = 0xaaffffff;
-
-    private static final int BASE_SPEED = 500;
-    private static final int GAP_BASE = 1;
-    private static final int ANGLE_BASE = 12;
-    private static final float SIZE_BASE = 1.0f;
-
-    // structure
-    private int mOverallSpeed = BASE_SPEED;
-    private int mPanelDegree;
-    private int mPanelOrientation;
-    private int mInnerPieRadius;
-    private int mOuterPieRadius;
-    private int mPieAngle;
-    private int mPieGap;
-    private int mInnerChevronRadius;
-    private int mOuterChevronRadius;
-    private int mInnerBatteryRadius;
-    private int mOuterBatteryRadius;
-    private int mStatusRadius;
-    private int mAngle;
-
-    private float mPieSize = SIZE_BASE;
-
-    private Point mCenter = new Point(0, 0);
-    private float mCenterDistance = 0;
-
-    private Path mStatusPath = new Path();
-    private Path mChevronPath;
-    private Path mBatteryPathBackground;
-    private Path mBatteryPathJuice;
+    private final Handler mHandler = new Handler();
+    private final Point mCenter = new Point(0, 0);
+    private final ConnectivityManager mConnectivityManager;
+    private final TelephonyManager mTelephonyManager;
+    private final PieSignalCallback mSignalCallback = new PieSignalCallback();
+    private final WindowManager mWindowManager;
+    private final WifiManager mWifiManager;
 
     // paints
-    private Paint mPieBackground = new Paint(COLOR_PIE_BACKGROUND);
-    private Paint mPieSelected = new Paint(COLOR_PIE_SELECT);
-    private Paint mPieOutlines = new Paint(COLOR_PIE_OUTLINES);
-    private Paint mChevronBackground = new Paint(COLOR_CHEVRON);
-    private Paint mBatteryJuice = new Paint(COLOR_BATTERY_JUICE);
-    private Paint mBatteryBackground = new Paint(COLOR_BATTERY_BACKGROUND);
-    private Paint mSnapBackground = new Paint(COLOR_SNAP_BACKGROUND);
+    private final Paint mToggleBackground;
+    private final Paint mToggleOuterBackground;
+    private final Paint mClockPaint;
+    private final Paint mStatusPaint;
+    private final Paint mLinePaint;
+    private final Paint mCirclePaint;
+    private final Paint mBackgroundCirclePaint;
+    private final Paint mBatteryPaint;
+    private final Paint mShaderPaint;
+    private final Paint mToggleShaderPaint;
 
-    private Paint mClockPaint;
-    private Paint mAmPmPaint;
-    private Paint mStatusPaint;
+    private final AssistUtils mAssistUtils;
+    private final BaseStatusBar mBar;
+    private final Context mContext;
+    private final List<PieItem> mItems = new ArrayList<>();
+    private final PieController mPanel;
+    private final Resources mResources;
+    private final TogglePoint[] mTogglePoint = new TogglePoint[5];
+    private final Vibrator mVibrator;
 
+    // Colors
+    private int mForegroundColor;
+    private int mBackgroundColor;
+    private int mIconColor;
+    private int mLineColor;
+    private int mSelectedColor;
+    private int mBackgroundCircleColor;
+    private int mBatteryColor;
+    private int mBatteryMedColor;
+    private int mBatteryLowColor;
+    private int mShaderStartColor;
+    private int mShaderEndColor;
+
+    // Dark colors;
+    private int mDarkBackgroundColor;
+    private int mDarkSnappointColor;
+
+    // Dimensions
+    private int mPanelOrientation;
+    private int mOuterCircleRadius;
+    private int mOuterCircleThickness;
+    private int mInnerCircleRadius;
+    private int mBatteryCircleRadius;
+    private float mShadeThreshold;
+    private float mCenterDistance = 0;
+
+    // Info texts
     private String mClockText;
-    private String mClockTextAmPm;
-    private float mClockTextAmPmSize;
-    private float mClockTextTotalOffset = 0;
-    private float[] mClockTextOffsets = new float[20];
-    private float mClockTextRotation;
-    private float mClockOffset;
-    private float mAmPmOffset;
-    private float mStatusOffset;
+    private String mBatteryText;
+    private String mDateText;
+    private String mSsidText;
+    private String mNetworkText;
 
-    private float mStartBattery;
-    private float mEndBattery;
-    private int mBatteryLevel;
+    // Animators
+    private ValueAnimator mPieBackgroundAnimator;
+    private ValueAnimator mPieFadeAnimator;
+    private ValueAnimator mPieGrowAnimator;
+    private ValueAnimator mPieMoveAnimator;
+    private ValueAnimator mToggleAnimator;
+    private ValueAnimator mToggleGrowAnimator;
+    private ValueAnimator mToggleOuterGrowAnimator;
+    private ValueAnimator mRippleAnimator;
+    private ValueAnimator mSettingsToggleAnimator;
 
-    private Context mContext;
-    private Resources mResources;
-    private PieHelper mPieHelper;
-    private Vibrator mVibrator;
+    // Animator fractions
+    private float mBackgroundFraction;
+    private float mSettingsToggleFraction;
 
-    private PieItem mCurrentItem;
-    private List<PieItem> mItems;
-    private PieControlPanel mPanel;
+    private int mOverallSpeed;
+
+    // Offsets
+    private float mClockOffsetX;
+    private float mClockOffsetY;
+    private float mDateOffsetX;
+    private float mDateOffsetY;
+    private float mBatteryOffsetX;
+    private float mBatteryOffsetY;
+    private float mBatteryOffsetYSide;
+    private float mLandOffsetX;
+    private float mLandOffsetY;
+
+    private float mSweep;
+
+    private int mLineLength;
+    private int mLineOffset;
+    private int mLineOffsetLand;
+    private int mLineOffsetSide;
+    private int mWidth;
+    private int mHeight;
+
+    // Settings
+    private final ImageView mSettingsLogo;
+    private final Intent mSettingsIntent;
+    private final Intent mCloseDialogsIntent;
+    private boolean mSettingsAttached;
+    private int mSettingsOffset;
+    private int mSettingsOffsetLand;
+
+    // Now on tap
+    private final ImageView mNOTLogo;
+    private boolean mNotAttached = false;
+    private int mNOTSize;
+    private int mNOTRadius;
+    private int mNOTOffsetY;
+    private int mNOTOffsetX;
+
+    // Notifications
+    private List<AnimatedImageView> mIconViews = new ArrayList<>();
+    private List<Pair<StatusBarNotification,Icon>> mNotifications;
+    private int mIconSize;
+    private int mIconPadding;
+    private int mMaxIcons;
+    private float mIconOffsetY;
+    private float mIconOffsetYside;
+
+    // Pie theme
+    private boolean mDarkThemeEnabled;
 
     private boolean mHasShown;
-    private boolean mHasAssistant = false;
+    private boolean mReversing;
+    private boolean mSnappointsShowing;
 
-    private class SnapPoint {
-        public boolean active;
-        public int radius;
-        public int alpha;
-        public int gravity;
-        public int x;
-        public int y;
+    private int mNumberOfSnapPoints;
 
-        public SnapPoint(int snapX, int snapY, int snapRadius, int snapAlpha, int snapGravity) {
-            x = snapX;
-            y = snapY;
-            radius = snapRadius;
-            alpha = snapAlpha;
-            gravity = snapGravity;
-            active = false;
-        }
+    private int mSnapRadius;
+    private int mSnapOffset;
 
-        /**
-         * @return whether the gravity of this snap point is usable under the current conditions
-         */
-        public boolean isCurrentlyPossible() {
-            return mPanel.isGravityPossible(gravity, false);
-        }
-    }
+    private int mBatteryLevel;
 
-    private SnapPoint[] mSnapPoint = new SnapPoint[3];
-    int mSnapRadius;
-    int mSnapThickness;
-    int mNumberOfSnapPoints;
-
-    //Flags
+    private boolean mSnappointLaunched;
     private boolean mOpen;
-    private int mStatusMode;
-    private boolean mHapticFeedback;
-    private boolean mEnableColor;
-    private boolean mUseMenuAlways;
-    private boolean mUseLastApp;
-    private boolean mUseKillTask;
-    private boolean mUseNotifications;
-    private boolean mSettingsPanel;
-    private boolean mUseScreenshot;
+    private boolean mPieBottom;
+    private boolean mRegistered;
 
-    private int mGlowOffset = 150;
+    private int mBatteryMode;
+    private int mStatusIndicator;
 
-    private class CustomValueAnimator {
-
-        public CustomValueAnimator(int animateIndex) {
-            index = animateIndex;
-            manual = false;
-            animator = ValueAnimator.ofInt(0, 1);
-            animator.addUpdateListener(new CustomAnimatorUpdateListener(index));
-            fraction = 0;
-        }
-
-        public void start() {
-            if (!manual) {
-                animator.setDuration(duration);
-                animator.start();
-            }
-        }
-
-        public void cancel() {
-            animator.cancel();
-            fraction = 0;
-        }
-
-        public int index;
-        public int duration;
-        public boolean manual;
-        public float fraction;
-        public ValueAnimator animator;
-    }
-
-    private CustomValueAnimator[] mAnimators = new CustomValueAnimator[ANIMATOR_END + 1];
-
-    private float mX = 0;
-    private float mY = 0;
-
-    private void getDimensions() {
-        // fetch orientation
-        mPanelDegree = mPanel.getDegree();
-        mPanelOrientation = mPanel.getOrientation();
-
-        // fetch modes
-        mHapticFeedback = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.HAPTIC_FEEDBACK_ENABLED, 1) != 0;
-        mPieSize = Settings.System.getFloat(mContext.getContentResolver(),
-                Settings.System.PA_PIE_SIZE, 1.0f);
-        mStatusMode = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_MODE, 2);
-        mPieAngle = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_ANGLE, 12);
-        mPieGap = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_GAP, 2);
-        mUseMenuAlways = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_MENU, 0) == 1;
-        mUseLastApp = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_LAST_APP, 0) == 1;
-        mUseKillTask = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_KILL_TASK, 0) == 1;
-        mUseNotifications = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_NOTIFICATIONS, 0) == 1;
-        mSettingsPanel = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_SETTINGS_PANEL, 0) == 1;
-        mUseScreenshot = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_SCREENSHOT, 0) == 1;
-        mHasAssistant = mPieHelper.isAssistantAvailable();
-
-        // snap
-        mSnapRadius = (int) (mResources.getDimensionPixelSize(R.dimen.pie_snap_radius) * mPieSize);
-        mSnapThickness = (int) (mResources
-                .getDimensionPixelSize(R.dimen.pie_snap_thickness) * mPieSize);
-
-        Point outSize = new Point(0, 0);
-        WindowManager windowManager = (WindowManager)
-                mContext.getSystemService(Context.WINDOW_SERVICE);
-        windowManager.getDefaultDisplay().getRealSize(outSize);
-        int mWidth = outSize.x;
-        int mHeight = outSize.y;
-
-        int snapIndex = 0;
-        if (mPanelOrientation != Gravity.LEFT)
-            mSnapPoint[snapIndex++] = new SnapPoint(0 + mSnapThickness / 2, mHeight / 2,
-                    mSnapRadius, 0x22, Gravity.LEFT);
-
-        if (mPanelOrientation != Gravity.RIGHT)
-            mSnapPoint[snapIndex++] = new SnapPoint(mWidth - mSnapThickness / 2, mHeight / 2,
-                    mSnapRadius, 0x22, Gravity.RIGHT);
-
-        if (mPanelOrientation != Gravity.BOTTOM)
-            mSnapPoint[snapIndex++] = new SnapPoint(mWidth / 2, mHeight - mSnapThickness / 2,
-                    mSnapRadius, 0x22, Gravity.BOTTOM);
-
-        mNumberOfSnapPoints = snapIndex;
-
-        // create pie
-        mAngle = (int) (mPieAngle * mPieSize);
-        mInnerPieRadius = (int) (mResources
-                .getDimensionPixelSize(R.dimen.pie_radius_start) * mPieSize);
-        mOuterPieRadius = (int) (mInnerPieRadius +
-                mResources.getDimensionPixelSize(R.dimen.pie_radius_increment) * mPieSize);
-
-        // calculate chevrons
-        mInnerChevronRadius = (int) (mResources
-                .getDimensionPixelSize(R.dimen.pie_chevron_start) * mPieSize);
-        mOuterChevronRadius = (int) (mInnerChevronRadius +
-                mResources.getDimensionPixelSize(R.dimen.pie_chevron_increment) * mPieSize);
-
-        // create full chevron
-        mChevronPath = makeSlice(mPanelDegree, mPanelDegree + 180, mInnerChevronRadius, mOuterChevronRadius, mCenter);
-
-        // calculate text circle
-        mStatusRadius = (int) (mResources
-                .getDimensionPixelSize(R.dimen.pie_status_start) * mPieSize);
-        mStatusPath.reset();
-        mStatusPath.addCircle(mCenter.x, mCenter.y, mStatusRadius, Path.Direction.CW);
-
-        mClockPaint.setTextSize(mResources
-                .getDimensionPixelSize(R.dimen.pie_clock_size) * mPieSize);
-        mClockOffset = mResources
-                .getDimensionPixelSize(R.dimen.pie_clock_offset) * mPieSize;
-        mAmPmPaint.setTextSize(mResources
-                .getDimensionPixelSize(R.dimen.pie_am_pm_size) * mPieSize);
-        mAmPmOffset = mResources.getDimensionPixelSize(R.dimen.pie_am_pm_offset) * mPieSize;
-
-        mStatusPaint.setTextSize((int) (mResources
-                .getDimensionPixelSize(R.dimen.pie_status_size) * mPieSize));
-        mStatusOffset = mResources.getDimensionPixelSize(R.dimen.pie_status_offset) * mPieSize;
-
-        // battery
-        mInnerBatteryRadius = (int) (mResources
-                .getDimensionPixelSize(R.dimen.pie_battery_start) * mPieSize);
-        mOuterBatteryRadius = (int) (mInnerBatteryRadius +
-                mResources.getDimensionPixelSize(R.dimen.pie_battery_increment) * mPieSize);
-
-        mBatteryBackground.setColor(getResources().getColor(R.color.battery_background));
-        mBatteryLevel = mPieHelper.getBatteryLevel();
-        if (mBatteryLevel <= PieHelper.LOW_BATTERY_LEVEL
-                && mBatteryLevel > PieHelper.CRITICAL_BATTERY_LEVEL) {
-            mBatteryJuice.setColor(getResources().getColor(R.color.battery_juice_low));
-        } else if (mBatteryLevel <= mPieHelper.CRITICAL_BATTERY_LEVEL) {
-            mBatteryJuice.setColor(getResources().getColor(R.color.battery_juice_critical));
-        } else {
-            mBatteryJuice.setColor(getResources().getColor(R.color.battery_juice));
-        }
-
-        mStartBattery = mPanel.getDegree() + mAngle + mPieGap;
-        mEndBattery = mPanel.getDegree() + (mPieGap <= 2 ? 88 : 90 - mPieGap);
-        mBatteryPathBackground = makeSlice(mStartBattery, mEndBattery, mInnerBatteryRadius,
-                mOuterBatteryRadius, mCenter);
-        mBatteryPathJuice = makeSlice(mStartBattery, mStartBattery, mInnerBatteryRadius,
-                mOuterBatteryRadius, mCenter);
-
-        // Colors
-        mEnableColor = (Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_ENABLE_COLOR, 0) == 1);
-
-        mSnapBackground.setColor(getResources().getColor(R.color.snap_background));
-
-        if (mEnableColor) {
-            mPieBackground.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_BACKGROUND, COLOR_PIE_BACKGROUND));
-            mPieSelected.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_SELECT, COLOR_PIE_SELECT));
-            mPieOutlines.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_OUTLINES, COLOR_PIE_OUTLINES));
-            mClockPaint.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_STATUS_CLOCK, COLOR_STATUS));
-            mAmPmPaint.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_STATUS_CLOCK, COLOR_STATUS));
-            mStatusPaint.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_STATUS, COLOR_STATUS));
-            mChevronBackground.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                    Settings.System.PA_PIE_CHEVRON, COLOR_CHEVRON));
-            mBatteryJuice.setColorFilter(new PorterDuffColorFilter(extractRGB(Settings.System
-                    .getInt(mContext.getContentResolver(),
-                            Settings.System.PA_PIE_JUICE, COLOR_BATTERY_JUICE)) | COLOR_OPAQUE_MASK,
-                    Mode.SRC_ATOP));
-            for (PieItem item : mItems) {
-                item.setColor(Settings.System.getInt(mContext.getContentResolver(),
-                        Settings.System.PA_PIE_BUTTON_COLOR, COLOR_PIE_BUTTON));
-            }
-        } else {
-            mPieBackground.setColor(getResources().getColor(R.color.pie_background));
-            mPieSelected.setColor(getResources().getColor(R.color.pie_select));
-            mPieOutlines.setColor(getResources().getColor(R.color.pie_outlines));
-            mClockPaint.setColor(getResources().getColor(R.color.status));
-            mAmPmPaint.setColor(getResources().getColor(R.color.status));
-            mStatusPaint.setColor(getResources().getColor(R.color.status));
-            mChevronBackground.setColor(getResources().getColor(R.color.chevron));
-            mBatteryJuice.setColorFilter(null);
-            for (PieItem item : mItems) {
-                item.setColor(COLOR_PIE_BUTTON);
-            }
-        }
-
-        // measure clock
-        measureClock(mPieHelper.getSimpleTime());
-
-        // Determine animationspeed
-        mOverallSpeed = BASE_SPEED / 4;
-        int mInitialSpeed = BASE_SPEED * (mStatusMode == -1 ? 0 : mStatusMode) / 2;
-
-        // create animators
-        for (int i = 0; i < mAnimators.length; i++) {
-            mAnimators[i] = new CustomValueAnimator(i);
-        }
-
-        // linear animators
-        mAnimators[ANIMATOR_DEC_SPEED15].duration = (int) (mOverallSpeed * 1.5);
-        mAnimators[ANIMATOR_DEC_SPEED15].animator.setInterpolator(new DecelerateInterpolator());
-        mAnimators[ANIMATOR_DEC_SPEED15].animator.setStartDelay((int) (mInitialSpeed * 1.5));
-
-        mAnimators[ANIMATOR_ACC_SPEED15].duration = (int) (mOverallSpeed * 1.5);
-        mAnimators[ANIMATOR_ACC_SPEED15].animator.setInterpolator(new AccelerateInterpolator());
-        mAnimators[ANIMATOR_ACC_SPEED15].animator.setStartDelay((int) (mInitialSpeed * 1.5));
-
-        // cascade accelerators
-        int count = 0;
-        for (int i = ANIMATOR_ACC_INC_1; i < ANIMATOR_ACC_INC_15 + 1; i++) {
-            mAnimators[i].duration = 150;
-            mAnimators[i].animator.setInterpolator(new DecelerateInterpolator());
-            mAnimators[i].animator.setStartDelay((int) (mInitialSpeed * 1.5f + (++count * 75)));
-        }
-
-        // special purpose
-        mAnimators[ANIMATOR_BATTERY_METER].duration = (int) (mOverallSpeed * 1.5);
-        mAnimators[ANIMATOR_BATTERY_METER].animator.setInterpolator(new DecelerateInterpolator());
-        mAnimators[ANIMATOR_BATTERY_METER].animator.setStartDelay((int) (mInitialSpeed * 1.5));
-
-        mAnimators[ANIMATOR_SNAP_GROW].manual = true;
-        mAnimators[ANIMATOR_SNAP_GROW].animator.setDuration(1000);
-        mAnimators[ANIMATOR_SNAP_GROW].animator.setInterpolator(new AccelerateInterpolator());
-        mAnimators[ANIMATOR_SNAP_GROW].animator.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationCancel(Animator animation) {
-            }
-
-            @Override
-            public void onAnimationRepeat(Animator animation) {
-            }
-
-            @Override
-            public void onAnimationStart(Animator animation) {
-            }
-
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                if (mAnimators[ANIMATOR_SNAP_GROW].fraction == 1) {
-                    for (int i = 0; i < 2; i++) {
-                        SnapPoint snap = mSnapPoint[i];
-                        if (snap != null && snap.active && snap.isCurrentlyPossible()) {
-                            if (mHapticFeedback) mVibrator.vibrate(2);
-                            deselect();
-                            animateOut();
-                            mPanel.reorient(snap.gravity);
-                        }
-                    }
-                }
-            }
-        });
-    }
-
-    // may regulate a bit offsets, ":" looks to closer to previous and next number
-    private int extractRGB(int color) {
-        return color & 0x00FFFFFF;
-    }
-
-    private void measureClock(String text) {
-        mClockText = text;
-
-        mClockTextAmPm = mPieHelper.getAmPm();
-        mClockTextAmPmSize = mAmPmPaint.measureText(mClockTextAmPm);
-        mClockTextTotalOffset = 0;
-
-        for (int i = 0; i < mClockText.length(); i++) {
-            char character = mClockText.charAt(i);
-            float measure = mClockPaint.measureText("" + character);
-            mClockTextOffsets[i] = measure * (character == '1' || character == ':' ? 0.8f : 1f);
-            mClockTextTotalOffset += measure *
-                    (character == '1' || character == ':' ? 0.8f : 1f);
-        }
-
-        mClockTextTotalOffset += mClockTextAmPmSize;
-        mClockTextRotation = mPanel.getDegree()
-                + (180 - (mClockTextTotalOffset * 360 / (2f * (mStatusRadius
-                + Math.abs(mClockOffset)) * (float) Math.PI)))
-                - (mPieHelper.is24Hours() ? 8 : 2);
-    }
+    // network
+    private ImageView mNetworkIcon;
+    private ImageView mWifiIcon;
+    private NetworkController mNetworkController;
+    private boolean mNetworkIconsAttached;
+    private boolean mSignalRegistered;
+    private int mSubId;
+    private int mStatusTextTopMargin;
+    private int mStatusTextTopMarginLand;
+    private int mStatusOffset;
+    private int mStatusIconSize;
+    private int mWifiIconResId;
+    private int mNetworkIconResId;
 
     /**
      * Creates a new pie outline view
      *
-     * @Param context the current context
-     * @Param panel the current PieControlPanel
+     * @param context the current context
+     * @param panel instance of piecontroller
+     * @param bar instance of basestatusbar
      */
-    public PieMenu(Context context, PieControlPanel panel) {
+    public PieMenu(Context context, PieController panel, BaseStatusBar bar) {
         super(context);
 
         mContext = context;
         mResources = mContext.getResources();
+        mBar = bar;
         mPanel = panel;
+
+        mNetworkController = mBar.getNetworkController();
 
         setWillNotDraw(false);
         setDrawingCacheEnabled(false);
+        setElevation(mResources.getDimensionPixelSize(R.dimen.pie_elevation));
 
+        // create system services
         mVibrator = (Vibrator) mContext.getSystemService(Context.VIBRATOR_SERVICE);
-        mPieHelper = PieHelper.getInstance();
+        mWindowManager = (WindowManager) mContext.getSystemService(Context.WINDOW_SERVICE);
+        mConnectivityManager = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
+        mTelephonyManager = (TelephonyManager) mContext.getSystemService(Context.TELEPHONY_SERVICE);
+        mWifiManager = (WifiManager) mContext.getSystemService(Context.WIFI_SERVICE);
 
-        // initialize classes
-        mItems = new ArrayList<PieItem>();
-        mPieBackground.setAntiAlias(true);
-        mPieSelected.setAntiAlias(true);
-        mPieOutlines.setAntiAlias(true);
-        mPieOutlines.setStyle(Style.STROKE);
-        mPieOutlines.setStrokeWidth(mResources.getDimensionPixelSize(R.dimen.pie_outline));
-        mChevronBackground.setAntiAlias(true);
-        mBatteryJuice.setAntiAlias(true);
-        mBatteryBackground.setAntiAlias(true);
-        mSnapBackground.setAntiAlias(true);
+        // create assist manager
+        mAssistUtils = new AssistUtils(mContext);
 
+        // register broadcast receivers
+        registerReceivers();
+
+        // settings intent
+        mSettingsIntent = new Intent("android.settings.PIE_SETTINGS");
+        mSettingsIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        mSettingsIntent.putExtra(SETTINGS_FRAGMENT_INTENT, true);
+        mCloseDialogsIntent = new Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS);
+
+        // snappoint background
+        mToggleBackground = new Paint();
+        mToggleBackground.setAntiAlias(true);
+
+        // outer snap point animation paint
+        mToggleOuterBackground = new Paint();
+        mToggleOuterBackground.setAntiAlias(true);
+
+        // clock
         mClockPaint = new Paint();
         mClockPaint.setAntiAlias(true);
         mClockPaint.setTypeface(Typeface.create(FONT_FAMILY_LIGHT, Typeface.NORMAL));
 
-        mAmPmPaint = new Paint();
-        mAmPmPaint.setAntiAlias(true);
-        mAmPmPaint.setTypeface(Typeface.create(FONT_FAMILY_CONDENSED, Typeface.NORMAL));
-
+        // status (date and battery)
         mStatusPaint = new Paint();
         mStatusPaint.setAntiAlias(true);
-        mStatusPaint.setTypeface(Typeface.create(FONT_FAMILY_CONDENSED, Typeface.NORMAL));
+        mStatusPaint.setTypeface(Typeface.create(FONT_FAMILY_MEDIUM, Typeface.NORMAL));
 
-        // Clock observer
-        mPieHelper.setOnClockChangedListener(new PieHelper.OnClockChangedListener() {
-            public void onChange(String s) {
-                measureClock(s);
-            }
-        });
+        // line
+        mLinePaint = new Paint();
+        mLinePaint.setAntiAlias(true);
+
+        // pie circles
+        mCirclePaint = new Paint();
+        mCirclePaint.setAntiAlias(true);
+        mCirclePaint.setStyle(Paint.Style.FILL_AND_STROKE);
+
+        // background circle
+        mBackgroundCirclePaint = new Paint();
+        mBackgroundCirclePaint.setAntiAlias(true);
+
+        // battery circle
+        mBatteryPaint = new Paint();
+        mBatteryPaint.setAntiAlias(true);
+        mBatteryPaint.setStyle(Paint.Style.STROKE);
+
+        // shader
+        mShaderPaint = new Paint();
+        mShaderPaint.setAntiAlias(true);
+        mShaderPaint.setStyle(Paint.Style.STROKE);
+
+        // toggle shader
+        mToggleShaderPaint = new Paint();
+        mToggleShaderPaint.setAntiAlias(true);
+        mToggleShaderPaint.setStyle(Paint.Style.STROKE);
+
+        // Settings
+        mSettingsLogo = new ImageView(mContext);
+
+        // now on tap
+        mNOTLogo = new ImageView(mContext);
+
+        // Pie animation speed
+        mOverallSpeed = mResources.getInteger(R.integer.pie_animation_speed);
+
+        // network icons
+        mWifiIcon = new ImageView(mContext);
+        mNetworkIcon = new ImageView(mContext);
+        mWifiIcon.setAlpha(0); // default alpha to 0, animator will animate to 255
+        mNetworkIcon.setAlpha(0);
 
         // Get all dimensions
         getDimensions();
     }
 
-    public void addItem(PieItem item) {
+    /**
+     * Initializes current dimensions
+     */
+    private void getDimensions() {
+        // get theme status
+        int themeMode = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.PIE_THEME_MODE, 0);
+        if (themeMode == 0) {
+            int primaryTheme = mContext.getResources().getColor(R.color.system_primary_color);
+            mDarkThemeEnabled = primaryTheme == 1 || primaryTheme == 3;
+        } else {
+            mDarkThemeEnabled = themeMode == 2;
+        }
+
+        // Battery circle status
+        mBatteryMode = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.PIE_BATTERY_MODE, 0);
+
+        // status indicator
+        mStatusIndicator = Settings.Secure.getInt(mContext.getContentResolver(),
+                Settings.Secure.PIE_STATUS_INDICATOR, 0);
+
+        // Settings
+        mSettingsOffset = mResources.getDimensionPixelSize(R.dimen.pie_settings_offset);
+        mSettingsOffsetLand = mResources.getDimensionPixelSize(R.dimen.pie_settings_offset_land);
+
+        // now on tap
+        mNOTSize = mResources.getDimensionPixelSize(R.dimen.pie_not_size);
+        mNOTRadius = mResources.getDimensionPixelSize(R.dimen.pie_not_radius);
+        mNOTOffsetY = mResources.getDimensionPixelSize(R.dimen.pie_not_offset);
+        mNOTOffsetX = mResources.getDimensionPixelSize(R.dimen.pie_not_offsetx);
+
+        // snap
+        mSnappointLaunched = false;
+        mReversing = false;
+        mSnapRadius = mResources.getDimensionPixelSize(R.dimen.pie_snap_radius);
+        mSnapOffset = mResources.getDimensionPixelSize(R.dimen.pie_snap_offset);
+
+        // fetch colors
+        mBackgroundColor = mResources.getColor(R.color.pie_foreground);
+        mForegroundColor = mResources.getColor(R.color.pie_background);
+        mIconColor = mResources.getColor(R.color.pie_icon);
+        mLineColor = mResources.getColor(R.color.pie_line);
+        mSelectedColor = mResources.getColor(R.color.pie_selected);
+        mBackgroundCircleColor = mResources.getColor(R.color.pie_background_circle);
+        mBatteryColor = mResources.getColor(R.color.pie_battery);
+        mBatteryMedColor = mResources.getColor(R.color.pie_battery_med);
+        mBatteryLowColor = mResources.getColor(R.color.pie_battery_low);
+        mShaderStartColor = mResources.getColor(R.color.pie_shader_start);
+        mShaderEndColor = mResources.getColor(R.color.pie_shader_end);
+        mDarkBackgroundColor = mResources.getColor(R.color.pie_dark_background);
+        mDarkSnappointColor = mResources.getColor(R.color.pie_dark_snap_point);
+
+        mBackgroundFraction = 0.0f;
+        mSettingsToggleFraction = 0.0f;
+
+        // fetch orientation
+        mPanelOrientation = mPanel.getOrientation();
+        mPieBottom = mPanelOrientation == Gravity.BOTTOM || isLandScape();
+
+        Point outSize = new Point(0, 0);
+        mWindowManager.getDefaultDisplay().getRealSize(outSize);
+        mWidth = outSize.x;
+        mHeight = outSize.y;
+
+        // Create snap points
+        mNumberOfSnapPoints = 0;
+        if (isSnapPossible(Gravity.LEFT) && !isLandScape()) {
+            mTogglePoint[mNumberOfSnapPoints++] = new SnapPoint(
+                    0 - mSnapOffset, mHeight / 2, mSnapRadius, Gravity.LEFT);
+        }
+
+        if (isSnapPossible(Gravity.RIGHT) && !isLandScape()) {
+            mTogglePoint[mNumberOfSnapPoints++] = new SnapPoint(
+                    mWidth + mSnapOffset, mHeight / 2, mSnapRadius, Gravity.RIGHT);
+        }
+
+        if ((!isLandScape() || isTablet()) && isSnapPossible(Gravity.BOTTOM)) {
+            mTogglePoint[mNumberOfSnapPoints++] = new SnapPoint(
+                    mWidth / 2, mHeight + mSnapOffset, mSnapRadius, Gravity.BOTTOM);
+        }
+
+        final boolean pieRight = mPanelOrientation == Gravity.RIGHT;
+        if (!mSettingsAttached) {
+            mSettingsLogo.setImageResource(R.drawable.ic_settings);
+            addView(mSettingsLogo);
+            mSettingsAttached = true;
+        }
+        setColor(mSettingsLogo, mDarkThemeEnabled ? mForegroundColor : mBackgroundColor);
+        mTogglePoint[mNumberOfSnapPoints++] = new SettingsPoint(mWidth / 2
+                + (mPieBottom ? 0 : (pieRight ? -mSettingsOffset : mSettingsOffset))
+                + (mPanelOrientation == Gravity.BOTTOM ? 0 :
+                (isLandScape() ? -mSettingsOffsetLand : (pieRight ? -mNOTOffsetX : mNOTOffsetX))),
+                mHeight / (mPanelOrientation == Gravity.BOTTOM ? 6 : 2), mNOTRadius, mSettingsLogo,
+                mNOTSize);
+
+        if (isAssistantAvailable()) {
+            if (!mNotAttached) {
+                mNOTLogo.setImageResource(R.drawable.ic_google_logo);
+                addView(mNOTLogo);
+                mNotAttached = true;
+            }
+            setColor(mNOTLogo, mDarkThemeEnabled ? mForegroundColor : mBackgroundColor);
+            mTogglePoint[mNumberOfSnapPoints++] = new NowOnTapPoint(mWidth / 2 +
+                    (mPanelOrientation == Gravity.BOTTOM ? 0 : (isLandScape() ? mWidth / 7 :
+                    (pieRight ? -mNOTOffsetX : mNOTOffsetX))), mHeight / 2 +
+                    (mPanelOrientation == Gravity.BOTTOM ? mNOTOffsetY : 0),
+                    mNOTRadius, mNOTLogo, mNOTSize);
+        }
+
+        // shader
+        mShaderPaint.setStrokeWidth(mResources.getDimensionPixelSize(R.dimen.pie_shader_width));
+        mToggleShaderPaint.setStrokeWidth(mResources.getDimensionPixelSize(R.dimen.pie_shader_width));
+
+        // create pie
+        mOuterCircleRadius = mResources
+                .getDimensionPixelSize(R.dimen.pie_outer_circle_radius);
+        mOuterCircleThickness = mResources
+                .getDimensionPixelSize(R.dimen.pie_outer_circle_thickness);
+        mInnerCircleRadius = mResources
+                .getDimensionPixelSize(R.dimen.pie_inner_circle_radius);
+        mShadeThreshold = mOuterCircleRadius + mOuterCircleThickness;
+
+        // clock
+        mClockPaint.setTextSize(mResources
+                .getDimensionPixelSize(R.dimen.pie_clock_size));
+        mClockPaint.setLetterSpacing(mResources.getFloat(R.integer.pie_clock_letter_spacing));
+        measureClock(getSimpleTime());
+        mClockOffsetY = mResources.getDimensionPixelSize(R.dimen.pie_clock_offset);
+
+        // status (date and battery)
+        mStatusPaint.setTextSize(mResources
+                .getDimensionPixelSize(R.dimen.pie_status_size));
+        mStatusPaint.setLetterSpacing(mResources.getFloat(R.integer.pie_status_letter_spacing));
+
+        // landscape ofset
+        mLandOffsetX = mResources.getDimensionPixelSize(R.dimen.pie_land_offset);
+        mLandOffsetY = mResources.getDimensionPixelSize(R.dimen.pie_land_offset_y);
+
+        // date
+        mDateText = getSimpleDate();
+        mDateOffsetX = mStatusPaint.measureText(mDateText) / 2;
+        mDateOffsetY = mResources.getDimensionPixelSize(R.dimen.pie_date_offset);
+
+        // battery
+        mBatteryText = mResources.getString(R.string.pie_battery_level)
+                + mBatteryLevel + "%";
+        mBatteryOffsetX = mStatusPaint.measureText(mBatteryText) / 2;
+        mBatteryOffsetY = mResources.getDimensionPixelSize(R.dimen.pie_battery_offset);
+        mBatteryOffsetYSide = mResources.getDimensionPixelSize(R.dimen.pie_battery_offset_side);
+        mBatteryCircleRadius = mResources.getDimensionPixelSize(R.dimen.pie_battery_circle_radius);
+        mBatteryPaint.setStrokeWidth(mResources.getDimensionPixelSize(R.dimen.pie_battery_width));
+
+        // line
+        mLinePaint.setStrokeWidth(mResources.getDimensionPixelSize(R.dimen.pie_line_width));
+        mLineLength = mResources.getDimensionPixelSize(R.dimen.pie_line_length);
+        mLineOffset = mResources.getDimensionPixelSize(R.dimen.pie_line_offset);
+        mLineOffsetLand = mResources.getDimensionPixelSize(R.dimen.pie_line_offset_land);
+        mLineOffsetSide = mResources.getDimensionPixelSize(R.dimen.pie_line_offset_side);
+
+        mSweep = 0;
+
+        // notifications
+        mIconSize = mResources.getDimensionPixelSize(R.dimen.pie_icon_size);
+        mIconPadding = mResources.getDimensionPixelSize(R.dimen.pie_icon_padding);
+        mMaxIcons = mContext.getResources().getInteger(R.integer.pie_maximum_notifications);
+        mIconOffsetY = mResources.getDimensionPixelSize(R.dimen.pie_icon_offset);
+        mIconOffsetYside = mResources.getDimensionPixelSize(R.dimen.pie_icon_offset_side);
+
+        updateNotifications();
+
+        // status icons
+        mStatusOffset = mResources.getDimensionPixelSize(R.dimen.pie_status_offset);
+        mStatusTextTopMargin = mResources.getDimensionPixelSize(R.dimen.pie_status_text_top_margin);
+        mStatusTextTopMarginLand = mResources.getDimensionPixelSize(
+                R.dimen.pie_status_text_top_margin_land);
+        mStatusIconSize = mResources.getDimensionPixelSize(R.dimen.pie_status_item_size);
+        mNetworkText = getNetworkText();
+        mSsidText = getWifiSsid();
+        createSignalIcons();
+
+        // Set colors
+        mToggleBackground.setColor(mDarkThemeEnabled ? mDarkSnappointColor : mForegroundColor);
+        mToggleOuterBackground.setColor(mForegroundColor);
+        mStatusPaint.setColor(mForegroundColor);
+        mClockPaint.setColor(mForegroundColor);
+        mLinePaint.setColor(mLineColor);
+        mCirclePaint.setColor(mDarkThemeEnabled ? mDarkBackgroundColor : mForegroundColor);
+        mBackgroundCirclePaint.setColor(mDarkThemeEnabled ? mBackgroundCircleColor
+                : mForegroundColor);
+        mBatteryPaint.setColor(mBatteryLevel >= 50 ? mBatteryColor : (mBatteryLevel <= 15 ?
+                mBatteryLowColor : mBatteryMedColor));
+
+        // background animator
+        mPieBackgroundAnimator = ValueAnimator.ofFloat(0f, 1f);
+        mPieBackgroundAnimator.setDuration(500);
+        mPieBackgroundAnimator.addUpdateListener(new AnimatorUpdateListener(mPieBackgroundAnimator));
+
+        // snappoint fade-in animator
+        mToggleAnimator = ValueAnimator.ofInt(0, 1);
+        mToggleAnimator.setDuration((int) (mOverallSpeed + 150));
+        mToggleAnimator.addUpdateListener(new AnimatorUpdateListener(mToggleAnimator));
+
+        // snappoint grow animator
+        mToggleGrowAnimator = ValueAnimator.ofInt(0, 1);
+        mToggleGrowAnimator.setDuration((int) (mOverallSpeed + 185));
+        mToggleGrowAnimator.setInterpolator(new DecelerateInterpolator());
+        mToggleGrowAnimator.setRepeatCount(1);
+        mToggleGrowAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        mToggleGrowAnimator.addUpdateListener(new AnimatorUpdateListener(mToggleGrowAnimator));
+
+        // outer snappoint grow animator
+        mToggleOuterGrowAnimator = ValueAnimator.ofInt(0, 1);
+        mToggleOuterGrowAnimator.setDuration((int) (mOverallSpeed - 10));
+        mToggleOuterGrowAnimator.setRepeatCount(1);
+        mToggleOuterGrowAnimator.setRepeatMode(ValueAnimator.REVERSE);
+        mToggleOuterGrowAnimator.addUpdateListener(new AnimatorUpdateListener(mToggleOuterGrowAnimator));
+        mToggleOuterGrowAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationCancel(Animator animation) {
+                // Remove all listeners to prevent onAnimationEnd from being called.
+                // This is a limitation from the API, so this is all we can do.
+                animation.removeAllListeners();
+            }
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                switchSnapPoints();
+                // Don't keep any listeners alive
+                animation.removeAllListeners();
+            }
+        });
+
+        // circle move animator
+        mPieMoveAnimator = ValueAnimator.ofInt(0, 1);
+        mPieMoveAnimator.setDuration((int) (mOverallSpeed * 1.5));
+        mPieMoveAnimator.setInterpolator(new DecelerateInterpolator());
+        mPieMoveAnimator.addUpdateListener(new AnimatorUpdateListener(mPieMoveAnimator));
+
+        // outer circle animator
+        mPieGrowAnimator = ValueAnimator.ofInt(0, 1);
+        mPieGrowAnimator.setDuration((int) (mOverallSpeed * 1.5));
+        mPieGrowAnimator.setInterpolator(new DecelerateInterpolator());
+        mPieGrowAnimator.addUpdateListener(new AnimatorUpdateListener(mPieGrowAnimator));
+
+        // Buttons fade-in animator
+        mPieFadeAnimator = ValueAnimator.ofFloat(0f, 1f);
+        mPieFadeAnimator.setDuration(500);
+        mPieFadeAnimator.addUpdateListener(new AnimatorUpdateListener(mPieFadeAnimator));
+
+        // Ripple alpha animator
+        mRippleAnimator = ValueAnimator.ofFloat(0f, 1f);
+        mRippleAnimator.setDuration(450);
+        mRippleAnimator.setInterpolator(new DecelerateInterpolator());
+        mRippleAnimator.addUpdateListener(new AnimatorUpdateListener(mRippleAnimator));
+
+        // settings snappoint
+        mSettingsToggleAnimator = ValueAnimator.ofFloat(0f, 1f);
+        mSettingsToggleAnimator.setDuration(500);
+        mSettingsToggleAnimator.addUpdateListener(new AnimatorUpdateListener(mSettingsToggleAnimator));
+    }
+
+    /**
+     * Create and layout the wifi and mobile signal icons
+     */
+    private void createSignalIcons() {
+        mNetworkText = getNetworkText();
+        mSsidText = getWifiSsid();
+
+        if (mNetworkText != null) {
+            mNetworkIcon.setImageResource(mNetworkIconResId);
+        }
+        if (mSsidText != null) {
+            mWifiIcon.setImageResource(mWifiIconResId);
+        }
+
+        // network icon layoutparams
+        RelativeLayout.LayoutParams lp = new
+                RelativeLayout.LayoutParams(mStatusIconSize, mStatusIconSize);
+        lp.leftMargin = isLandScape() ? mStatusOffset : 0;
+        lp.rightMargin = isLandScape() ? 0 : mStatusOffset;
+        lp.topMargin = isLandScape() ? mHeight - mStatusOffset * 2 : mStatusOffset;
+        if (!isLandScape()) {
+            lp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        }
+        mNetworkIcon.setLayoutParams(lp);
+
+        // wifi icon layoutparams
+        RelativeLayout.LayoutParams params = new
+                RelativeLayout.LayoutParams(mStatusIconSize, mStatusIconSize);
+        params.leftMargin = mStatusOffset;
+        params.topMargin = mStatusOffset;
+        mWifiIcon.setLayoutParams(params);
+
+        if (!mNetworkIconsAttached) {
+            addView(mNetworkIcon);
+            addView(mWifiIcon);
+            mNetworkIconsAttached = true;
+        }
+
+        mWifiIcon.setVisibility(mStatusIndicator == 2 || mStatusIndicator == 3
+                ? View.GONE : View.VISIBLE);
+        mNetworkIcon.setVisibility(mStatusIndicator == 1 || mStatusIndicator == 3
+                || mNetworkText == null ? View.GONE : View.VISIBLE);
+        setColor(mNetworkIcon, mForegroundColor);
+        setColor(mWifiIcon, mForegroundColor);
+    }
+
+    /**
+     * Checks whether snappoint should be created.
+     */
+    private boolean isSnapPossible(int gravity) {
+        return mPanelOrientation != gravity && mPanel.isGravityPossible(gravity);
+    }
+
+    /**
+     * Adds a new pie item to the item list
+     */
+    protected void addItem(PieItem item) {
         mItems.add(item);
     }
 
-    public void show(boolean show) {
-        mOpen = show;
-        if (mOpen) {
-            getDimensions();
-
-            // de-select all items
-            mCurrentItem = null;
-            for (PieItem item : mItems) {
-                item.setSelected(false);
+    /**
+     * Switches the snap points
+     */
+    private void switchSnapPoints() {
+        if (mSnappointLaunched) return;
+        mSnappointLaunched = true;
+        for (int i = 0; i < mNumberOfSnapPoints; i++) {
+            TogglePoint toggle = mTogglePoint[i];
+            if (toggle != null && toggle.active && toggle.isCurrentlyPossible(true)) {
+                mVibrator.vibrate(2);
+                animateOut(toggle);
             }
-
-            // calculate pie
-            layoutPie();
         }
+    }
+
+    /**
+     * Register time and battery receivers
+     */
+    private void registerReceivers() {
+        if (mRegistered) {
+            if (DEBUG) {
+                Log.d(TAG, "Cannot registering receivers, already registered.");
+            }
+            return;
+        }
+
+        final IntentFilter filter = new IntentFilter();
+        filter.addAction(Intent.ACTION_TIME_TICK);
+        filter.addAction(Intent.ACTION_TIME_CHANGED);
+        filter.addAction(Intent.ACTION_BATTERY_CHANGED);
+        mContext.registerReceiver(mReceiver, filter);
+        mRegistered = true;
+    }
+
+    /**
+     * Unregister time and battery receivers
+     */
+    private void unregisterReceivers() {
+        if (!mRegistered) {
+            if (DEBUG) {
+                Log.d(TAG, "Cannot unregistering receivers, they've never been registered.");
+            }
+            return;
+        }
+        mContext.unregisterReceiver(mReceiver);
+        mRegistered = false;
+    }
+
+    /**
+     * Starts assist activity
+     */
+    private void startAssist() {
+        if (isAssistantAvailable()) {
+            mBar.startAssist(new Bundle());
+        }
+    }
+
+    /**
+     * Measures clock text
+     */
+    private void measureClock(String text) {
+        mClockText = text;
+        mClockOffsetX = mClockPaint.measureText(mClockText) / 2;
+    }
+
+    /**
+     * Checks whether the PIE is currently showing
+     */
+    protected boolean isShowing() {
+        return mOpen;
+    }
+
+    /**
+     * Checks whether the current configuration is specified as for a tablet.
+     */
+    private boolean isTablet() {
+        return mResources.getBoolean(R.bool.config_isTablet);
+    }
+
+    /**
+     * Checks whether the current rotation is landscape or not.
+     */
+    private boolean isLandScape() {
+        return mPanel.isLandScape();
+    }
+
+    /**
+     * create notification icons
+     */
+    protected void updateNotifications() {
+        mNotifications = mBar.getNotifications();
+        if (mNotifications.size() > mMaxIcons) {
+            mNotifications.subList(mMaxIcons, mNotifications.size()).clear();
+        }
+        float iconOffsetX = ((mNotifications.size() * mIconSize) + ((mNotifications.size() - 1)
+                * mIconPadding)) / 2;
+        if (isAllowedToDraw()) {
+            if (mIconViews != null) {
+                for (View view : mIconViews) {
+                    removeView(view);
+                }
+                mIconViews.clear();
+            }
+            for (Pair<StatusBarNotification, Icon> icon : mNotifications) {
+                AnimatedImageView view = new AnimatedImageView(mContext);
+                try {
+                    view.setImageDrawable(icon.second.loadDrawable(
+                            mContext.createPackageContext(icon.first.getPackageName(),
+                                    Context.CONTEXT_IGNORE_SECURITY)));
+                } catch (PackageManager.NameNotFoundException e) {
+                    Log.d(TAG, "Could not load notification drawable", e);
+                }
+                setColor(view, mIconColor);
+                view.setMinimumWidth(mIconSize);
+                view.setMinimumHeight(mIconSize);
+                view.setScaleType(ScaleType.FIT_XY);
+                RelativeLayout.LayoutParams lp = new
+                        RelativeLayout.LayoutParams(mIconSize, mIconSize);
+                if (mPieBottom) {
+                    lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+                }
+                lp.topMargin = mHeight / (mPieBottom ? 2 : 4) + (int)
+                        (mPieBottom ? mIconOffsetY : mIconOffsetYside) + (int)
+                        (isLandScape() ? mLandOffsetY : 0);
+                lp.leftMargin = mWidth / 2 - (int) iconOffsetX -
+                        (isLandScape() ? (int) mLandOffsetX : 0);
+                view.setLayoutParams(lp);
+                addView(view);
+                mIconViews.add(view);
+                iconOffsetX -= (float) mIconSize + mIconPadding;
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Shows the PIE
+     */
+    protected void show(boolean show) {
+        mOpen = show;
+
+        setVisibility(show ? View.VISIBLE : View.GONE);
+
+        if (mOpen) {
+            centerPie();
+            registerReceivers();
+            getDimensions();
+            layoutPie();
+            if (!mSignalRegistered) {
+                mNetworkController.addSignalCallback(mSignalCallback);
+                mSignalRegistered = true;
+            }
+            if (isAllowedToDraw()) {
+                mHandler.postDelayed(mAnimateRunnable, 2000);
+            }
+        } else {
+            unregisterReceivers();
+            if (mSignalRegistered) {
+                mNetworkController.removeSignalCallback(mSignalCallback);
+                mSignalRegistered = false;
+            }
+        }
+
         invalidate();
     }
 
-    public void setCenter(int x, int y) {
+    /**
+     * Animate Pie shade after a fixed amount of time.
+     */
+    private final Runnable mAnimateRunnable = new Runnable() {
+        @Override
+        public void run() {
+            animateInRest(false);
+        }
+    };
+
+    /**
+     * Sets PIE center dimensions
+     */
+    private void centerPie() {
+        switch (mPanel.getOrientation()) {
+            case Gravity.LEFT:
+                mPanel.setCenter(0, mHeight / 2);
+                break;
+            case Gravity.RIGHT:
+                mPanel.setCenter(mWidth, mHeight / 2);
+                break;
+            default:
+                mPanel.setCenter(mWidth / 2, mHeight);
+                break;
+        }
+    }
+
+
+    /**
+     * Centers the PIE x and y coordinates
+     */
+    protected void setCoordinates(int x, int y) {
         mCenter.y = y;
         mCenter.x = x;
-
-        mStatusPath.reset();
-        mStatusPath.addCircle(mCenter.x, mCenter.y, mStatusRadius, Path.Direction.CW);
     }
 
-    private boolean canItemDisplay(PieItem item) {
-        return !(item.getName().equals(PieConstants.MENU_BUTTON) && !mPanel.currentAppUsesMenu()
-                && !mUseMenuAlways) &&
-                !(item.getName().equals(PieConstants.NOTIFICATIONS_BUTTON) && !mUseNotifications) &&
-                !(item.getName().equals(PieConstants.SETTINGS_PANEL_BUTTON) && !mSettingsPanel) &&
-                !(item.getName().equals(PieConstants.KILL_TASK_BUTTON) && !mUseKillTask) &&
-                !(item.getName().equals(PieConstants.LAST_APP_BUTTON) && !mUseLastApp) &&
-                !(item.getName().equals(PieConstants.SCREENSHOT_BUTTON) && !mUseScreenshot);
+    /**
+     * Sets the color of the imageviews
+     */
+    private void setColor(ImageView view, int color) {
+        view.setColorFilter(color);
     }
 
+    /**
+     * Layout the pie
+     */
     private void layoutPie() {
-        float emptyangle = mPieAngle * (float) Math.PI / 180;
-        int inner = mInnerPieRadius;
-        int outer = mOuterPieRadius;
-
         int itemCount = mItems.size();
-        if (!mPanel.currentAppUsesMenu() && !mUseMenuAlways)
-            itemCount--;
-        if (!mUseNotifications)
-            itemCount--;
-        if (!mSettingsPanel)
-            itemCount--;
-        if (!mUseLastApp)
-            itemCount--;
-        if (!mUseKillTask)
-            itemCount--;
-        if (!mUseScreenshot)
-            itemCount--;
 
-        int lesserSweepCount = 0;
-        for (PieItem item : mItems) {
-            boolean canDisplay = canItemDisplay(item);
-            if (canDisplay) {
-                if (item.isLesser()) {
-                    lesserSweepCount += 1;
-                }
-            }
-        }
-
-        float adjustedSweep = lesserSweepCount > 0 ?
-                (((1 - 0.65f) * lesserSweepCount) / (itemCount - lesserSweepCount)) : 0;
-        float sweep = 0;
         float angle = 0;
         float total = 0;
 
-        int count = 0;
         for (PieItem item : mItems) {
-            if (!canItemDisplay(item)) continue;
-
-            sweep = ((float) (Math.PI - 2 * emptyangle) /
-                    itemCount) * (item.isLesser() ? 0.65f : 1 + adjustedSweep);
-            angle = (emptyangle + sweep / 2 - (float) Math.PI / 2);
-            item.setPath(
-                    makeSlice(getDegrees(0) - mPieGap, getDegrees(sweep) + mPieGap,
-                            outer, inner, mCenter, (mPieGap > 0 ? mPieGap + 0.4f : 0), count != 0));
+            mSweep = ((float) Math.PI / itemCount) * (item.isLesser() ? 0.65f : 1);
+            angle = (mSweep - (float) Math.PI) / 2;
             View view = item.getView();
 
             if (view != null) {
                 view.measure(view.getLayoutParams().width, view.getLayoutParams().height);
                 int w = view.getMeasuredWidth();
                 int h = view.getMeasuredHeight();
-                int r = inner + (outer - inner) * 2 / 3;
+                int r = mOuterCircleRadius;
                 int x = (int) (r * Math.sin(total + angle));
                 int y = (int) (r * Math.cos(total + angle));
 
@@ -654,351 +932,161 @@ public class PieMenu extends FrameLayout {
                 }
                 view.layout(x, y, x + w, y + h);
             }
-            float itemstart = total + angle - sweep / 2;
-            item.setGeometry(itemstart, sweep, inner, outer);
-            total += sweep;
-            count++;
+            float itemStart = total + angle - mSweep / 2;
+            item.setStartAngle(itemStart);
+            total += mSweep;
         }
     }
 
-    // param angle from 0 - pi to android degrees (clockwise starting at 3)
-    private float getDegrees(double angle) {
-        return (float) (270 - 180 * angle / Math.PI);
-    }
-
-    private class CustomAnimatorUpdateListener implements ValueAnimator.AnimatorUpdateListener {
-
-        private int mIndex;
-
-        CustomAnimatorUpdateListener(int index) {
-            mIndex = index;
-        }
-
-        @Override
-        public void onAnimationUpdate(ValueAnimator animation) {
-            float fraction = animation.getAnimatedFraction();
-            mAnimators[mIndex].fraction = fraction;
-            if (fraction != 1f) mHasShown = true;
-
-            // special purpose animators go here
-            if (mIndex == ANIMATOR_BATTERY_METER) {
-                mBatteryPathJuice = makeSlice(mStartBattery,
-                        mStartBattery + (float) animation.getAnimatedFraction() *
-                                (mBatteryLevel * (mEndBattery - mStartBattery) / 100),
-                        mInnerBatteryRadius, mOuterBatteryRadius, mCenter);
-            }
-            invalidate();
-        }
-    }
-
+    /**
+     * Cancels all animations
+     */
     private void cancelAnimation() {
-        for (int i = 0; i < mAnimators.length; i++) {
-            mAnimators[i].cancel();
-            invalidate();
-        }
+        mPieBackgroundAnimator.cancel();
+        mPieFadeAnimator.cancel();
+        mToggleGrowAnimator.cancel();
+        mToggleOuterGrowAnimator.cancel();
+        mPieGrowAnimator.cancel();
+        mRippleAnimator.cancel();
+        mSettingsToggleAnimator.cancel();
+        invalidate();
     }
 
-    private void animateIn() {
-        // cancel & start all animations
+    /**
+     * Start the first animations
+     */
+    private void animateInStartup() {
+        // cancel & start startup animations
         cancelAnimation();
-        for (int i = 0; i < mAnimators.length; i++) {
-            mAnimators[i].start();
+        mPieMoveAnimator.start();
+        mPieGrowAnimator.start();
+        mPieFadeAnimator.setStartDelay(50);
+        mPieFadeAnimator.start();
+    }
+
+    /**
+     * Starts the rest of the animations
+     */
+    private void animateInRest(boolean fromTouch) {
+        // start missing animations
+        if (!mHasShown) {
+            mHasShown = true;
+            if (fromTouch) mPieBackgroundAnimator.setStartDelay(250);
+            mPieBackgroundAnimator.start();
+            mSettingsToggleAnimator.setStartDelay(fromTouch ? 2500 : 4500);
+            mSettingsToggleAnimator.start();
         }
     }
 
-    public void animateOut() {
-        mHasShown = false;
-        mPanel.show(false);
-        cancelAnimation();
-    }
+    /**
+     * Animates the PIE out of the view
+     */
+    private void animateOut(final TogglePoint toggle) {
+        deselect();
+        deselectNotifications();
 
-    public void animateInImmediate() {
-        mHasShown = true;
-        cancelAnimation();
-        for (int i = 0; i < mAnimators.length; i++) {
-            mAnimators[i].animator.setStartDelay(0);
-            mAnimators[i].start();
-        }
-    }
-
-    @Override
-    protected void onDraw(Canvas canvas) {
-        if (mOpen) {
-            int state;
-
-            // Draw background
-            if (mStatusMode != -1) {
-                canvas.drawARGB((int) (mAnimators[ANIMATOR_DEC_SPEED15].fraction * 0xcc), 0, 0, 0);
-            }
-
-            // snap points
-            final int threshold = mOuterChevronRadius;
-
-            if (mCenterDistance > threshold) {
-                for (int i = 0; i < mNumberOfSnapPoints; i++) {
-                    SnapPoint snap = mSnapPoint[i];
-                    if (!snap.isCurrentlyPossible()) continue;
-
-                    mSnapBackground
-                            .setAlpha((int) (snap.alpha + (snap.active ? mAnimators[ANIMATOR_SNAP_GROW].fraction * 80
-                                    : 0)));
-
-                    float snapDistanceX = snap.x - mX;
-                    float snapDistanceY = snap.y - mY;
-                    float fraction = 1f
-                            + (snap.active ? mAnimators[ANIMATOR_SNAP_GROW].fraction * 2f : 0f);
-                    float snapDistance = (float) Math.sqrt(
-                            Math.pow(snapDistanceX, 2) + Math.pow(snapDistanceY, 2));
-                    int radius = (int) (snap.radius * fraction * 0.7f);
-
-                    float snapTouch = snapDistance < mSnapRadius * 7 ? 200 -
-                            (snapDistance * (200 - snap.alpha) / (mSnapRadius * 7)) : snap.alpha;
-
-                    mSnapBackground.setAlpha((int) snapTouch);
-
-                    Path circle = new Path();
-                    boolean onX = snap.gravity == Gravity.LEFT || snap.gravity == Gravity.RIGHT;
-                    int displacement = ((radius / 2) * (snap.gravity == Gravity.LEFT ? 1 : -1));
-                    circle.addCircle(snap.x - (onX ? displacement : 0),
-                            snap.y - (onX ? 0 : displacement), radius, Path.Direction.CW);
-                    canvas.drawPath(circle, mSnapBackground);
-                }
-            }
-
-            // draw base menu
-            for (PieItem item : mItems) {
-                if (!canItemDisplay(item)) continue;
-                drawItem(canvas, item);
-            }
-
-            if (mStatusMode != -1) { // NOT Bare mode
-            // draw chevron ring
-            mChevronBackground.setAlpha((int)
-                    (mAnimators[ANIMATOR_DEC_SPEED15].fraction * mGlowOffset));
-
-            state = canvas.save();
-            canvas.rotate(90, mCenter.x, mCenter.y);
-            canvas.drawPath(mChevronPath, mChevronBackground);
-            canvas.restoreToCount(state);
-
-            // draw battery
-            mBatteryBackground.setAlpha((int)
-                    (mAnimators[ANIMATOR_DEC_SPEED15].fraction * 0x22));
-            mBatteryJuice.setAlpha((int)
-                    (mAnimators[ANIMATOR_ACC_SPEED15].fraction * 0x88));
-
-            state = canvas.save();
-            canvas.rotate(90, mCenter.x, mCenter.y);
-            canvas.drawPath(mBatteryPathBackground, mBatteryBackground);
-            canvas.restoreToCount(state);
-
-            state = canvas.save();
-            canvas.rotate(90, mCenter.x, mCenter.y);
-            canvas.drawPath(mBatteryPathJuice, mBatteryJuice);
-            canvas.restoreToCount(state);
-
-            // draw clock && AM/PM
-            state = canvas.save();
-            canvas.rotate(mClockTextRotation -
-                    (1 - mAnimators[ANIMATOR_DEC_SPEED15].fraction) * 90, mCenter.x, mCenter.y);
-
-            mClockPaint.setAlpha((int) (mAnimators[ANIMATOR_DEC_SPEED15].fraction * 0xcc));
-            float lastPos = 0;
-            for (int i = 0; i < mClockText.length(); i++) {
-                canvas.drawTextOnPath("" + mClockText.charAt(i),
-                        mStatusPath, lastPos - mClockTextAmPmSize, mClockOffset, mClockPaint);
-                lastPos += mClockTextOffsets[i];
-            }
-
-            mAmPmPaint.setAlpha((int) (mAnimators[ANIMATOR_DEC_SPEED15].fraction * 0xaa));
-            canvas.drawTextOnPath(mClockTextAmPm, mStatusPath,
-                    lastPos - mClockTextAmPmSize, mAmPmOffset, mAmPmPaint);
-            canvas.restoreToCount(state);
-
-            // device status information and date
-            mStatusPaint.setAlpha((int) (mAnimators[ANIMATOR_ACC_SPEED15].fraction * 0xaa));
-
-            state = canvas.save();
-            final boolean isTelephony = mPieHelper.supportsTelephony();
-            canvas.rotate(mPanel.getDegree() + 180
-                    + (1 - mAnimators[ANIMATOR_DEC_SPEED15].fraction) * 90, mCenter.x, mCenter.y);
-            if (isTelephony) {
-                canvas.drawTextOnPath(mPieHelper.getNetworkProvider() + " " + mPieHelper.getNetworkType(),
-                        mStatusPath, 0, mStatusOffset * 4, mStatusPaint);
-            }
-            canvas.drawTextOnPath(mPieHelper.getCount() + " "
-                            + mContext.getString(R.string.status_bar_latest_events_title).toUpperCase(),
-                    mStatusPath, 0, mStatusOffset * 3, mStatusPaint);
-            canvas.drawTextOnPath(mPieHelper.getSimpleDate(),
-                    mStatusPath, 0, mStatusOffset * 2, mStatusPaint);
-            canvas.drawTextOnPath(
-                    mContext.getString(R.string.quick_settings_wifi_label).toUpperCase()
-                            + ": " + mPieHelper.getWifiSsid(), mStatusPath,
-                    0, mStatusOffset * 1, mStatusPaint);
-            canvas.drawTextOnPath(mPieHelper.getBatteryLevelReadable(),
-                    mStatusPath, 0, mStatusOffset * 0, mStatusPaint);
-            canvas.restoreToCount(state);
-            } // NOT Bare mode END
-            state = canvas.save();
-            canvas.rotate(mPanel.getDegree() + 180, mCenter.x, mCenter.y);
-
-            canvas.restoreToCount(state);
-        }
-    }
-
-    private void drawItem(Canvas canvas, PieItem item) {
-        if (item.getView() != null) {
-            int state = canvas.save();
-            canvas.rotate(getDegrees(item.getStartAngle())
-                    + mPanel.getDegree(), mCenter.x, mCenter.y);
-            canvas.drawPath(item.getPath(), item.isSelected() ? mPieSelected : mPieBackground);
-            canvas.drawPath(item.getPath(), mPieOutlines);
-            canvas.restoreToCount(state);
-
-            state = canvas.save();
-            ImageView view = (ImageView) item.getView();
-            canvas.translate(view.getX(), view.getY());
-            canvas.rotate(getDegrees(item.getStartAngle()
-                            + item.getSweep() / 2) + mPanel.getDegree(),
-                    view.getWidth() / 2, view.getHeight() / 2);
-
-            view.draw(canvas);
-            canvas.restoreToCount(state);
-        }
-    }
-
-    private Path makeSlice(float start, float end, int outer, int inner, Point center) {
-        return makeSlice(start, end, outer, inner, center, 0, true);
-    }
-
-    private Path makeSlice(float start, float end, int outer,
-                           int inner, Point center, float narrow, boolean bothEnds) {
-        RectF bb = new RectF(center.x - outer, center.y - outer,
-                center.x + outer, center.y + outer);
-        RectF bbi = new RectF(center.x - inner, center.y - inner,
-                center.x + inner, center.y + inner);
-        Path path = new Path();
-        path.arcTo(bb, start, end - start, true);
-        path.arcTo(bbi, end + narrow, start - end - (bothEnds ? narrow : narrow * 2));
-        path.close();
-        return path;
-    }
-
-    // touch handling for pie
-    @Override
-    public boolean onTouchEvent(MotionEvent evt) {
-        if (evt.getPointerCount() > 1) return true;
-        mX = evt.getRawX();
-        mY = evt.getRawY();
-        float distanceX = mCenter.x - mX;
-        float distanceY = mCenter.y - mY;
-        mCenterDistance = (float) Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
-        float shadeTreshold = mOuterChevronRadius;
-
-        int action = evt.getActionMasked();
-        if (MotionEvent.ACTION_DOWN == action) {
-            // open panel
-            animateIn();
-        } else if (MotionEvent.ACTION_MOVE == action) {
-            for (int i = 0; i < mNumberOfSnapPoints; i++) {
-                SnapPoint snap = mSnapPoint[i];
-                if (!snap.isCurrentlyPossible()) continue;
-
-                float snapDistanceX = snap.x - mX;
-                float snapDistanceY = snap.y - mY;
-                float snapDistance = (float)
-                        Math.sqrt(Math.pow(snapDistanceX, 2) + Math.pow(snapDistanceY, 2));
-
-                if (snapDistance < mSnapRadius) {
-                    snap.alpha = 60;
-                    if (!snap.active) {
-                        mAnimators[ANIMATOR_SNAP_GROW].cancel();
-                        mAnimators[ANIMATOR_SNAP_GROW].animator.start();
-                        if (mHapticFeedback) mVibrator.vibrate(2);
-                    }
-                    snap.active = true;
-                    mGlowOffset = 150;
-                } else {
-                    if (snap.active) {
-                        mAnimators[ANIMATOR_SNAP_GROW].cancel();
-                    }
-                    snap.alpha = 30;
-                    snap.active = false;
-                }
-            }
-
-            // trigger the shades
-            if (mCenterDistance > shadeTreshold) {
-                mGlowOffset = 150;
-                if (!mHasShown) animateInImmediate();
-                deselect();
-            }
-
-            // take back shade trigger if user decides to abandon his gesture
-            if (mCenterDistance < shadeTreshold) {
-                mGlowOffset = 150;
-
-                // check for onEnter separately or'll face constant deselect
-                PieItem item = findItem(getPolar(mX, mY));
-                if (item != null) {
-                    if (mCenterDistance < shadeTreshold &&
-                            mCenterDistance > (mInnerPieRadius * 0.75f)) {
-                        onEnter(item);
-                    } else {
-                        deselect();
+        // Hook the listener up onto the main pie grow animator
+        // since  this one is always available
+        mPieGrowAnimator.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                mHasShown = false;
+                mSnappointsShowing = false;
+                mHandler.removeCallbacks(mAnimateRunnable);
+                show(false);
+                cancelAnimation();
+                mReversing = false;
+                if (toggle != null) {
+                    if (toggle instanceof NowOnTapPoint) {
+                        startAssist();
+                    } else if (toggle instanceof SettingsPoint) {
+                        mContext.sendBroadcast(mCloseDialogsIntent);
+                        mContext.startActivity(mSettingsIntent);
+                    } else if (toggle instanceof SnapPoint) {
+                        mPanel.reorient(((SnapPoint)toggle).gravity);
                     }
                 }
             }
-            invalidate();
-        } else if (MotionEvent.ACTION_UP == action) {
-            if (mOpen) {
-                PieItem item = mCurrentItem;
+        });
 
-                // check for click actions
-                if (item != null && item.getView() != null && mCenterDistance < shadeTreshold) {
-                    if (mHapticFeedback) mVibrator.vibrate(2);
-                    item.getView().performClick();
-                }
+        // Cancel pie toggle animators
+        mToggleGrowAnimator.cancel();
+        mToggleOuterGrowAnimator.cancel();
+        mSettingsToggleAnimator.cancel();
 
-                // check for google now action
-                if (mCenterDistance > shadeTreshold) {
-                    if (mHasAssistant) mPieHelper.startAssistActivity();
-                }
+        // Remove start delay because we set it when animating in
+        mPieFadeAnimator.setStartDelay(0);
+        if (mHasShown && isAllowedToDraw()) {
+            mPieBackgroundAnimator.setStartDelay(0);
+            mPieBackgroundAnimator.reverse();
+            if (mSettingsToggleFraction != 0f) {
+                mSettingsToggleAnimator.setStartDelay(0);
+                mSettingsToggleAnimator.reverse();
             }
-
-            // say good bye
-            deselect();
-            animateOut();
-            return true;
         }
-        // always re-dispatch event
-        return false;
-    }
 
-    private void onEnter(PieItem item) {
-        if (mCurrentItem == item) return;
-
-        // deselect
-        if (mCurrentItem != null) {
-            mCurrentItem.setSelected(false);
-        }
-        if (item != null) {
-            // clear up stack
-            playSoundEffect(SoundEffectConstants.CLICK);
-            item.setSelected(true);
-            mCurrentItem = item;
-        } else {
-            mCurrentItem = null;
+        // Reverse the animators
+        mPieMoveAnimator.reverse();
+        mPieGrowAnimator.reverse();
+        mPieFadeAnimator.reverse();
+        if (toggle != null) {
+             mReversing = true;
         }
     }
 
+    /**
+     * Draws the PIE items
+     */
+    private void drawItem(Canvas canvas, PieItem item, float fraction) {
+        if (item.getView() == null) return;
+        final ImageView view = (ImageView) item.getView();
+        final int itemOffset = item.getSize() / 2;
+        final Point start = new Point(mCenter.x - itemOffset, mCenter.y + itemOffset);
+        final int state = canvas.save();
+        final float rippleFraction = mRippleAnimator.getAnimatedFraction();
+        final float x = start.x + (fraction * (view.getX() - start.x));
+        final float y = start.y + (fraction * (view.getY() - start.y));
+        setColor(view, mDarkThemeEnabled ? mForegroundColor : item.getColor());
+        canvas.translate(x, y);
+        view.setImageAlpha((int) (mPieFadeAnimator.getAnimatedFraction() * 0xff));
+        view.getBackground().setAlpha(view.isSelected()
+                ? (int) (rippleFraction * (mDarkThemeEnabled ? 0x59 : 0x33)) : 0);
+        view.draw(canvas);
+        canvas.restoreToCount(state);
+        if (DEBUG) {
+            Log.d(TAG, "Drawing item: " + view.getTag());
+        }
+    }
+
+    /**
+     * Checks whether the PIE detail is allowed to show
+     */
+    private boolean isAllowedToDraw() {
+        return !mPanel.isKeyguardLocked();
+    }
+
+    /**
+     * Deselects current pie item
+     */
     private void deselect() {
-        if (mCurrentItem != null) {
-            mCurrentItem.setSelected(false);
+        for (PieItem item : mItems) {
+            if (item == null) return;
+            item.setSelected(false);
         }
-        mCurrentItem = null;
     }
 
+    /**
+     * Deselects all notification icons
+     */
+    private void deselectNotifications() {
+        for (AnimatedImageView view : mIconViews) {
+            view.setSelected(false);
+        }
+    }
+
+    /**
+     * Calculates the polar
+     */
     private float getPolar(float x, float y) {
         float deltaY = mCenter.y - y;
         float deltaX = mCenter.x - x;
@@ -1015,69 +1103,642 @@ public class PieMenu extends FrameLayout {
                 deltaY) * 180 / (float) Math.PI) * (float) Math.PI / 180;
     }
 
-    private PieItem findItem(float polar) {
-        if (mItems != null) {
-            for (PieItem item : mItems) {
-                if (!canItemDisplay(item)) continue;
-                if (inside(polar, item)) {
-                    return item;
+    /**
+     * Broadcast receiver for battery and time
+     */
+    private BroadcastReceiver mReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            final String action = intent.getAction();
+            if (Intent.ACTION_TIME_TICK.equals(action)
+                    || Intent.ACTION_TIME_CHANGED.equals(action)) {
+                measureClock(getSimpleTime());
+            } else if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
+                mBatteryLevel = intent.getIntExtra("level", 0);
+                mBatteryPaint.setColor(mBatteryLevel >= 50 ? mBatteryColor
+                        : (mBatteryLevel <= 15 ? mBatteryLowColor : mBatteryMedColor));
+            }
+
+            invalidate();
+        }
+    };
+
+    /**
+     * Get the current date in a simple format
+     */
+    private String getSimpleDate() {
+        SimpleDateFormat sdf = new SimpleDateFormat(
+                mContext.getString(R.string.pie_date_format), Locale.getDefault());
+        String date = sdf.format(new Date());
+        return date.toUpperCase();
+    }
+
+    /**
+     * Get the current time in a simple format
+     */
+    private String getSimpleTime() {
+        SimpleDateFormat sdf = new SimpleDateFormat(
+                mContext.getString(DateFormat.is24HourFormat(mContext)
+                        ? R.string.pie_hour_format_24
+                        : R.string.pie_hour_format_12), Locale.getDefault());
+        String time = sdf.format(new Date());
+        return time.toUpperCase();
+    }
+
+    /**
+     * Get the connect wifi network SSID.
+     */
+    private String getWifiSsid() {
+        String ssid = null;
+        NetworkInfo info = mConnectivityManager.getNetworkInfo(ConnectivityManager.TYPE_WIFI);
+        if (info.isConnected()) {
+            final WifiInfo connectionInfo = mWifiManager.getConnectionInfo();
+            String name = connectionInfo.getSSID();
+            if (name != null) {
+                ssid = name;
+            }
+            if (ssid == null) {
+                List<WifiConfiguration> networks = mWifiManager.getConfiguredNetworks();
+                for (WifiConfiguration net : networks) {
+                    if (net.networkId == connectionInfo.getNetworkId()) {
+                        ssid = net.SSID;
+                    }
                 }
             }
         }
-        return null;
+        if (ssid != null) {
+            ssid = ssid.replaceAll("^\"|\"$", "");
+        }
+        return ssid != null ? ssid.toUpperCase() : null;
     }
 
-    private boolean inside(float polar, PieItem item) {
-        return (item.getStartAngle() < polar)
-                && (item.getStartAngle() + item.getSweep() > polar);
+    /**
+     * Get the current provider name and the mobile data type, if enabled
+     */
+    private String getNetworkText() {
+        boolean mobileDataEnabled = TelephonyManager.getDefault().getDataEnabled(mSubId);
+        String type = TelephonyManager.getDefault().getNetworkTypeName();
+        String operatorName = mTelephonyManager.getNetworkOperatorName();
+        if (operatorName == null) {
+            operatorName = mTelephonyManager.getSimOperatorName();
+        }
+        if (operatorName != null && operatorName.equals("")) {
+            operatorName = null;
+        }
+        if (!mobileDataEnabled) {
+            return operatorName == null ? null : operatorName.toUpperCase();
+        }
+        return operatorName == null || type == null ? null :
+                operatorName.toUpperCase() + "  " + type.toUpperCase();
     }
 
-    private SettingsObserver _observer;
-
-    SettingsObserver observer() {
-        if (_observer == null)
-            _observer = new SettingsObserver(new Handler());
-        return _observer;
+    /**
+     * @return whether assistant is currently available
+     */
+    private boolean isAssistantAvailable() {
+        return mAssistUtils.getAssistComponentForUser(UserHandle.USER_CURRENT) != null;
     }
 
-    private void unobserve() {
-        if (_observer != null)
-            _observer._unobserve();
-    }
+    /**
+     * Draws PIE stuff
+     */
+    @Override
+    protected void onDraw(final Canvas canvas) {
+        if (!mOpen) return;
+        int state;
 
-    class SettingsObserver extends ContentObserver {
-        SettingsObserver(Handler handler) {
-            super(handler);
+        if (isAllowedToDraw()) {
+            // draw background
+            canvas.drawARGB((int) (mBackgroundFraction * 0xcc), 0, 0, 0);
+
+            // draw clock, date, battery level, line, wifi and network
+            mClockPaint.setAlpha((int) (mBackgroundFraction * 0xff));
+            mStatusPaint.setAlpha((int) (mBackgroundFraction * 0xff));
+            mLinePaint.setAlpha((int) (mBackgroundFraction * 0x1f));
+            if (mStatusIndicator != 2 && mStatusIndicator != 3) {
+                mWifiIcon.setAlpha((int) (mBackgroundFraction * 0xff));
+                if (mSsidText != null) {
+                    canvas.drawText(mSsidText, mWidth / (isLandScape() ? 12 : 8), mStatusOffset
+                            + mStatusTextTopMargin, mStatusPaint);
+                }
+            }
+            if (mStatusIndicator != 1 && mStatusIndicator != 3) {
+                mNetworkIcon.setAlpha((int) (mBackgroundFraction * 0xff));
+                if (mNetworkText != null) {
+                    if (!isLandScape()) {
+                        mStatusPaint.setTextAlign(Paint.Align.RIGHT);
+                    }
+                    canvas.drawText(mNetworkText, isLandScape() ? mWidth / 12 : mWidth -
+                              (mWidth / 8), isLandScape() ? (mHeight - (mStatusOffset
+                              + mStatusTextTopMarginLand)) : (mStatusOffset
+                              + mStatusTextTopMargin), mStatusPaint);
+                    // restore to default alignment
+                    mStatusPaint.setTextAlign(Paint.Align.LEFT);
+                }
+            }
+            canvas.drawText(mClockText, mWidth / 2 - mClockOffsetX -
+                    (isLandScape() ? mLandOffsetX : 0), mHeight / (mPieBottom ? 2 : 4)
+                    - mClockOffsetY + (isLandScape() ? mLandOffsetY : 0), mClockPaint);
+            canvas.drawText(getSimpleDate(), mWidth / 2 - mDateOffsetX -
+                    (isLandScape() ? mLandOffsetX : 0), mHeight / (mPieBottom ? 2 : 4)
+                    - mDateOffsetY + (isLandScape() ? mLandOffsetY : 0), mStatusPaint);
+            // Don't draw battery text if disabled
+            if (mBatteryMode != 1) {
+                canvas.drawText(mBatteryText, mWidth / 2 - mBatteryOffsetX -
+                        (isLandScape() ? mLandOffsetX : 0), mHeight / (mPieBottom ? 2 : 4) -
+                        (mPieBottom ? mBatteryOffsetY : mBatteryOffsetYSide) +
+                        (isLandScape() ? mLandOffsetY : 0), mStatusPaint);
+            }
+            // Hide line when there are no notifications
+            if (mNotifications.size() > 0) {
+                canvas.drawLine(mWidth / 2 - mLineLength / 2 - (isLandScape() ? mLineOffsetLand : 0),
+                        (mPieBottom ? mHeight / 2 - mLineOffset : mHeight / 4 + mLineOffsetSide)
+                        + (isLandScape() ? mLandOffsetY : 0), mWidth / 2 + mLineLength / 2 -
+                        (isLandScape() ? mLineOffsetLand : 0),
+                        (mPieBottom ? mHeight / 2 - mLineOffset : mHeight / 4 + mLineOffsetSide)
+                        + (isLandScape() ? mLandOffsetY : 0), mLinePaint);
+            }
+
+            // draw notification icons
+            for (AnimatedImageView view : mIconViews) {
+                view.setAlpha((int) (mBackgroundFraction * 0xff));
+                setColor(view, view.isSelected() ? mIconColor : mBackgroundColor);
+            }
+        }
+        // draw snap points and now on tap
+        for (int i = 0; i < mNumberOfSnapPoints; i++) {
+            TogglePoint toggle = mTogglePoint[i];
+            if (!toggle.isCurrentlyPossible(mCenterDistance > mShadeThreshold)
+                    && !mToggleAnimator.isRunning()) {
+                continue;
+            }
+            boolean isTogglePoint = toggle instanceof NowOnTapPoint
+                    || toggle instanceof SettingsPoint;
+            float toggleAnimatorFraction = mToggleAnimator.getAnimatedFraction();
+            float toggleOuterAnimatorFraction = mToggleOuterGrowAnimator.getAnimatedFraction();
+            float fraction = 1f + (toggle.active ?
+                    mToggleGrowAnimator.getAnimatedFraction() * (isTogglePoint ? 0.5f : 0.7f) : 0f);
+            float toggleOuterfraction = (toggle.active ? 1f + toggleOuterAnimatorFraction
+                    * (isTogglePoint ? 0.9f : 1f) : 0);
+            if (mDarkThemeEnabled) {
+                if (isTogglePoint) {
+                    mToggleBackground.setColor(mDarkBackgroundColor);
+                } else {
+                    mToggleBackground.setColor(mDarkSnappointColor);
+                }
+                mToggleShaderPaint.setShader(new LinearGradient(toggle.x - toggle.radius, toggle.y
+                        - toggle.radius, toggle.x + toggle.radius, toggle.y + toggle.radius,
+                        mShaderStartColor, mShaderEndColor, Shader.TileMode.CLAMP));
+                mToggleShaderPaint.setAlpha((int) ((!isTogglePoint && mBackgroundFraction == 1f ?
+                        toggleAnimatorFraction : (toggle instanceof SettingsPoint ?
+                        mSettingsToggleFraction : mBackgroundFraction)) * 0xff));
+                state = canvas.save();
+                canvas.drawCircle(toggle.x, toggle.y, toggle.radius, mToggleShaderPaint);
+                canvas.restoreToCount(state);
+            } else {
+                mToggleBackground.setColor(mForegroundColor);
+            }
+            toggle.draw(canvas, mToggleBackground, fraction, (!isTogglePoint && mBackgroundFraction
+                    == 1f ? toggleAnimatorFraction : (toggle instanceof SettingsPoint
+                            ? mSettingsToggleFraction : mBackgroundFraction)));
+            // Only draw when outside animator is running.
+            if (mToggleOuterGrowAnimator.isStarted()) {
+                toggle.draw(canvas, mToggleOuterBackground, toggleOuterfraction,
+                        toggleOuterAnimatorFraction / 2);
+            }
         }
 
-        void observe() {
-            ContentResolver resolver = mContext.getContentResolver();
+        final float pieMoveFraction = mPieMoveAnimator.getAnimatedFraction();
+        final float pieGrowFraction = mPieGrowAnimator.getAnimatedFraction();
+        final float circleCenterY = mCenter.y + mInnerCircleRadius -
+                (pieMoveFraction * mInnerCircleRadius);
+        final float circleThickness = pieGrowFraction * mOuterCircleThickness;
+        final float circleRadius = pieMoveFraction * mOuterCircleRadius;
 
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_BACKGROUND), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_SELECT), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_OUTLINES), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_STATUS_CLOCK), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_STATUS), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_CHEVRON), false, this);
-            resolver.registerContentObserver(Settings.System.getUriFor(
-                    Settings.System.PA_PIE_JUICE), false, this);
-            getDimensions();
+        if (mBatteryMode == 1 || mBatteryMode == 2) {
+            // Draw battery circle
+            final boolean pieLeft = mPanelOrientation == Gravity.LEFT;
+            final boolean pieBottom = mPanelOrientation == Gravity.BOTTOM;
+            final float startAngle = pieBottom ? 180 : (isLandScape() ? 90 : (pieLeft ? 270 : 90));
+            final float sweepAngle = (float) (mBatteryLevel / 100.0 * 180.0);
+            state = canvas.save();
+            canvas.drawArc(mCenter.x - circleRadius + mBatteryCircleRadius,
+                    mCenter.y - circleRadius + mBatteryCircleRadius, mCenter.x +
+                    circleRadius - mBatteryCircleRadius, mCenter.y + circleRadius -
+                    mBatteryCircleRadius, startAngle, sweepAngle, false, mBatteryPaint);
+            canvas.restoreToCount(state);
         }
 
-        private void _unobserve() {
-            mContext.getContentResolver().unregisterContentObserver(_observer);
-            _observer = null;
+        // draw background circle
+        mBackgroundCirclePaint.setAlpha(mDarkThemeEnabled ? 0 : 100);
+        state = canvas.save();
+        canvas.drawCircle(mCenter.x, circleCenterY, circleRadius, mBackgroundCirclePaint);
+        canvas.restoreToCount(state);
+
+        // draw outer circle
+        state = canvas.save();
+        final Path outerCirclePath = new Path();
+        outerCirclePath.addCircle(mCenter.x, circleCenterY,
+                circleRadius + circleThickness, Direction.CW);
+        outerCirclePath.close();
+        outerCirclePath.addCircle(mCenter.x, circleCenterY,
+                circleRadius - circleThickness, Direction.CW);
+        outerCirclePath.close();
+        outerCirclePath.setFillType(Path.FillType.EVEN_ODD);
+        outerCirclePath.setFillType(Path.FillType.EVEN_ODD);
+        canvas.drawPath(outerCirclePath, mCirclePaint);
+        canvas.restoreToCount(state);
+
+        // draw inner circle
+        state = canvas.save();
+        canvas.drawCircle(mCenter.x, circleCenterY, mInnerCircleRadius, mCirclePaint);
+        canvas.restoreToCount(state);
+
+        // draw shade around PIE if dark theme is enabled
+        if (mDarkThemeEnabled) {
+            mShaderPaint.setShader(new LinearGradient(0, 0, 0, circleCenterY + circleRadius,
+                    mShaderStartColor, mShaderEndColor, Shader.TileMode.CLAMP));
+            state = canvas.save();
+            canvas.drawCircle(mCenter.x, circleCenterY, circleRadius + circleThickness,
+                    mShaderPaint);
+            canvas.restoreToCount(state);
+            mShaderPaint.setShader(new LinearGradient(mCenter.x - mInnerCircleRadius,
+                    circleCenterY - mInnerCircleRadius, mCenter.x + mInnerCircleRadius,
+                    circleCenterY + mInnerCircleRadius, mShaderStartColor, mShaderEndColor,
+                    Shader.TileMode.CLAMP));
+            state = canvas.save();
+            canvas.drawCircle(mCenter.x, circleCenterY, mInnerCircleRadius, mShaderPaint);
+            canvas.restoreToCount(state);
+        }
+
+        // draw buttons
+        for (PieItem item : mItems) {
+            drawItem(canvas, item, mPieMoveAnimator.getAnimatedFraction());
+        }
+
+        invalidateOutline();
+    }
+
+    /**
+     * Touch handling for pie
+     */
+    @Override
+    public boolean onTouchEvent(MotionEvent evt) {
+        if (evt.getPointerCount() > 1 || mReversing) return true;
+        final float mX = evt.getRawX();
+        final float mY = evt.getRawY();
+        final float distanceX = mCenter.x - mX;
+        final float distanceY = mCenter.y - mY;
+        final float polar = getPolar(mX, mY);
+        boolean snappointActive = false;
+        PieItem item = null;
+        for (PieItem it : mItems) {
+            if ((it.getStartAngle() < polar) && (it.getStartAngle() + mSweep > polar)) {
+                item = it;
+            }
+        }
+        mCenterDistance = (float) Math.sqrt(Math.pow(distanceX, 2) + Math.pow(distanceY, 2));
+
+        int action = evt.getActionMasked();
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                // open panel
+                animateInStartup();
+                break;
+            case MotionEvent.ACTION_MOVE:
+                for (int i = 0; i < mNumberOfSnapPoints; i++) {
+                    TogglePoint toggle = mTogglePoint[i];
+                    if (!toggle.isCurrentlyPossible(true)) continue;
+
+                    boolean settingsPoint = toggle instanceof SettingsPoint;
+                    float toggleDistanceX = toggle.x - mX;
+                    float toggleDistanceY = toggle.y - mY;
+                    float toggleDistance = (float) Math.sqrt(Math.pow(toggleDistanceX, 2)
+                            + Math.pow(toggleDistanceY, 2));
+
+                    if (toggleDistance < toggle.radius && isAllowedToDraw()) {
+                        if (settingsPoint && mSettingsToggleFraction == 0f) {
+                            mSettingsToggleAnimator.setStartDelay(1);
+                            mSettingsToggleAnimator.start();
+                        }
+                        if (!toggle.active && ((settingsPoint && mSettingsToggleFraction == 1f)
+                                || (!settingsPoint))) {
+                            mToggleGrowAnimator.cancel();
+                            mToggleOuterGrowAnimator.cancel();
+                            mToggleGrowAnimator.start();
+                            mVibrator.vibrate(2);
+                            toggle.active = true;
+                        }
+                    } else {
+                        if (toggle.active) {
+                            mToggleGrowAnimator.cancel();
+                            mToggleOuterGrowAnimator.cancel();
+                            toggle.active = false;
+                        }
+                    }
+                    snappointActive = toggle.active;
+                }
+
+                // trigger the shades
+                if (mCenterDistance > mShadeThreshold && isAllowedToDraw()) {
+                    animateInRest(true);
+                    deselect();
+                    if (mHasShown && !mSnappointsShowing) {
+                        mToggleAnimator.start();
+                        mSnappointsShowing = true;
+                    }
+                    for (AnimatedImageView view : mIconViews) {
+                        Rect rect = new Rect(view.getLeft(), view.getTop() - 375,
+                                view.getRight(), view.getBottom() + (mPieBottom ? 375 : 0));
+                        if (!snappointActive && rect.contains((int) mX, (int) mY)) {
+                            view.setSelected(true);
+                        } else {
+                            view.setSelected(false);
+                        }
+                    }
+                } else {
+                    if (mSnappointsShowing) {
+                        mToggleAnimator.reverse();
+                        mSnappointsShowing = false;
+                    }
+                }
+                if (mCenterDistance < mShadeThreshold && mCenterDistance > mInnerCircleRadius) {
+                    if (item != null && item.getView() != null) {
+                        if (!item.getView().isSelected()) {
+                            deselect();
+                            item.setSelected(true);
+                            mRippleAnimator.start();
+                        }
+                    }
+                } else {
+                    deselect();
+                }
+                invalidate();
+                break;
+            case MotionEvent.ACTION_UP:
+                if (mOpen) {
+                    for (int i = 0; i < mNumberOfSnapPoints; i++) {
+                        TogglePoint toggle = mTogglePoint[i];
+                        if (!toggle.isCurrentlyPossible(true)) continue;
+                        if (toggle.active) {
+                            mToggleGrowAnimator.end();
+                            mToggleOuterGrowAnimator.end();
+                            break;
+                        }
+                    }
+                    // check for click actions
+                    for (int i = 0; i < mIconViews.size(); i++) { // Use only 1 loop because the size is the same
+                        AnimatedImageView view = mIconViews.get(i);
+                        if (!view.isSelected()) continue;
+                        Pair<StatusBarNotification, Icon> p = mNotifications.get(i);
+                        final Notification notif = p.first.getNotification();
+                        final PendingIntent pIntent = notif.contentIntent != null
+                                ? notif.contentIntent : notif.fullScreenIntent;
+                        try {
+                            mBar.animateCollapsePanels(
+                                    CommandQueue.FLAG_EXCLUDE_RECENTS_PANEL, true);
+                            ActivityManagerNative.getDefault().resumeAppSwitches();
+                            if (pIntent != null) {
+                                pIntent.send(null, 0, null, null, null, null,
+                                        mBar.getActivityOptions());
+                            }
+                            mBar.performRemoveNotification(p.first);
+                        } catch (PendingIntent.CanceledException | RemoteException e) {
+                            Log.e(TAG, "Failed trying to open notification " + e);
+                        }
+                        break;
+                    }
+                    if (item != null && item.getView() != null
+                            && item.getView().isSelected()) {
+                        item.getView().performClick();
+                        performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY);
+                        if (item.getView().getTag().equals(PieController.RECENT_BUTTON) ||
+                                item.getView().getTag().equals(PieController.HOME_BUTTON)) {
+                            try {
+                                WindowManagerGlobal.getWindowManagerService()
+                                        .dismissKeyguard();
+                            } catch (RemoteException ex) {
+                                // system is dead
+                            }
+                        }
+                    }
+                }
+
+                // say good bye
+                animateOut(null);
+                return true;
+        }
+        // always re-dispatch event
+        return false;
+    }
+
+    @Override
+    protected void onAttachedToWindow() {
+        setVisibility(View.GONE);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldW, int oldH) {
+        mWidth = w;
+        mHeight = h;
+        setOutlineProvider(new PieOutline());
+    }
+
+    private class AnimatorUpdateListener implements ValueAnimator.AnimatorUpdateListener {
+        private ValueAnimator animationIndex;
+
+        AnimatorUpdateListener(ValueAnimator index) {
+            animationIndex = index;
         }
 
         @Override
-        public void onChange(boolean selfChange) {
-            getDimensions();
+        public void onAnimationUpdate(ValueAnimator animation) {
+            if (animationIndex == mPieBackgroundAnimator) {
+                mBackgroundFraction = animation.getAnimatedFraction();
+            }
+            if (animationIndex == mSettingsToggleAnimator) {
+                mSettingsToggleFraction = animation.getAnimatedFraction();
+            }
+            if (animationIndex == mToggleGrowAnimator
+                    && animation.getAnimatedFraction() >= 0.95
+                    && !mToggleOuterGrowAnimator.isRunning()) {
+                mToggleOuterGrowAnimator.start();
+            }
+            invalidate();
+        }
+    }
+
+    private abstract class TogglePoint {
+        public boolean active;
+        public final int radius;
+        public final int x;
+        public final int y;
+
+        TogglePoint(int toggleX, int toggleY, int toggleRadius) {
+            x = toggleX;
+            y = toggleY;
+            radius = toggleRadius;
+            active = false;
+        }
+
+        public void draw(Canvas canvas, Paint paint, float growFraction, float alphaFraction) {
+            int growRadius = (int) (radius * growFraction);
+            paint.setAlpha((int) (alphaFraction * 0xff));
+            canvas.drawCircle(x, y, growRadius, paint);
+        }
+
+        public abstract boolean isCurrentlyPossible(boolean trigger);
+    }
+
+    private class SnapPoint extends TogglePoint {
+        public final int gravity;
+
+        SnapPoint(int snapX, int snapY, int snapRadius, int snapGravity) {
+            super(snapX, snapY, snapRadius);
+            gravity = snapGravity;
+        }
+
+        /**
+         * @return whether the gravity of this snap point is usable under the current conditions
+         */
+        @Override
+        public boolean isCurrentlyPossible(boolean trigger) {
+            return trigger && mPanel.isGravityPossible(gravity);
+        }
+    }
+
+    private class NowOnTapPoint extends TogglePoint {
+        private final ImageView mLogo;
+
+        NowOnTapPoint(int notX, int notY, int notRadius, ImageView logo, int logoSize) {
+            super(notX, notY, notRadius);
+
+            logo.setMinimumWidth(logoSize);
+            logo.setMinimumHeight(logoSize);
+            logo.setScaleType(ScaleType.FIT_XY);
+            RelativeLayout.LayoutParams lp = new
+                    RelativeLayout.LayoutParams(logoSize, logoSize);
+            if (mPanelOrientation == Gravity.BOTTOM) {
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            }
+            lp.leftMargin = notX - logoSize / 2;
+            lp.topMargin = notY - logoSize / 2;
+            logo.setLayoutParams(lp);
+            mLogo = logo;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, float growFraction, float
+                alphaFraction) {
+            super.draw(canvas, paint, growFraction, alphaFraction);
+            // Don't set alpha when outer animator is running
+            if (!mToggleOuterGrowAnimator.isRunning()) {
+                mLogo.setAlpha(alphaFraction);
+            }
+        }
+
+        /**
+         * @return whether the assist manager is currently available
+         */
+        @Override
+        public boolean isCurrentlyPossible(boolean trigger) {
+            return isAssistantAvailable();
+        }
+    }
+
+    private class SettingsPoint extends TogglePoint {
+        private final ImageView mLogo;
+
+        SettingsPoint(int x, int y, int radius, ImageView logo, int size) {
+            super(x, y, radius);
+
+            logo.setMinimumWidth(size);
+            logo.setMinimumHeight(size);
+            logo.setScaleType(ScaleType.FIT_XY);
+            RelativeLayout.LayoutParams lp = new
+                    RelativeLayout.LayoutParams(size, size);
+            if (mPanelOrientation == Gravity.BOTTOM) {
+                lp.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+            }
+            lp.leftMargin = x - size / 2;
+            lp.topMargin = y - size / 2;
+            logo.setLayoutParams(lp);
+            mLogo = logo;
+        }
+
+        @Override
+        public void draw(Canvas canvas, Paint paint, float growFraction, float
+                alphaFraction) {
+            super.draw(canvas, paint, growFraction, alphaFraction);
+            // Don't set alpha when outer animator is running
+            if (!mToggleOuterGrowAnimator.isRunning()) {
+                mLogo.setAlpha(alphaFraction);
+            }
+        }
+
+        /**
+         * @return whether snappoint is available
+         */
+        @Override
+        public boolean isCurrentlyPossible(boolean trigger) {
+            return true;
+        }
+    }
+
+    private class PieOutline extends ViewOutlineProvider {
+
+        private final float mPadding;
+
+        PieOutline() {
+            mPadding = mResources.getDimensionPixelSize(R.dimen.pie_elevation);
+        }
+
+        @Override
+        public void getOutline(View view, Outline outline) {
+            float circleThickness = mPieGrowAnimator.getAnimatedFraction()
+                    * mOuterCircleThickness;
+            float circleRadius = mPieMoveAnimator.getAnimatedFraction()
+                    * mOuterCircleRadius;
+            int size = (int) (circleRadius + circleThickness + mPadding);
+            final Path outerCirclePath = new Path();
+            outerCirclePath.addCircle(0, 0,
+                    circleRadius + circleThickness + mPadding, Direction.CW);
+            outerCirclePath.close();
+            outline.setConvexPath(outerCirclePath);
+            outline.setOval(-size, -size, size, size);
+            outline.setAlpha(0.6f);
+            outline.offset(mCenter.x, mCenter.y);
+        }
+    }
+
+    private class PieSignalCallback implements SignalCallback {
+        @Override
+        public void setWifiIndicators(boolean enabled, IconState statusIcon, IconState qsIcon,
+                boolean activityIn, boolean activityOut, String description) {
+            mWifiIconResId = qsIcon == null ? 0 : qsIcon.icon;
+            createSignalIcons();
+        }
+
+        @Override
+        public void setMobileDataIndicators(IconState statusIcon, IconState qsIcon, int statusType,
+                int qsType, boolean activityIn, boolean activityOut,
+                String typeContentDescription, String description, boolean isWide, int subId,
+                boolean isMobileIms,boolean roaming) {
+            mSubId = subId;
+            mNetworkIconResId = qsIcon == null ? 0 : qsIcon.icon;
+            createSignalIcons();
+        }
+
+        @Override
+        public void setNoSims(boolean show) {
+        }
+
+        @Override
+        public void setIsAirplaneMode(IconState icon) {
+        }
+
+        @Override
+        public void setMobileDataEnabled(boolean enabled) {
         }
     }
 }

@@ -23,6 +23,7 @@ import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.graphics.Typeface;
 import android.graphics.PorterDuff.Mode;
+import android.media.MediaMetadata;
 import android.os.Handler;
 import android.os.UserHandle;
 import android.provider.Settings;
@@ -31,9 +32,12 @@ import android.text.Layout.Alignment;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.view.animation.Animation;
+import android.view.animation.AlphaAnimation;
 import android.view.animation.AnimationUtils;
+import android.view.animation.Interpolator;
 import android.view.View;
 import android.widget.ImageSwitcher;
+import android.widget.ImageView;
 import android.widget.TextSwitcher;
 import android.widget.TextView;
 
@@ -60,6 +64,9 @@ public abstract class Ticker {
     private int mTickerTextColor;
     private int mTickerFontSize = 14;
     private Typeface mFontStyle;
+
+    // The ticker color as requested by the statusbar
+    private int mDefaultColor = 0xffffffff;
 
 
     public static boolean isGraphicOrEmoji(char c) {
@@ -171,21 +178,28 @@ public abstract class Ticker {
         final int imageBounds = res.getDimensionPixelSize(R.dimen.status_bar_icon_drawing_size);
         mIconScale = (float)imageBounds / (float)outerBounds;
 
-        mTickerView = sb.findViewById(R.id.ticker);
 
-        mIconSwitcher = (ImageSwitcher)sb.findViewById(R.id.tickerIcon);
-        mIconSwitcher.setInAnimation(
-                    AnimationUtils.loadAnimation(context, com.android.internal.R.anim.push_up_in));
-        mIconSwitcher.setOutAnimation(
-                    AnimationUtils.loadAnimation(context, com.android.internal.R.anim.push_up_out));
+        AlphaAnimation animationIn = new AlphaAnimation(0.0f, 1.0f);
+        Interpolator interpolatorIn = AnimationUtils.loadInterpolator(context,
+                android.R.interpolator.decelerate_quad);
+        animationIn.setInterpolator(interpolatorIn);
+        animationIn.setDuration(350);
+
+        AlphaAnimation animationOut = new AlphaAnimation(1.0f, 0.0f);
+        Interpolator interpolatorOut = AnimationUtils.loadInterpolator(context,
+                android.R.interpolator.accelerate_quad);
+        animationIn.setInterpolator(interpolatorOut);
+        animationOut.setDuration(350);
+
+        mIconSwitcher = (ImageSwitcher) sb.findViewById(R.id.tickerIcon);
+        mIconSwitcher.setInAnimation(animationIn);
+        mIconSwitcher.setOutAnimation(animationOut);
         mIconSwitcher.setScaleX(mIconScale);
         mIconSwitcher.setScaleY(mIconScale);
 
-        mTextSwitcher = (TextSwitcher)sb.findViewById(R.id.tickerText);
-        mTextSwitcher.setInAnimation(
-                    AnimationUtils.loadAnimation(context, com.android.internal.R.anim.push_up_in));
-        mTextSwitcher.setOutAnimation(
-                    AnimationUtils.loadAnimation(context, com.android.internal.R.anim.push_up_out));
+        mTextSwitcher = (TextSwitcher) sb.findViewById(R.id.tickerText);
+        mTextSwitcher.setInAnimation(animationIn);
+        mTextSwitcher.setOutAnimation(animationOut);
 
         // Copy the paint style of one of the TextSwitchers children to use later for measuring
         TextView text = (TextView)mTextSwitcher.getChildAt(0);
@@ -196,9 +210,20 @@ public abstract class Ticker {
     }
 
 
-    public void addEntry(StatusBarNotification n) {
+    public void addEntry(StatusBarNotification n, boolean isMusic, MediaMetadata mediaMetaData) {
         int initialCount = mSegments.size();
         ContentResolver resolver = mContext.getContentResolver();
+
+        if (isMusic) {
+            CharSequence artist = mediaMetaData.getText(MediaMetadata.METADATA_KEY_ARTIST);
+            CharSequence album = mediaMetaData.getText(MediaMetadata.METADATA_KEY_ALBUM);
+            CharSequence title = mediaMetaData.getText(MediaMetadata.METADATA_KEY_TITLE);
+            if (artist != null && album != null && title != null) {
+                n.getNotification().tickerText = artist.toString() + " - " + album.toString() + " - " + title.toString();
+            } else {
+                return;
+            }
+        }
 
         // If what's being displayed has the same text and icon, just drop it
         // (which will let the current one finish, this happens when apps do
@@ -219,7 +244,7 @@ public abstract class Ticker {
                         n.getNotification().tickerText));
         final CharSequence text = n.getNotification().tickerText;
         final Segment newSegment = new Segment(n, icon, text);
-        final ColorStateList tickerIconColor = TickerColorHelper.getTickerIconColorList(mContext);
+        final ColorStateList tickerIconColor = TickerColorHelper.getTickerIconColorList(mContext, mDefaultColor);
 
         // If there's already a notification schedule for this package and id, remove it.
         for (int i=0; i<mSegments.size(); i++) {
@@ -246,7 +271,7 @@ public abstract class Ticker {
             updateTickerSize();
             updateTextColor();
             updateTickerFontStyle();
-            mTextSwitcher.setTextColor(mTickerTextColor);
+            setTextSwitcherColor();
             mTextSwitcher.setTextSize(mTickerFontSize);
             mTextSwitcher.setTypeface(mFontStyle);
 
@@ -291,7 +316,7 @@ public abstract class Ticker {
             mTextSwitcher.setCurrentText(text);
             updateTickerSize();
             updateTextColor();
-            mTextSwitcher.setTextColor(mTickerTextColor);
+            setTextSwitcherColor();
             mTextSwitcher.setTextSize(mTickerFontSize);
             mTextSwitcher.setTypeface(mFontStyle);
         }
@@ -302,7 +327,8 @@ public abstract class Ticker {
             while (mSegments.size() > 0) {
                 Segment seg = mSegments.get(0);
 
-                final ColorStateList tickerIconColor = TickerColorHelper.getTickerIconColorList(mContext);
+                final ColorStateList tickerIconColor =
+                        TickerColorHelper.getTickerIconColorList(mContext, mDefaultColor);
                 if (seg.first) {
                     // this makes the icon slide in for the first one for a given
                     // notification even if there are two notifications with the
@@ -317,7 +343,7 @@ public abstract class Ticker {
                 mTextSwitcher.setText(text);
                 updateTickerSize();
                 updateTextColor();
-                mTextSwitcher.setTextColor(mTickerTextColor);
+                setTextSwitcherColor();
                 mTextSwitcher.setTextSize(mTickerFontSize);
                 mTextSwitcher.setTypeface(mFontStyle);
 
@@ -438,6 +464,28 @@ public abstract class Ticker {
 
         mTickerTextColor = Settings.System.getInt(resolver,
                 Settings.System.STATUS_BAR_TICKER_TEXT_COLOR,
-                0xffb0b0b0);
+                0xffffffff);
+    }
+
+    public void setDefaultColor(int color) {
+        mDefaultColor = color;
+
+        // Update text color
+        setTextSwitcherColor();
+        // Update currently displayed icon
+        ImageView currentIcon = (ImageView) mIconSwitcher.getCurrentView();
+        if (currentIcon != null) {
+            final ColorStateList tickerIconColor =
+                    TickerColorHelper.getTickerIconColorList(mContext, mDefaultColor);
+            currentIcon.setImageTintList(tickerIconColor);
+        }
+    }
+
+    private void setTextSwitcherColor() {
+        if (mTickerTextColor == 0xffffffff) {
+            mTextSwitcher.setTextColor(mDefaultColor);
+        } else {
+            mTextSwitcher.setTextColor(mTickerTextColor);
+        }
     }
 }

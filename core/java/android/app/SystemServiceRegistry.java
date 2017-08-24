@@ -107,6 +107,8 @@ import android.os.UserManager;
 import android.os.Vibrator;
 import android.os.health.SystemHealthManager;
 import android.os.storage.StorageManager;
+import android.pocket.IPocketService;
+import android.pocket.PocketManager;
 import android.print.IPrintManager;
 import android.print.PrintManager;
 import android.hardware.fingerprint.FingerprintManager;
@@ -320,10 +322,10 @@ final class SystemServiceRegistry {
             }});
 
         registerService(Context.KEYGUARD_SERVICE, KeyguardManager.class,
-                new StaticServiceFetcher<KeyguardManager>() {
+                new CachedServiceFetcher<KeyguardManager>() {
             @Override
-            public KeyguardManager createService() {
-                return new KeyguardManager();
+            public KeyguardManager createService(ContextImpl ctx) {
+                return new KeyguardManager(ctx);
             }});
 
         registerService(Context.LAYOUT_INFLATER_SERVICE, LayoutInflater.class,
@@ -643,6 +645,15 @@ final class SystemServiceRegistry {
                 IFingerprintService service = IFingerprintService.Stub.asInterface(binder);
                 return new FingerprintManager(ctx.getOuterContext(), service);
             }});
+
+        registerService(Context.POCKET_SERVICE, PocketManager.class,
+                new CachedServiceFetcher<PocketManager>() {
+                    @Override
+                    public PocketManager createService(ContextImpl ctx) {
+                        IBinder binder = ServiceManager.getService(Context.POCKET_SERVICE);
+                        IPocketService service = IPocketService.Stub.asInterface(binder);
+                        return new PocketManager(ctx.getOuterContext(), service);
+                    }});
 
         registerService(Context.TV_INPUT_SERVICE, TvInputManager.class,
                 new StaticServiceFetcher<TvInputManager>() {

@@ -49,10 +49,11 @@ import com.android.systemui.qs.tiles.CaffeineTile;
 import com.android.systemui.qs.tiles.CastTile;
 import com.android.systemui.qs.tiles.CellularTile;
 import com.android.systemui.qs.tiles.ColorInversionTile;
+import com.android.systemui.qs.tiles.CompassTile;
 import com.android.systemui.qs.tiles.DataSaverTile;
 import com.android.systemui.qs.tiles.DndTile;
 import com.android.systemui.qs.tiles.ExpandedDesktopTile;
-import com.android.systemui.qs.tiles.PieTile;
+import com.android.systemui.qs.tiles.PerfProfileTile;
 import com.android.systemui.qs.tiles.ScreenrecordTile;
 import com.android.systemui.qs.tiles.NfcTile;
 import com.android.systemui.qs.tiles.LteTile;
@@ -60,13 +61,16 @@ import com.android.systemui.qs.tiles.FlashlightTile;
 import com.android.systemui.qs.tiles.HeadsUpTile;
 import com.android.systemui.qs.tiles.HotspotTile;
 import com.android.systemui.qs.tiles.ImeTile;
+import com.android.systemui.qs.tiles.HWKeysTile;
 import com.android.systemui.qs.tiles.IntentTile;
+import com.android.systemui.qs.tiles.LocaleTile;
 import com.android.systemui.qs.tiles.LocationTile;
 import com.android.systemui.qs.tiles.GpsTile;
 import com.android.systemui.qs.tiles.MusicTile;
 import com.android.systemui.qs.tiles.NavigationBarTile;
 import com.android.systemui.qs.tiles.RebootTile;
 import com.android.systemui.qs.tiles.NightDisplayTile;
+import com.android.systemui.qs.tiles.SuspendActionsTile;
 import com.android.systemui.qs.tiles.RotationLockTile;
 import com.android.systemui.qs.tiles.SoundTile;
 import com.android.systemui.qs.tiles.AppCircleBarTile;
@@ -76,9 +80,11 @@ import com.android.systemui.qs.tiles.PulseTile;
 import com.android.systemui.qs.tiles.VolumeTile;
 import com.android.systemui.qs.tiles.ScreenshotTile;
 import com.android.systemui.qs.tiles.SyncTile;
+import com.android.systemui.qs.tiles.PieTile;
 import com.android.systemui.qs.tiles.RRTile;
 import com.android.systemui.qs.tiles.UsbTetherTile;
 import com.android.systemui.qs.tiles.UserTile;
+import com.android.systemui.qs.tiles.WeatherTile;
 import com.android.systemui.qs.tiles.WifiTile;
 import com.android.systemui.qs.tiles.WorkModeTile;
 import com.android.systemui.statusbar.policy.BatteryController;
@@ -228,21 +234,6 @@ public class QSTileHost implements QSTile.Host, Tunable {
         mStatusBar.postStartActivityDismissingKeyguard(intent);
     }
 
-
-    public static boolean deviceSupportsLte(Context ctx) {
-        final TelephonyManager tm = (TelephonyManager)
-                ctx.getSystemService(Context.TELEPHONY_SERVICE);
-        return (tm.getLteOnCdmaMode() == PhoneConstants.LTE_ON_CDMA_TRUE)
-                || tm.getLteOnGsmMode() != 0;
-    }
-
-    public static boolean deviceSupportsDdsSupported(Context context) {
-        TelephonyManager tm = (TelephonyManager)
-                context.getSystemService(Context.TELEPHONY_SERVICE);
-        return tm.isMultiSimEnabled()
-                && tm.getMultiSimConfiguration() == TelephonyManager.MultiSimVariants.DSDA;
-    }
-
     @Override
     public void startRunnableDismissingKeyguard(Runnable runnable) {
         mStatusBar.postQSRunnableDismissingKeyguard(runnable);
@@ -382,19 +373,27 @@ public class QSTileHost implements QSTile.Host, Tunable {
             QSTile<?> tile = mTiles.get(tileSpec);
             if (tile != null && (!(tile instanceof CustomTile)
                     || ((CustomTile) tile).getUser() == currentUser)) {
-                if (DEBUG) Log.d(TAG, "Adding " + tile);
-                tile.removeCallbacks();
-                if (!(tile instanceof CustomTile) && mCurrentUser != currentUser) {
-                    tile.userSwitch(currentUser);
+                if (tile.isAvailable()) {
+                    if (DEBUG) Log.d(TAG, "Adding " + tile);
+                    tile.removeCallbacks();
+                    if (!(tile instanceof CustomTile) && mCurrentUser != currentUser) {
+                        tile.userSwitch(currentUser);
+                    }
+                    newTiles.put(tileSpec, tile);
+                } else {
+                    tile.destroy();
                 }
-                newTiles.put(tileSpec, tile);
             } else {
                 if (DEBUG) Log.d(TAG, "Creating tile: " + tileSpec);
                 try {
                     tile = createTile(tileSpec);
-                    if (tile != null && tile.isAvailable()) {
-                        tile.setTileSpec(tileSpec);
-                        newTiles.put(tileSpec, tile);
+                    if (tile != null) {
+                        if (tile.isAvailable()) {
+                            tile.setTileSpec(tileSpec);
+                            newTiles.put(tileSpec, tile);
+                        } else {
+                            tile.destroy();
+                        }
                     }
                 } catch (Throwable t) {
                     Log.w(TAG, "Error creating tile for spec: " + tileSpec, t);
@@ -503,10 +502,16 @@ public class QSTileHost implements QSTile.Host, Tunable {
         else if (tileSpec.equals("pulse")) return new PulseTile(this);
         else if (tileSpec.equals("app_circle_bar")) return new AppCircleBarTile(this);
         else if (tileSpec.equals("gesture_anywhere")) return new GestureAnyWhereTile(this);
-        else if (tileSpec.equals("pie")) return new PieTile(this);
         else if (tileSpec.equals("ambient_display")) return new AmbientDisplayTile(this);
         else if (tileSpec.equals("night")) return new NightDisplayTile(this);
         else if (tileSpec.equals("heads_up")) return new HeadsUpTile(this);
+        else if (tileSpec.equals("locale")) return new LocaleTile(this);
+        else if (tileSpec.equals("compass")) return new CompassTile(this);
+        else if (tileSpec.equals("weather")) return new WeatherTile(this);
+        else if (tileSpec.equals("suspend_actions")) return new SuspendActionsTile(this);
+        else if (tileSpec.equals("performance")) return new PerfProfileTile(this);
+        else if (tileSpec.equals("hwkeys")) return  new HWKeysTile(this);
+        else if (tileSpec.equals("pie")) return  new PieTile(this);
         // Intent tiles.
         else if (tileSpec.startsWith(IntentTile.PREFIX)) return IntentTile.create(this,tileSpec);
         else if (tileSpec.startsWith(CustomTile.PREFIX)) return CustomTile.create(this,tileSpec);

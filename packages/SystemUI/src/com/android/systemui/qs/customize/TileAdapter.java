@@ -23,6 +23,7 @@ import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Handler;
+import android.provider.Settings;
 import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.GridLayoutManager.SpanSizeLookup;
 import android.support.v7.widget.RecyclerView;
@@ -264,9 +265,18 @@ public class TileAdapter extends RecyclerView.Adapter<Holder> implements TileSta
         holder.mTileView.onStateChanged(info.state);
         holder.mTileView.setAppLabel(info.appLabel);
         holder.mTileView.setShowAppLabel(position > mEditIndex && !info.isSystem);
-
+        final boolean selectable = !mAccessibilityMoving || position < mEditIndex;
+        if (isSingleTapEnabled()) {
+           if (!(mAccessibilityManager.isTouchExplorationEnabled() && selectable)) {
+               holder.mTileView.setOnClickListener(new OnClickListener() {
+               @Override
+               public void onClick(View v) {
+                         move(holder.getAdapterPosition(), mEditIndex, holder.mTileView);
+                    }
+               });
+            }
+        }
         if (mAccessibilityManager.isTouchExplorationEnabled()) {
-            final boolean selectable = !mAccessibilityMoving || position < mEditIndex;
             holder.mTileView.setClickable(selectable);
             holder.mTileView.setFocusable(selectable);
             holder.mTileView.setImportantForAccessibility(selectable
@@ -302,6 +312,11 @@ public class TileAdapter extends RecyclerView.Adapter<Holder> implements TileSta
 
         move(mAccessibilityFromIndex, position, v);
         notifyDataSetChanged();
+    }
+
+    public boolean isSingleTapEnabled() {
+        return Settings.System.getInt(mContext.getContentResolver(),
+            Settings.System.QUICK_TILE_ADD, 0) == 1;
     }
 
     private void showAccessibilityDialog(final int position, final View v) {
@@ -476,10 +491,9 @@ public class TileAdapter extends RecyclerView.Adapter<Holder> implements TileSta
         private TileItemDecoration(Context context) {
             TypedArray ta =
                     context.obtainStyledAttributes(new int[]{android.R.attr.colorSecondary});
-            mDrawable = new ColorDrawable(ta.getColor(0, 0));
+            mDrawable = new ColorDrawable();
             ta.recycle();
         }
-
 
         @Override
         public void onDraw(Canvas c, RecyclerView parent, State state) {
@@ -499,6 +513,9 @@ public class TileAdapter extends RecyclerView.Adapter<Holder> implements TileSta
                         .getLayoutParams();
                 final int top = child.getTop() + params.topMargin +
                         Math.round(ViewCompat.getTranslationY(child));
+                // Set drawable color
+                mDrawable.setColor(mContext.getResources().getColor(
+                        R.color.qs_edit_item_decoration_bg));
                 // Draw full width, in case there aren't tiles all the way across.
                 mDrawable.setBounds(0, top, width, bottom);
                 mDrawable.draw(c);

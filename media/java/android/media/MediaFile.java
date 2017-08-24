@@ -82,11 +82,11 @@ public class MediaFile {
 
     // More video file types
     public static final int FILE_TYPE_MP2PS   = 200;
-    public static final int FILE_TYPE_QT      = 201;
-    public static final int FILE_TYPE_DIVX    = 202;
-    public static final int FILE_TYPE_FLV     = 203;
+    public static final int FILE_TYPE_DIVX    = 201;
+    public static final int FILE_TYPE_FLV     = 202;
+    public static final int FILE_TYPE_QT      = 203;
     private static final int FIRST_VIDEO_FILE_TYPE2 = FILE_TYPE_MP2PS;
-    private static final int LAST_VIDEO_FILE_TYPE2 = FILE_TYPE_FLV;
+    private static final int LAST_VIDEO_FILE_TYPE2 = FILE_TYPE_QT;
 
     // Image file types
     public static final int FILE_TYPE_JPEG    = 31;
@@ -124,8 +124,9 @@ public class MediaFile {
 
     // Drm file types
     public static final int FILE_TYPE_FL      = 51;
+    public static final int FILE_TYPE_SD      = 52;
     private static final int FIRST_DRM_FILE_TYPE = FILE_TYPE_FL;
-    private static final int LAST_DRM_FILE_TYPE = FILE_TYPE_FL;
+    private static final int LAST_DRM_FILE_TYPE = FILE_TYPE_SD;
 
     // Other popular file types
     public static final int FILE_TYPE_TEXT          = 100;
@@ -210,6 +211,7 @@ public class MediaFile {
         addFileType("OGG", FILE_TYPE_OGG, "audio/ogg", MtpConstants.FORMAT_OGG);
         addFileType("OGG", FILE_TYPE_OGG, "application/ogg", MtpConstants.FORMAT_OGG);
         addFileType("OGA", FILE_TYPE_OGG, "application/ogg", MtpConstants.FORMAT_OGG);
+        addFileType("OPUS", FILE_TYPE_OGG, "audio/ogg", MtpConstants.FORMAT_OGG);
         addFileType("AAC", FILE_TYPE_AAC, "audio/aac", MtpConstants.FORMAT_AAC);
         addFileType("AAC", FILE_TYPE_AAC, "audio/aac-adts", MtpConstants.FORMAT_AAC);
         addFileType("MKA", FILE_TYPE_MKA, "audio/x-matroska");
@@ -272,6 +274,7 @@ public class MediaFile {
         addFileType("M3U8", FILE_TYPE_HTTPLIVE, "audio/x-mpegurl");
 
         addFileType("FL", FILE_TYPE_FL, "application/x-android-drm-fl");
+        addFileType("DCF", FILE_TYPE_SD, "application/vnd.oma.drm.content");
 
         addFileType("TXT", FILE_TYPE_TEXT, "text/plain", MtpConstants.FORMAT_TEXT);
         addFileType("HTM", FILE_TYPE_HTML, "text/html", MtpConstants.FORMAT_HTML);

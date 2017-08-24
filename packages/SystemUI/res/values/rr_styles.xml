@@ -20,6 +20,18 @@
         <item name="android:textStyle">normal</item>
     </style>
 
+    <style name="TextAppearance.StatusBar.Expanded.WeatherTemp">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/status_bar_temperature_text_color</item>
+    </style>
+	
+    <style name="TextAppearance.StatusBar.Expanded.WeatherLocation">
+        <item name="android:textSize">10sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">@color/status_bar_temperature_location_text_color</item>
+    </style>
+
     <style name="ListTheme" parent="@*android:style/Theme.Holo">
         <item name="android:windowBackground">@*android:color/transparent</item>
         <item name="android:windowIsTranslucent">true</item>
@@ -44,6 +56,12 @@
         <item name="android:textStyle">normal</item>
     </style>
 
+    <style name="TextAppearance.StatusBar.TaskManager" parent="@*android:style/TextAppearance.StatusBar.Icon">
+        <item name="android:textSize">13dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">normal</item>
+    </style>
+
     <!-- Screenshot Crop & Share -->
     <style name="CropDialogAnimations">
         <item name="android:windowEnterAnimation">@anim/crop_in</item>
@@ -54,5 +72,46 @@
     </style>
 
     <style name="BatteryMeterViewDrawable.Solid"/>
+
+    <!-- Substratum -->
+    <!-- Switch bar text appearance -->
+    <style name="TextAppearance.SwitchBar" parent="@android:style/TextAppearance.Material.Title">
+        <item name="android:textColor">?android:attr/textColorPrimaryInverse</item>
+    </style>
+
+    <!-- Slim recents -->
+    <style name="card_header_favorite_icon">
+        <item name="android:layout_width">@dimen/recent_favorite_icon_size</item>
+        <item name="android:layout_height">@dimen/recent_favorite_icon_size</item>
+        <item name="android:layout_marginStart">-16dp</item>
+        <item name="android:layout_marginTop">2dp</item>
+    </style>
+
+    <style name="ListTheme" parent="@*android:style/Theme.Holo">
+        <item name="android:windowBackground">@*android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:backgroundDimEnabled">true</item>
+        <item name="android:listSelector">@*android:color/transparent</item>
+        <item name="android:scrollbars">none</item>
+        <item name="android:clipChildren">false</item>
+        <item name="android:overScrollMode">never</item>
+        <item name="android:divider">@null</item>
+    </style>
+
+   <style name="TextAppearance.StatusBar.Expanded.Weather">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
+    <style name="TextAppearance.StatusBar.Expanded.Weather.Detailed">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textColor">#ffffff</item>
+    </style>
+
+    <!-- Phyisical Keyboard Dialog style -->
+    <style name="KeyboardShortcutsDialog" parent="@*android:style/Theme.DeviceDefault.Light" />
+
 
 </resources>

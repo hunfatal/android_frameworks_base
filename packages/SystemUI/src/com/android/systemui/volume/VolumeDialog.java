@@ -29,6 +29,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.drawable.AnimatedVectorDrawable;
 import android.graphics.drawable.ColorDrawable;
@@ -249,8 +250,13 @@ public class VolumeDialog implements TunerService.Tunable {
                 });
 
         if (mRows.isEmpty()) {
-            addRow(AudioManager.STREAM_RING,
-                    R.drawable.ic_volume_ringer, R.drawable.ic_volume_ringer_mute, true);
+            if (Util.isVoiceCapable(mContext)) {
+                addRow(AudioManager.STREAM_RING,
+                        R.drawable.ic_volume_ringer, R.drawable.ic_volume_ringer_mute, true);
+            } else {
+                addRow(AudioManager.STREAM_RING, R.drawable.ic_volume_notification,
+                        R.drawable.ic_volume_notification_mute, true);
+            }
             addRow(AudioManager.STREAM_MUSIC,
                     R.drawable.ic_volume_media, R.drawable.ic_volume_media_mute, true);
             addRow(AudioManager.STREAM_ALARM,
@@ -394,6 +400,8 @@ public class VolumeDialog implements TunerService.Tunable {
         row.header.setId(20 * row.stream);
         mSpTexts.add(row.header);
         row.slider = (SeekBar) row.view.findViewById(R.id.volume_row_slider);
+        row.slider.setProgressTintMode(PorterDuff.Mode.SRC_ATOP);
+        row.slider.setThumbTintMode(PorterDuff.Mode.SRC_ATOP);
         row.slider.setOnSeekBarChangeListener(new VolumeSeekBarChangeListener(row));
         row.anim = null;
         row.cachedShowHeaders = VolumePrefs.DEFAULT_SHOW_HEADERS;
@@ -700,7 +708,9 @@ public class VolumeDialog implements TunerService.Tunable {
             }
         }
 
-        updateNotificationRowH();
+        if (Util.isVoiceCapable(mContext)) {
+            updateNotificationRowH();
+        }
 
         if (mActiveStream != state.activeStream) {
             mActiveStream = state.activeStream;
@@ -804,7 +814,8 @@ public class VolumeDialog implements TunerService.Tunable {
                 isRingVibrate ? R.drawable.ic_volume_ringer_vibrate
                         : isRingSilent || zenMuted ? row.cachedIconRes
                         : ss.routedToBluetooth ?
-                        (ss.muted ? R.drawable.ic_volume_media_bt_mute
+                        ((mAutomute && ss.level == 0) || ss.muted ?
+                                  R.drawable.ic_volume_media_bt_mute
                                 : R.drawable.ic_volume_media_bt)
                         : mAutomute && ss.level == 0 ? row.iconMuteRes
                         : (ss.muted ? row.iconMuteRes : row.iconRes);

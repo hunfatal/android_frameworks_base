@@ -367,13 +367,13 @@ public class TelephonyManager {
      * The lookup key used with the {@link #ACTION_PHONE_STATE_CHANGED} broadcast
      * for a String containing the new call state.
      *
-     * @see #EXTRA_STATE_IDLE
-     * @see #EXTRA_STATE_RINGING
-     * @see #EXTRA_STATE_OFFHOOK
-     *
      * <p class="note">
      * Retrieve with
      * {@link android.content.Intent#getStringExtra(String)}.
+     *
+     * @see #EXTRA_STATE_IDLE
+     * @see #EXTRA_STATE_RINGING
+     * @see #EXTRA_STATE_OFFHOOK
      */
     public static final String EXTRA_STATE = PhoneConstants.STATE_KEY;
 
@@ -1057,12 +1057,12 @@ public class TelephonyManager {
     /**
      * Returns the neighboring cell information of the device.
      *
+     * <p>Requires Permission:
+     * {@link android.Manifest.permission#ACCESS_COARSE_LOCATION}
+     *
      * @return List of NeighboringCellInfo or null if info unavailable.
      *
-     * <p>Requires Permission:
-     * (@link android.Manifest.permission#ACCESS_COARSE_UPDATES}
-     *
-     * @deprecated Use (@link getAllCellInfo} which returns a superset of the information
+     * @deprecated Use {@link #getAllCellInfo} which returns a superset of the information
      *             from NeighboringCellInfo.
      */
     @Deprecated
@@ -1590,6 +1590,11 @@ public class TelephonyManager {
     /**
      * Returns a constant indicating the radio technology (network type)
      * currently in use on the device for data transmission.
+     *
+     * <p>
+     * Requires Permission:
+     *   {@link android.Manifest.permission#READ_PHONE_STATE READ_PHONE_STATE}
+     *
      * @return the network type
      *
      * @see #NETWORK_TYPE_UNKNOWN
@@ -1608,10 +1613,6 @@ public class TelephonyManager {
      * @see #NETWORK_TYPE_LTE
      * @see #NETWORK_TYPE_EHRPD
      * @see #NETWORK_TYPE_HSPAP
-     *
-     * <p>
-     * Requires Permission:
-     *   {@link android.Manifest.permission#READ_PHONE_STATE READ_PHONE_STATE}
      */
     public int getDataNetworkType() {
         return getDataNetworkType(getDefaultDataSubscriptionId());
@@ -3260,6 +3261,16 @@ public class TelephonyManager {
                 telephony.setCellInfoListRate(rateInMillis);
         } catch (RemoteException ex) {
         } catch (NullPointerException ex) {
+        }
+    }
+
+    /**
+     * @hide
+     */
+    public void toggle2G(boolean twoGees) {
+        try {
+            getITelephony().toggle2G(twoGees);
+        } catch (RemoteException e) {
         }
     }
 
@@ -5039,6 +5050,24 @@ public class TelephonyManager {
        }
    }
 
+   /**
+    * Returns the IMS Registration Status
+    * using subId
+    * @hide
+    */
+   public boolean isImsRegisteredForSubscriber(int subId) {
+       try {
+           ITelephony telephony = getITelephony();
+           if (telephony == null)
+               return false;
+           return telephony.isImsRegisteredForSubscriber(subId);
+       } catch (RemoteException ex) {
+           return false;
+       } catch (NullPointerException ex) {
+           return false;
+       }
+   }
+
     /**
      * Returns the Status of Volte
      * @hide
@@ -5183,6 +5212,12 @@ public class TelephonyManager {
         if (SubscriptionManager.isValidPhoneId(phoneId)) {
             String prop = TelephonyProperties.PROPERTY_BASEBAND_VERSION +
                     ((phoneId == 0) ? "" : Integer.toString(phoneId));
+            if (version != null && version.length() > SystemProperties.PROP_VALUE_MAX) {
+                Log.e(TAG, "setBasebandVersionForPhone(): version string '" + version +
+                        "' too long! (" + version.length() +
+                        " > " + SystemProperties.PROP_VALUE_MAX + ")");
+                version = version.substring(0, SystemProperties.PROP_VALUE_MAX);
+            }
             SystemProperties.set(prop, version);
         }
     }

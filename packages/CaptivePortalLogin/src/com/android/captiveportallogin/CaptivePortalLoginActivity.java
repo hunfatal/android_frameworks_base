@@ -37,6 +37,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -55,12 +56,15 @@ import java.lang.reflect.Method;
 import java.util.Random;
 
 public class CaptivePortalLoginActivity extends Activity {
-    private static final String TAG = "CaptivePortalLogin";
+    private static final String TAG = CaptivePortalLoginActivity.class.getSimpleName();
+    private static final boolean DBG = true;
+
     private static final int SOCKET_TIMEOUT_MS = 10000;
 
     private enum Result { DISMISSED, UNWANTED, WANTED_AS_IS };
 
-    private URL mURL;
+    private URL mUrl;
+    private String mUserAgent;
     private Network mNetwork;
     private CaptivePortal mCaptivePortal;
     private NetworkCallback mNetworkCallback;
@@ -72,17 +76,20 @@ public class CaptivePortalLoginActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         mCm = ConnectivityManager.from(this);
-        String url = getIntent().getStringExtra(ConnectivityManager.EXTRA_CAPTIVE_PORTAL_URL);
-        if (url == null) url = mCm.getCaptivePortalServerUrl();
-        try {
-            mURL = new URL(url);
-        } catch (MalformedURLException e) {
-            // System misconfigured, bail out in a way that at least provides network access.
-            Log.e(TAG, "Invalid captive portal URL, url=" + url);
-            done(Result.WANTED_AS_IS);
-        }
         mNetwork = getIntent().getParcelableExtra(ConnectivityManager.EXTRA_NETWORK);
         mCaptivePortal = getIntent().getParcelableExtra(ConnectivityManager.EXTRA_CAPTIVE_PORTAL);
+        mUserAgent =
+                getIntent().getStringExtra(ConnectivityManager.EXTRA_CAPTIVE_PORTAL_USER_AGENT);
+        mUrl = getUrl();
+        if (mUrl == null) {
+            // getUrl() failed to parse the url provided in the intent: bail out in a way that
+            // at least provides network access.
+            done(Result.WANTED_AS_IS);
+            return;
+        }
+        if (DBG) {
+            Log.d(TAG, String.format("onCreate for %s", mUrl.toString()));
+        }
 
         // Also initializes proxy system properties.
         mCm.bindProcessToNetwork(mNetwork);
@@ -90,8 +97,6 @@ public class CaptivePortalLoginActivity extends Activity {
         // Proxy system properties must be initialized before setContentView is called because
         // setContentView initializes the WebView logic which in turn reads the system properties.
         setContentView(R.layout.activity_captive_portal_login);
-
-        getActionBar().setDisplayShowHomeEnabled(false);
 
         // Exit app if Network disappears.
         final NetworkCapabilities networkCapabilities = mCm.getNetworkCapabilities(mNetwork);
@@ -111,17 +116,27 @@ public class CaptivePortalLoginActivity extends Activity {
         }
         mCm.registerNetworkCallback(builder.build(), mNetworkCallback);
 
-        final WebView myWebView = (WebView) findViewById(R.id.webview);
-        myWebView.clearCache(true);
-        WebSettings webSettings = myWebView.getSettings();
+        getActionBar().setDisplayShowHomeEnabled(false);
+        getActionBar().setElevation(0); // remove shadow
+        getActionBar().setTitle(getHeaderTitle());
+        getActionBar().setSubtitle("");
+
+        final WebView webview = getWebview();
+        webview.clearCache(true);
+        WebSettings webSettings = webview.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setMixedContentMode(WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE);
+        webSettings.setUseWideViewPort(true);
+        webSettings.setLoadWithOverviewMode(true);
+        webSettings.setSupportZoom(true);
+        webSettings.setBuiltInZoomControls(true);
+        webSettings.setDisplayZoomControls(false);
         mWebViewClient = new MyWebViewClient();
-        myWebView.setWebViewClient(mWebViewClient);
-        myWebView.setWebChromeClient(new MyWebChromeClient());
+        webview.setWebViewClient(mWebViewClient);
+        webview.setWebChromeClient(new MyWebChromeClient());
         // Start initial page load so WebView finishes loading proxy settings.
         // Actual load of mUrl is initiated by MyWebViewClient.
-        myWebView.loadData("", "text/html", null);
+        webview.loadData("", "text/html", null);
     }
 
     // Find WebView's proxy BroadcastReceiver and prompt it to read proxy system properties.
@@ -149,6 +164,9 @@ public class CaptivePortalLoginActivity extends Activity {
     }
 
     private void done(Result result) {
+        if (DBG) {
+            Log.d(TAG, String.format("Result %s for %s", result.name(), mUrl.toString()));
+        }
         if (mNetworkCallback != null) {
             mCm.unregisterNetworkCallback(mNetworkCallback);
             mNetworkCallback = null;
@@ -185,22 +203,31 @@ public class CaptivePortalLoginActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-        if (id == R.id.action_use_network) {
-            done(Result.WANTED_AS_IS);
-            return true;
+        final Result result;
+        final String action;
+        final int id = item.getItemId();
+        switch (id) {
+            case R.id.action_use_network:
+                result = Result.WANTED_AS_IS;
+                action = "USE_NETWORK";
+                break;
+            case R.id.action_do_not_use_network:
+                result = Result.UNWANTED;
+                action = "DO_NOT_USE_NETWORK";
+                break;
+            default:
+                return super.onOptionsItemSelected(item);
         }
-        if (id == R.id.action_do_not_use_network) {
-            done(Result.UNWANTED);
-            return true;
+        if (DBG) {
+            Log.d(TAG, String.format("onOptionsItemSelect %s for %s", action, mUrl.toString()));
         }
-        return super.onOptionsItemSelected(item);
+        done(result);
+        return true;
     }
 
     @Override
     public void onDestroy() {
         super.onDestroy();
-
         if (mNetworkCallback != null) {
             mCm.unregisterNetworkCallback(mNetworkCallback);
             mNetworkCallback = null;
@@ -215,11 +242,33 @@ public class CaptivePortalLoginActivity extends Activity {
                 } catch (InterruptedException e) {
                 }
             }
-            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(mURL.toString())));
+            final String url = mUrl.toString();
+            if (DBG) {
+                Log.d(TAG, "starting activity with intent ACTION_VIEW for " + url);
+            }
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         }
     }
 
+    private URL getUrl() {
+        String url = getIntent().getStringExtra(ConnectivityManager.EXTRA_CAPTIVE_PORTAL_URL);
+        if (url == null) {
+            url = mCm.getCaptivePortalServerUrl();
+        }
+        return makeURL(url);
+    }
+
+    private static URL makeURL(String url) {
+        try {
+            return new URL(url);
+        } catch (MalformedURLException e) {
+            Log.e(TAG, "Invalid URL " + url);
+        }
+        return null;
+    }
+
     private void testForCaptivePortal() {
+        // TODO: reuse NetworkMonitor facilities for consistent captive portal detection.
         new Thread(new Runnable() {
             public void run() {
                 // Give time for captive portal to open.
@@ -230,13 +279,25 @@ public class CaptivePortalLoginActivity extends Activity {
                 HttpURLConnection urlConnection = null;
                 int httpResponseCode = 500;
                 try {
-                    urlConnection = (HttpURLConnection) mURL.openConnection();
+                    urlConnection = (HttpURLConnection) mNetwork.openConnection(mUrl);
                     urlConnection.setInstanceFollowRedirects(false);
                     urlConnection.setConnectTimeout(SOCKET_TIMEOUT_MS);
                     urlConnection.setReadTimeout(SOCKET_TIMEOUT_MS);
                     urlConnection.setUseCaches(false);
+                    if (mUserAgent != null) {
+                       urlConnection.setRequestProperty("User-Agent", mUserAgent);
+                    }
+                    // cannot read request header after connection
+                    String requestHeader = urlConnection.getRequestProperties().toString();
+
                     urlConnection.getInputStream();
                     httpResponseCode = urlConnection.getResponseCode();
+                    if (DBG) {
+                        Log.d(TAG, "probe at " + mUrl +
+                                " ret=" + httpResponseCode +
+                                " request=" + requestHeader +
+                                " headers=" + urlConnection.getHeaderFields());
+                    }
                 } catch (IOException e) {
                 } finally {
                     if (urlConnection != null) urlConnection.disconnect();
@@ -278,21 +339,22 @@ public class CaptivePortalLoginActivity extends Activity {
             // For internally generated pages, leave URL bar listing prior URL as this is the URL
             // the page refers to.
             if (!url.startsWith(INTERNAL_ASSETS)) {
-                final TextView myUrlBar = (TextView) findViewById(R.id.url_bar);
-                myUrlBar.setText(url);
+                getActionBar().setSubtitle(getHeaderSubtitle(url));
             }
+            getProgressBar().setVisibility(View.VISIBLE);
             testForCaptivePortal();
         }
 
         @Override
         public void onPageFinished(WebView view, String url) {
             mPagesLoaded++;
+            getProgressBar().setVisibility(View.INVISIBLE);
             if (mPagesLoaded == 1) {
                 // Now that WebView has loaded at least one page we know it has read in the proxy
                 // settings.  Now prompt the WebView read the Network-specific proxy settings.
                 setWebViewProxy();
                 // Load the real page.
-                view.loadUrl(mURL.toString());
+                view.loadUrl(mUrl.toString());
                 return;
             } else if (mPagesLoaded == 2) {
                 // Prevent going back to empty first page.
@@ -359,8 +421,31 @@ public class CaptivePortalLoginActivity extends Activity {
     private class MyWebChromeClient extends WebChromeClient {
         @Override
         public void onProgressChanged(WebView view, int newProgress) {
-            final ProgressBar myProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
-            myProgressBar.setProgress(newProgress);
+            getProgressBar().setProgress(newProgress);
         }
+    }
+
+    private ProgressBar getProgressBar() {
+        return (ProgressBar) findViewById(R.id.progress_bar);
+    }
+
+    private WebView getWebview() {
+        return (WebView) findViewById(R.id.webview);
+    }
+
+    private String getHeaderTitle() {
+        return getString(R.string.action_bar_label);
+    }
+
+    private String getHeaderSubtitle(String urlString) {
+        URL url = makeURL(urlString);
+        if (url == null) {
+            return urlString;
+        }
+        final String https = "https";
+        if (https.equals(url.getProtocol())) {
+            return https + "://" + url.getHost();
+        }
+        return url.getHost();
     }
 }

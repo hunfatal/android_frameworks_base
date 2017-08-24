@@ -17,7 +17,7 @@
  -->
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <!-- Screenrecord Notification Ticker -->
-  <string name="screenrecord_notif_ticker">Ekran kaydedilirken</string>
+  <string name="screenrecord_notif_ticker">Ekran kaydediliyor</string>
   <!-- Screenrecord notification title -->
   <string name="screenrecord_notif_title">Ekran kayıt ediliyor</string>
   <!-- Screenrecord notification action: Stop -->
@@ -31,30 +31,30 @@
   <!-- Screenshot Delete Toast -->
   <string name="delete_screenshot_toast">Ekran görüntüsü silindi</string>
   <string name="gestures_message">Deseninizi buraya çizin</string>
-  <string name="rr_sys_tuner">Sistem Arayüzü ayarlayıcı</string>
+  <string name="rr_sys_tuner">Sistem arayüzü ayarlayıcı</string>
   <!-- Strings for lockscreen shortcut hints -->
   <string name="left_shortcut_hint">%1$s için sağa kaydırın</string>
   <string name="right_shortcut_hint">%1$s için sola kaydırın</string>
-  <string name="lockscreen_message">Bir kilit ekranı kısayolu oluşturmak için sol veya sağdaki bir simgeye dokunun.</string>
+  <string name="lockscreen_message">Bir kilit ekranı kısayolu atamak için sol veya sağdaki bir simgeye dokunun.</string>
   <string name="lockscreen_default_target">Varsayılan</string>
   <string name="select_application">Uygulama seçin</string>
   <string name="lockscreen_choose_action_title">Eylem seçin</string>
   <string name="lockscreen_none_target">Hiçbiri</string>
   <!-- App circle sidebar -->
-  <string name="app_float_maximize_item_title">Maksimuma çıkar</string>
+  <string name="app_float_maximize_item_title">En yükseğe çıkar</string>
   <string name="app_float_item_title">Yüzer görünüm</string>
   <string name="app_stop_item_title">Uygulamayı sonlandır</string>
   <!-- On The Go -->
-  <string name="onthego_notif_ticker">On-The-Go etkinleştirildi</string>
-  <string name="onthego_notif_title">On-The-Go aktif</string>
+  <string name="onthego_notif_ticker">Yürüme modu etkinleştirildi</string>
+  <string name="onthego_notif_title">Yürüme modu aktif</string>
   <string name="onthego_notif_stop">Durdur</string>
   <string name="onthego_notif_options">Seçenekler</string>
-  <string name="onthego_notif_error">On-The-Go başlatılamıyor</string>
-  <string name="onthego_notif_restart">On-The-Go \'yu yeniden başlat</string>
+  <string name="onthego_notif_error">Yürüme modu başlatılamıyor</string>
+  <string name="onthego_notif_restart">Yürüme modunu yeniden başlat</string>
   <string name="onthego_notif_camera_changed">Kamera modu değiştirildi</string>
   <string name="onthego_transparency">Saydamlık</string>
   <string name="onthego_front_camera">Ön kamerayı kullan</string>
-  <string name="onthego_service_toggle">Otomatik olarak hizmeti yeniden başlat</string>
+  <string name="onthego_service_toggle">Otomatik olarak servisi yeniden başlat</string>
   <!-- Sound QS Tile -->
   <string name="quick_settings_sound_label">Ses</string>
   <string name="quick_settings_sound_ring">Zil sesi</string>
@@ -74,7 +74,7 @@
   <string name="accessibility_quick_settings_sync_on">Eşitleme açık</string>
   <string name="accessibility_quick_settings_sync_changed_off">Eşitleme kapatıldı</string>
   <string name="accessibility_quick_settings_sync_changed_on">Eşitleme açıldı</string>
-  <string name="quick_settings_expanded_desktop_label">Genişletilmiş masaüstü</string>
+  <string name="quick_settings_expanded_desktop_label">Genişletilmiş ekran</string>
   <string name="quick_settings_expanded_desktop">Genişletilmiş</string>
   <string name="quick_settings_expanded_desktop_off">Standart</string>
   <string name="quick_settings_reboot_label">Yeniden başlat</string>
@@ -88,7 +88,7 @@
   <string name="quick_settings_music_play">Oynat</string>
   <string name="quick_settings_music_pause">Duraklat</string>
   <string name="quick_settings_ime_tile_label">Giriş yöntemi</string>
-  <string name="rr_qs_tile">Kişiselleştirme</string>
+  <string name="rr_qs_tile">Gelişmiş ayarlar</string>
   <string name="quick_settings_caffeine_label">Kafein</string>
   <string name="accessibility_quick_settings_caffeine_off">Kafein kapalı</string>
   <string name="accessibility_quick_settings_caffeine_on">Kafein açık</string>
@@ -99,42 +99,109 @@
   <string name="quick_settings_nfc">NFC</string>
   <string name="quick_settings_nfc_label">NFC</string>
   <string name="quick_settings_nfc_off">NFC kapalı</string>
-  <string name="quick_settings_screenrecord">Ekran Kaydı</string>
+  <string name="quick_settings_screenrecord">Ekran kaydı</string>
   <string name="quick_settings_screenrecord_on">Kaydediliyor ...</string>
   <string name="quick_settings_navigation_bar">Gezinme çubuğu</string>
-  <string name="quick_settings_smartbar">SmartBar</string>
-  <string name="quick_settings_smartbar_off">SmartBar kapalı</string>
+  <string name="quick_settings_smartbar">Smart bar</string>
+  <string name="quick_settings_smartbar_off">Smart bar kapalı</string>
   <string name="quick_settings_fling">Fling</string>
   <string name="quick_settings_fling_off">Fling kapalı</string>
-  <string name="quick_settings_appcirclebar_title">AppCircleBar</string>
-  <string name="quick_settings_appcirclebar_on">AppCircleBar Açık</string>
-  <string name="quick_settings_appcirclebar_off">AppCircleBar Kapalı</string>
-  <string name="quick_settings_gesture_anywhere_label">Her Yerde Hareket</string>
+  <string name="quick_settings_appcirclebar_title">Uygulama daire çubuğu</string>
+  <string name="quick_settings_appcirclebar_on">Uygulama daire çubuğu Açık</string>
+  <string name="quick_settings_appcirclebar_off">Uygulama daire çubuğu Kapalı</string>
+  <string name="quick_settings_gesture_anywhere_label">Her yerde hareket</string>
   <string name="quick_settings_gesture_anywhere_on">Hareketler Açık</string>
   <string name="quick_settings_gesture_anywhere_off">Hareketler Kapalı</string>
-  <string name="quick_settings_appsidebar_title">Uygulama Kenar Çubuğu Açık</string>
-  <string name="quick_settings_appsidebar_on">Uygulama Kenar Çubuğu Açık</string>
-  <string name="quick_settings_appsidebar_off">Uygulama Kenar Çubuğu Kapalı</string>
-  <string name="quick_settings_pulse_enabled">Pulse Etkin</string>
+  <string name="quick_settings_appsidebar_title">Uygulama kenar çubuğu</string>
+  <string name="quick_settings_appsidebar_on">Uygulama kenar çubuğu Açık</string>
+  <string name="quick_settings_appsidebar_off">Uygulama kenar çubuğu Kapalı</string>
+  <!-- Pulse Tile -->
+  <string name="quick_settings_pulse_enabled">Pulse etkin</string>
   <string name="quick_settings_pulse_disabled">Görselleştirme yok</string>
-  <string name="quick_settings_pulse_label">Gezinti Çubuğu Görselleştirme</string>
-  <string name="quick_settings_pie">Pie</string>
+  <string name="quick_settings_pulse_label">Pulse</string>
+  <string name="accessibility_quick_settings_pulse_off">Pulse kapalı</string>
+  <string name="accessibility_quick_settings_pulse_on">Pulse açık</string>
+  <string name="accessibility_quick_settings_pulse_changed_off">Pulse kapatıldı</string>
+  <string name="accessibility_quick_settings_pulse_changed_on">Pulse açıldı</string>
+  <string name="quick_settings_pulse_label">Gezinme çubuğu görselleştirme</string>
   <string name="quick_settings_ambient_display_label">Ortam ekranı</string>
   <string name="accessibility_quick_settings_ambient_display_off">Ortam ekranı kapalı.</string>
-  <string name="accessibility_quick_settings_ambient_display_on">Ortam ekranı açık.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_off">Ortam ekranı kapatıldı.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_on">Ortam ekranı açıldı.</string>
-  <string name="quick_settings_heads_up_label">Heads up</string>
-  <string name="accessibility_quick_settings_heads_up_off">Bildirim pencereleri kapalı.</string>
-  <string name="accessibility_quick_settings_heads_up_on">Bildirim pencereleri açık.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_off">Bildirim pencereleri kapatıldı.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_on">Bildirim pencereleri açıldı.</string>
-  <!-- PA Pie controls -->
+  <string name="accessibility_quick_settings_ambient_display_on">Ortam ekranı açık</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_off">Ortam ekranı kapatıldı</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_on">Ortam ekranı açıldı</string>
+  <string name="quick_settings_heads_up_label">Bildirim pencereleri</string>
+  <string name="accessibility_quick_settings_heads_up_off">Bildirim pencereleri kapalı</string>
+  <string name="accessibility_quick_settings_heads_up_on">Bildirim pencereleri açık</string>
+  <string name="accessibility_quick_settings_heads_up_changed_off">Bildirim pencereleri kapatıldı</string>
+  <string name="accessibility_quick_settings_heads_up_changed_on">Bildirim pencereleri açıldı</string>
+  <!-- Location Tile -->
+  <string name="accessibility_quick_settings_location_battery_saving">Konum bildirimi: pil tasarruf modu.</string>
+  <string name="accessibility_quick_settings_location_gps_only">Konum bildirimi: yalnızca sensörler modu.</string>
+  <string name="accessibility_quick_settings_location_high_accuracy">Konum bildirmi: yüksek doğruluk modu.</string>
+  <string name="accessibility_quick_settings_location_changed_battery_saving">Konum bildirimi pil tasarruf moduna geçti.</string>
+  <string name="accessibility_quick_settings_location_changed_gps_only">Konum bildirimi yalnızca sensörler moduna geçti.</string>
+  <string name="accessibility_quick_settings_location_changed_high_accuracy">Konum bildirimi yüksek hassasiyet moduna geçti.</string>
+  <string name="quick_settings_location_detail_title">Konum modu</string>
+  <string name="quick_settings_location_battery_saving_label">Pil tasarrufu</string>
+  <string name="quick_settings_location_gps_only_label">Yalnızca cihaz</string>
+  <string name="quick_settings_location_high_accuracy_label">Yüksek doğruluk</string>
+  <string name="quick_settings_location_off_label">Konum kapalı</string>
+  <string name="quick_settings_location_off_custom_label">Konum</string>
+  <!-- Language\Locale Tile -->
+  <string name="quick_settings_locale_label">Dil</string>
+  <string name="quick_settings_locale_more_locales_toast">Geçiş işlevselliğini etkinleştirmek için lütfen birden fazla dil yapılandırın</string>
+  <!-- Suspend Actions Tile -->
+  <string name="accessibility_quick_settings_suspend_actions_on">İşlemleri askıya alma etkin</string>
+  <string name="accessibility_quick_settings_suspend_actions_off">İşlemleri askıya alma devre dışı</string>
+  <string name="quick_settings_suspend_actions_label">Eylemleri askıya al</string>
+  <!-- Perf Profile Tile -->
+  <string name="qs_tile_performance">Pil modu</string>
+  <!-- Content description of the battery mode tile in quick settings when on, power save mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_pwrsv">Pil modu; güç tasarrufu modu.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, balanced mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bal">Pil modu: dengeli mod.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, performance mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_perf">Pil modu: performans modu.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, efficiency mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_power">Pil modu: verimlilik modu.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, quick mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_perf">Pil modu: hızlı mod.</string>
+  <!-- Announcement made when the battery mode tile changes to power save (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_pwrsv">Pil modu güç tasarrufu modu olarak değiştirildi.</string>
+  <!-- Announcement made when the battery mode tile changes to balanced (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bal">Pil modu dengeli mod olarak değiştirildi.</string>
+  <!-- Announcement made when the battery mode tile changes to performance (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_perf">Pil modu performans modu olarak değiştirildi.</string>
+  <!-- Announcement made when the battery mode tile changes to efficiency (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_power">Pil modu verimlilik modu olarak değiştirildi.</string>
+  <!-- Announcement made when the battery mode tile changes to quick (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_perf">Pil modu hızlı mod olarak değiştirildi.</string>
+  <string name="quick_settings_performance_profile_detail_title">Pil modu</string>
+  <!-- Compass QS Tile -->
+  <string name="quick_settings_compass_label">Pusula</string>
+  <string name="quick_settings_compass_value"><xliff:g id="degrees">%1$.0f</xliff:g>\u00b0 <xliff:g id="direction">%2$s</xliff:g></string>
+  <string name="quick_settings_compass_init">Başlatılıyor\u2026</string>
+  <string name="accessibility_quick_settings_compass_off">Pusula kapalı.</string>
+  <string name="accessibility_quick_settings_compass_on">Pusula açık.</string>
+  <string name="accessibility_quick_settings_compass_changed_off">Pusula kapatıldı.</string>
+  <string name="accessibility_quick_settings_compass_changed_on">Pusula açıldı.</string>
+  <string name="quick_settings_compass_N">K</string>
+  <string name="quick_settings_compass_NE">KD</string>
+  <string name="quick_settings_compass_E">D</string>
+  <string name="quick_settings_compass_SE">GD</string>
+  <string name="quick_settings_compass_S">G</string>
+  <string name="quick_settings_compass_SW">GB</string>
+  <string name="quick_settings_compass_W">B</string>
+  <string name="quick_settings_compass_NW">KB</string>
+  <!-- HW Keys Tile -->
+  <string name="accessibility_quick_settings_hwkeys_on">Donanım tuşları açık</string>
+  <string name="accessibility_quick_settings_hwkeys_off">Donanım tuşları kapalı</string>
+  <string name="quick_settings_hwkeys_label">Donanım tuşları</string>
   <!-- Kill app toast -->
   <string name="app_killed_message">Uygulama Sonlandırıldı</string>
   <!-- Heads up snooze toast -->
-  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s</xliff:g> - Gözatma bildirimi 1 dakika kadar erteleniyor.</string>
-  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> - Gözatma bildirimi <xliff:g id="number">%d</xliff:g> dakika kadar erteleniyor.</string>
+  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s</xliff:g> • gözatma bildirimi 1 dakika kadar erteleniyor.</string>
+  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> • gözatma bildirimi <xliff:g id="number">%d</xliff:g> dakika kadar erteleniyor.</string>
   <!-- Screenshot action -->
   <string name="screenshot_abort_title">Ekran görüntüsü alınamadı</string>
   <string name="screenshot_abort_text">İşlem iptal edildi</string>
@@ -156,6 +223,61 @@
   <string name="action_save_fault">Kaydetme işlemi başarısız</string>
   <string name="action_edit">Düzenle</string>
   <string name="recents_custom_android_n">TÜMÜNÜ TEMİZLE</string>
-  <string name="recents_free_ram">Ücretsiz RAM: %1$d MB</string>
+  <string name="recents_free_ram">Boş RAM: %1$d MB</string>
   <!-- Path data for Solid battery -->
+  <!-- Task Manager -->
+  <string name="task_manager_title">Görev Yöneticisi</string>
+  <string name="message_switch_fail">Arayüzü olmadığı için bu göreve geçilemiyor.</string>
+  <string name="tasklist_killall">Tümünü Sonlandır</string>
+  <string name="tasklist_memory_usage">"Boş • Toplam Bellek: <xliff:g id="number">%s</xliff:g> • <xliff:g id="name">%s</xliff:g>"</string>
+  <string name="message_keep_one_launcher">En azından bir başlatıcı olmalı!</string>
+  <string name="tm_clear_task">TEMİZLE</string>
+  <!-- Slim Recents -->
+  <string name="recents_multiwin_warning">Çoklu bir pencere oturumu zaten aktif.\nSadece kullanmak istediğiniz uygulamaya dokunmanız yeterli.</string>
+  <string name="recents_multiwin_nolastapp">Son kullanılan uygulamaları temizlediniz, lütfen başlatıcıdan veya uygulama menüsünden uygulama seçin.</string>
+  <string name="slim_recent_keyguard">Son kullanılanları görüntülemek için cihazınızın kilidini açın</string>
+  <string name="slim_recent_pinned">Son kullanılanları görmek için ekranı açın</string>
+  <!-- Slim recents app sidebar queue app toast -->
+  <string name="toast_recents_queue_app">Son kullanılanları kapattıktan sonra %s uygulamasını başlat</string>
+  <string name="toast_recents_cancel_queued_app">Uygulama başlatma iptal edildi</string>
+  <!-- Kill button in notification guts -->
+  <string name="force_stop_dlg_title">Durdurmaya zorla?</string>
+  <string name="force_stop_dlg_text">Uygulamayı zorla durdurursanız, hatalı davranabilir.</string>
+  <string name="dlg_ok">TAMAM</string>
+  <string name="dlg_cancel">İptal</string>
+  <string name="kill">Uygulamayı Sonlandır</string>
+  <!-- OmniJAWS -->
+  <string name="omnijaws_service_error">Hata</string>
+  <string name="omnijaws_service_unkown">Hava durumu verisi yok</string>
+  <string name="omnijaws_detail_header">Hava durumu</string>
+  <string name="omnijaws_label_default">Hava durumu</string>
+  <string name="omnijaws_current_text">Şimdi</string>
+  <string name="omnijaws_package_not_available">OmniJaws mevcut değil</string>
+  <string name="omnijaws_service_error_long">Hava durumu verileri yüklenirken hata oluştu</string>
+  <string name="omnijaws_service_disabled">Servis devre dışı</string>
+  <!-- Weather string format in expanded statusbar header -->
+  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> - <xliff:g id="condition">%2$s</xliff:g></string>
+  <!-- volte icon switch -->
+  <string name="status_bar_volte">VOLTE</string>
+  <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
+  <string name="keyguard_indication_dash_charging_time">Dash Şarj Oluyor (tam dolmasına <xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> kaldı)</string>
+  <string name="keyguard_plugged_in_dash_charging">Dash Şarj Oluyor</string>
+  <!-- vpn icon switch -->
+  <string name="status_bar_vpn">VPN</string>
+  <!-- data saver icon switch -->
+  <string name="status_bar_datasaver">Veri tasarrufu</string>
+  <!-- No navigation warning notification -->
+  <string name="no_navigation_warning_title">Tüm gezinme yöntemleri devre dışı</string>
+  <string name="no_navigation_warning_text">Etkinleştirmek için dokunun</string>
+  <!-- Pie controls -->
+  <string name="pie_date_format">EEEE, dd MMMM yyyy</string>
+  <string name="pie_hour_format_12">ss:dd</string>
+  <string name="pie_hour_format_24">HH:mm</string>
+  <string name="pie_am_pm">a</string>
+  <string name="pie_state_name">Pie kontrolleri</string>
+  <string name="pie_state_summary">Tam ekran modundayken pie kontrollerini kullanın</string>
+  <string name="pie_battery_level">"PİL SEVİYESİ "</string>
+  <string name="quick_settings_pie">Pie</string>
+  <string name="accessibility_data_sim">Mevcut Veri SIM</string>
+  <string name="data_switch_started">Veri için kullanılan SIM kart değiştiriliyor. Bu işlem bir dakika kadar sürebilir...</string>
 </resources>

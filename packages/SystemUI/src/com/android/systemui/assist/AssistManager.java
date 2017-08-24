@@ -31,6 +31,7 @@ import android.widget.ImageView;
 import com.android.internal.app.AssistUtils;
 import com.android.internal.app.IVoiceInteractionSessionListener;
 import com.android.internal.app.IVoiceInteractionSessionShowCallback;
+import com.android.keyguard.KeyguardUpdateMonitor;
 import com.android.systemui.R;
 import com.android.systemui.statusbar.BaseStatusBar;
 import com.android.systemui.statusbar.CommandQueue;
@@ -108,15 +109,7 @@ public class AssistManager {
             visible = mView.isShowing();
             mWindowManager.removeView(mView);
         }
-
-        mView = (AssistOrbContainer) LayoutInflater.from(mContext).inflate(
-                R.layout.assist_orb, null);
-        mView.setVisibility(View.GONE);
-        mView.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
-        WindowManager.LayoutParams lp = getLayoutParams();
-        mWindowManager.addView(mView, lp);
+        createOrbView();
         if (visible) {
             mView.show(true /* show */, false /* animate */);
         }
@@ -166,8 +159,22 @@ public class AssistManager {
     }
 
     private void showOrb(@NonNull ComponentName assistComponent, boolean isService) {
+        if (mView == null) {
+            createOrbView();
+        }
         maybeSwapSearchIcon(assistComponent, isService);
         mView.show(true /* show */, true /* animate */);
+    }
+
+    private void createOrbView() {
+        mView = (AssistOrbContainer) LayoutInflater.from(mContext).inflate(
+                R.layout.assist_orb, null);
+        mView.setVisibility(View.GONE);
+        mView.setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION);
+        WindowManager.LayoutParams lp = getLayoutParams();
+        mWindowManager.addView(mView, lp);
     }
 
     private void startAssistInternal(Bundle args, @NonNull ComponentName assistComponent,
@@ -285,7 +292,7 @@ public class AssistManager {
 
     @Nullable
     private ComponentName getAssistInfo() {
-        return mAssistUtils.getAssistComponentForUser(UserHandle.USER_CURRENT);
+        return mAssistUtils.getAssistComponentForUser(KeyguardUpdateMonitor.getCurrentUser());
     }
 
     public void showDisclosure() {

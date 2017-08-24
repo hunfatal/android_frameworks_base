@@ -59,8 +59,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.net.InetAddress;
 import java.util.HashMap;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
 /**
  * Class that answers queries about the state of network connectivity. It also
@@ -88,6 +88,13 @@ public class ConnectivityManager {
      * been established or lost. The NetworkInfo for the affected network is
      * sent as an extra; it should be consulted to see what kind of
      * connectivity event occurred.
+     * <p/>
+     * Apps targeting Android 7.0 (API level 24) and higher do not receive this
+     * broadcast if they declare the broadcast receiver in their manifest. Apps
+     * will still receive broadcasts if they register their
+     * {@link android.content.BroadcastReceiver} with
+     * {@link android.content.Context#registerReceiver Context.registerReceiver()}
+     * and that context is still valid.
      * <p/>
      * If this is a connection that was the result of failing over from a
      * disconnected network, then the FAILOVER_CONNECTION boolean extra is
@@ -225,6 +232,13 @@ public class ConnectivityManager {
     public static final String EXTRA_CAPTIVE_PORTAL_URL = "android.net.extra.CAPTIVE_PORTAL_URL";
 
     /**
+     * Key for passing a user agent string to the captive portal login activity.
+     * {@hide}
+     */
+    public static final String EXTRA_CAPTIVE_PORTAL_USER_AGENT =
+            "android.net.extra.CAPTIVE_PORTAL_USER_AGENT";
+
+    /**
      * Broadcast action to indicate the change of data activity status
      * (idle or active) on a network in a recent period.
      * The network becomes active when data transmission is started, or
@@ -305,7 +319,7 @@ public class ConnectivityManager {
      * @hide
      */
     public static final String TETHER_CONNECT_STATE_CHANGED =
-            "codeaurora.net.conn.TETHER_CONNECT_STATE_CHANGED";
+        "codeaurora.net.conn.TETHER_CONNECT_STATE_CHANGED";
 
     /**
      * @hide
@@ -1529,6 +1543,9 @@ public class ConnectivityManager {
         }
 
         public void stop() {
+            if (mSlot == null) {
+                return;
+            }
             try {
                 mService.stopKeepalive(mNetwork, mSlot);
             } catch (RemoteException e) {
@@ -2020,20 +2037,6 @@ public class ConnectivityManager {
     }
 
     /**
-     * Get the list of Stations connected to Hotspot.
-     *
-     * @return a list of {@link WifiDevice} objects.
-     * {@hide}
-     */
-    public List<WifiDevice> getTetherConnectedSta() {
-        try {
-            return mService.getTetherConnectedSta();
-        } catch (RemoteException e) {
-            return null;
-        }
-    }
-
-    /**
      * Check if the device allows for tethering.  It may be disabled via
      * {@code ro.tether.denied} system property, Settings.TETHER_SUPPORTED or
      * due to device configuration.
@@ -2223,6 +2226,20 @@ public class ConnectivityManager {
             return mService.setUsbTethering(enable);
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * Get the list of Stations connected to Hotspot.
+     *
+     * @return a list of {@link WifiDevice} objects.
+     * {@hide}
+     */
+    public List<WifiDevice> getTetherConnectedSta() {
+        try {
+            return mService.getTetherConnectedSta();
+        } catch (RemoteException e) {
+            return null;
         }
     }
 

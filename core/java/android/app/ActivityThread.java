@@ -48,6 +48,7 @@ import android.database.sqlite.SQLiteDebug;
 import android.database.sqlite.SQLiteDebug.DbStats;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Typeface;
 import android.hardware.display.DisplayManagerGlobal;
 import android.net.ConnectivityManager;
 import android.net.IConnectivityManager;
@@ -62,6 +63,7 @@ import android.os.Bundle;
 import android.os.Debug;
 import android.os.DropBoxManager;
 import android.os.Environment;
+import android.os.GraphicsEnvironment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.LocaleList;
@@ -117,6 +119,7 @@ import com.android.internal.os.BinderInternal;
 import com.android.internal.os.RuntimeInit;
 import com.android.internal.os.SamplingProfilerIntegration;
 import com.android.internal.os.SomeArgs;
+import com.android.internal.policy.DecorView;
 import com.android.internal.util.ArrayUtils;
 import com.android.internal.util.FastPrintWriter;
 import com.android.org.conscrypt.OpenSSLSocketImpl;
@@ -291,6 +294,8 @@ public final class ActivityThread {
     // The lock of mProviderMap protects the following variables.
     final ArrayMap<ProviderKey, ProviderClientRecord> mProviderMap
         = new ArrayMap<ProviderKey, ProviderClientRecord>();
+    final ArrayMap<ProviderKey, ProviderAcquiringCount> mProviderAcquiringCountMap
+        = new ArrayMap<>();
     final ArrayMap<IBinder, ProviderRefCount> mProviderRefCountMap
         = new ArrayMap<IBinder, ProviderRefCount>();
     final ArrayMap<IBinder, ProviderClientRecord> mLocalProviders
@@ -376,6 +381,21 @@ public final class ActivityThread {
 
         public boolean isPersistable() {
             return activityInfo.persistableMode == ActivityInfo.PERSIST_ACROSS_REBOOTS;
+        }
+
+        public boolean isInStack() {
+            try {
+                int stackId = ActivityManagerNative.getDefault().getActivityStackId(token);
+                int taskId = ActivityManagerNative.getDefault().getTaskForActivity(token, false);
+                // INVALID_STACK_ID = -1 and INVALID_TASK_ID = -1
+                if (stackId != -1 && taskId != -1) {
+                    return true;
+                }
+            } catch (RemoteException e) {
+                Log.w(TAG, "remote exception occur while check the task and stack of activity:"
+                        + this.toString(), e);
+            }
+            return false;
         }
 
         public String toString() {
@@ -897,6 +917,14 @@ public final class ActivityThread {
             sendMessage(H.CONFIGURATION_CHANGED, config);
         }
 
+        public void scheduleAssetsChanged(@NonNull final String packageName,
+                @NonNull final ApplicationInfo ai) {
+            final SomeArgs args = SomeArgs.obtain();
+            args.arg1 = packageName;
+            args.arg2 = ai;
+            sendMessage(H.ASSETS_CHANGED, args);
+        }
+
         public void updateTimeZone() {
             TimeZone.setDefault(null);
         }
@@ -1405,6 +1433,7 @@ public final class ActivityThread {
         public static final int MULTI_WINDOW_MODE_CHANGED = 152;
         public static final int PICTURE_IN_PICTURE_MODE_CHANGED = 153;
         public static final int LOCAL_VOICE_INTERACTION_STARTED = 154;
+        public static final int ASSETS_CHANGED = 155;
 
         String codeToString(int code) {
             if (DEBUG_MESSAGES) {
@@ -1461,6 +1490,7 @@ public final class ActivityThread {
                     case MULTI_WINDOW_MODE_CHANGED: return "MULTI_WINDOW_MODE_CHANGED";
                     case PICTURE_IN_PICTURE_MODE_CHANGED: return "PICTURE_IN_PICTURE_MODE_CHANGED";
                     case LOCAL_VOICE_INTERACTION_STARTED: return "LOCAL_VOICE_INTERACTION_STARTED";
+                    case ASSETS_CHANGED: return "ASSETS_CHANGED";
                 }
             }
             return Integer.toString(code);
@@ -1715,6 +1745,10 @@ public final class ActivityThread {
                 case LOCAL_VOICE_INTERACTION_STARTED:
                     handleLocalVoiceInteractionStarted((IBinder) ((SomeArgs) msg.obj).arg1,
                             (IVoiceInteractor) ((SomeArgs) msg.obj).arg2);
+                    break;
+                case ASSETS_CHANGED:
+                    handleAssetsChanged((String)((SomeArgs)msg.obj).arg1,
+                            (ApplicationInfo)((SomeArgs)msg.obj).arg2);
                     break;
             }
             Object obj = msg.obj;
@@ -2704,6 +2738,12 @@ public final class ActivityThread {
     }
 
     private void handleLaunchActivity(ActivityClientRecord r, Intent customIntent, String reason) {
+        // can not launch the activity that its taskId or stackId is invalid.
+        if (!r.isInStack()) {
+            Log.w(TAG,"handleLaunchActivity stack or task is invalid, can not launch it, r:" + r);
+            return;
+        }
+
         // If we are getting ready to gc after going to the background, well
         // we are back active so skip it.
         unscheduleGcIdler();
@@ -3501,7 +3541,10 @@ public final class ActivityThread {
                 l.type = WindowManager.LayoutParams.TYPE_BASE_APPLICATION;
                 l.softInputMode |= forwardBit;
                 if (r.mPreserveWindow) {
-                    a.mWindowAdded = true;
+                    // if the preserve decor view is not attached to window, we
+                    // should make sure that it will been attached in the following
+                    // workflow.
+                    if(DecorView.isAddedToWindow(decor)) a.mWindowAdded = true;
                     r.mPreserveWindow = false;
                     // Normally the ViewRoot sets up callbacks with the Activity
                     // in addView->ViewRootImpl#setView. If we are instead reusing
@@ -3515,6 +3558,7 @@ public final class ActivityThread {
                 if (a.mVisibleFromClient && !a.mWindowAdded) {
                     a.mWindowAdded = true;
                     wm.addView(decor, l);
+                    DecorView.setAddedToWindow(a.mDecor);
                 }
 
             // If the window has already been added, but during resume
@@ -3802,6 +3846,14 @@ public final class ActivityThread {
             client = inClient;
             stableCount = sCount;
             unstableCount = uCount;
+        }
+    }
+
+    static final class ProviderAcquiringCount {
+        public int acquiringCount;
+
+        ProviderAcquiringCount(int aCount) {
+            acquiringCount = aCount;
         }
     }
 
@@ -4803,12 +4855,47 @@ public final class ActivityThread {
         }
     }
 
+    final void handleAssetsChanged(@NonNull final String packageToUpdate,
+            @NonNull final ApplicationInfo ai) {
+        synchronized (mResourcesManager) {
+            // Update all affected loaded packages with new overlay package information
+            final ArrayList<WeakReference<LoadedApk>> loadedPackages = new ArrayList<>();
+            loadedPackages.addAll(mPackages.values());
+            loadedPackages.addAll(mResourcePackages.values());
+            for (final WeakReference<LoadedApk> ref : loadedPackages) {
+                final LoadedApk apk = ref.get();
+                if (apk != null) {
+                    final String packageName = apk.getPackageName();
+                    if (packageToUpdate.equals(packageName)) {
+                        apk.updateApplicationInfo(ai, null);
+                    }
+                }
+            }
+
+            // Update all affected Resources objects to use new ResourcesImpl
+            mResourcesManager.applyNewResourceDirsLocked(ai.sourceDir, ai.resourceDirs);
+        }
+
+        // Schedule all activities to reload
+        for (final Map.Entry<IBinder, ActivityClientRecord> entry : mActivities.entrySet()) {
+            final Activity activity = entry.getValue().activity;
+            if (!activity.mFinished) {
+                requestRelaunchActivity(entry.getKey(), null, null, 0, false, null, null, false,
+                        false);
+            }
+        }
+    }
+
     static void freeTextLayoutCachesIfNeeded(int configDiff) {
         if (configDiff != 0) {
             // Ask text layout engine to free its caches if there is a locale change
             boolean hasLocaleConfigChange = ((configDiff & ActivityInfo.CONFIG_LOCALE) != 0);
-            if (hasLocaleConfigChange) {
+            boolean hasFontConfigChange = ((configDiff & ActivityInfo.CONFIG_THEME_FONT) != 0);
+            if (hasLocaleConfigChange || hasFontConfigChange) {
                 Canvas.freeTextLayoutCaches();
+                if (hasFontConfigChange) {
+                    Typeface.recreateDefaults();
+                }
                 if (DEBUG_CONFIGURATION) Slog.v(TAG, "Cleared TextLayout Caches");
             }
         }
@@ -5012,7 +5099,7 @@ public final class ActivityThread {
         WindowManagerGlobal.getInstance().trimMemory(level);
     }
 
-    private void setupGraphicsSupport(LoadedApk info, File cacheDir) {
+    private void setupGraphicsSupport(Context context, File cacheDir) {
         if (Process.isIsolated()) {
             // Isolated processes aren't going to do UI.
             return;
@@ -5025,6 +5112,7 @@ public final class ActivityThread {
             if (packages != null) {
                 ThreadedRenderer.setupDiskCache(cacheDir);
                 RenderScriptCacheDir.setupDiskCache(cacheDir);
+                GraphicsEnvironment.setupGraphicsEnvironment(context);
             }
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
@@ -5319,7 +5407,7 @@ public final class ActivityThread {
             final Context deviceContext = appContext.createDeviceProtectedStorageContext();
             final File codeCacheDir = deviceContext.getCodeCacheDir();
             if (codeCacheDir != null) {
-                setupGraphicsSupport(data.info, codeCacheDir);
+                setupGraphicsSupport(appContext, codeCacheDir);
             } else {
                 Log.e(TAG, "Unable to setupGraphicsSupport due to missing code-cache directory");
             }
@@ -5467,9 +5555,21 @@ public final class ActivityThread {
 
     public final IContentProvider acquireProvider(
             Context c, String auth, int userId, boolean stable) {
-        final IContentProvider provider = acquireExistingProvider(c, auth, userId, stable);
+        final ProviderKey key = new ProviderKey(auth, userId);
+        final IContentProvider provider = acquireExistingProvider(c, key, stable);
         if (provider != null) {
             return provider;
+        }
+
+        ProviderAcquiringCount pac;
+        synchronized (mProviderMap) {
+            pac = mProviderAcquiringCountMap.get(key);
+            if (pac == null) {
+                pac = new ProviderAcquiringCount(1);
+                mProviderAcquiringCountMap.put(key, pac);
+            } else {
+                pac.acquiringCount++;
+            }
         }
 
         // There is a possible race here.  Another thread may try to acquire
@@ -5479,11 +5579,17 @@ public final class ActivityThread {
         // provider since it might take a long time to run and it could also potentially
         // be re-entrant in the case where the provider is in the same process.
         IActivityManager.ContentProviderHolder holder = null;
-        try {
-            holder = ActivityManagerNative.getDefault().getContentProvider(
-                    getApplicationThread(), auth, userId, stable);
-        } catch (RemoteException ex) {
-            throw ex.rethrowFromSystemServer();
+        synchronized (pac) {
+            try {
+                holder = ActivityManagerNative.getDefault().getContentProvider(
+                        getApplicationThread(), auth, userId, stable);
+            } catch (RemoteException ex) {
+            }
+        }
+        synchronized (mProviderMap) {
+            if(--pac.acquiringCount == 0) {
+                mProviderAcquiringCountMap.remove(key);
+            }
         }
         if (holder == null) {
             Slog.e(TAG, "Failed to find provider info for " + auth);
@@ -5567,8 +5673,12 @@ public final class ActivityThread {
 
     public final IContentProvider acquireExistingProvider(
             Context c, String auth, int userId, boolean stable) {
+        return acquireExistingProvider(c, new ProviderKey(auth, userId), stable);
+    }
+
+    public final IContentProvider acquireExistingProvider(
+            Context c, ProviderKey key, boolean stable) {
         synchronized (mProviderMap) {
-            final ProviderKey key = new ProviderKey(auth, userId);
             final ProviderClientRecord pr = mProviderMap.get(key);
             if (pr == null) {
                 return null;
@@ -5579,7 +5689,7 @@ public final class ActivityThread {
             if (!jBinder.isBinderAlive()) {
                 // The hosting process of the provider has died; we can't
                 // use this one.
-                Log.i(TAG, "Acquiring provider " + auth + " for user " + userId
+                Log.i(TAG, "Acquiring provider " + key.authority + " for user " + key.userId
                         + ": existing object's process dead");
                 handleUnstableProviderDiedLocked(jBinder, true);
                 return null;

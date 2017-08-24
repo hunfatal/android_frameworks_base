@@ -30,12 +30,12 @@
   <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> - <xliff:g id="condition">%2$s</xliff:g></string>
   <!-- Screenshot Delete Toast -->
   <string name="delete_screenshot_toast">Đã xoá ảnh chụp màn hình</string>
-  <string name="gestures_message">Vẽ các cử chỉ của bạn ở đây</string>
-  <string name="rr_sys_tuner">Bộ điều hướng giao diện người dùng hệ thống</string>
+  <string name="gestures_message">Vẽ cử chỉ của bạn ở đây</string>
+  <string name="rr_sys_tuner">Bộ điều chỉnh UI hệ thống</string>
   <!-- Strings for lockscreen shortcut hints -->
   <string name="left_shortcut_hint">Vuốt qua phải để mở %1$s</string>
   <string name="right_shortcut_hint">Vuốt qua trái để mở %1$s</string>
-  <string name="lockscreen_message">Chạm vào biểu tượng bên trái hoặc phải để gán một phím tắt màn hình khóa.</string>
+  <string name="lockscreen_message">Chạm vào biểu tượng bên trái hoặc phải để gán lại một phím tắt màn hình khóa.</string>
   <string name="lockscreen_default_target">Mặc định</string>
   <string name="select_application">Chọn ứng dụng</string>
   <string name="lockscreen_choose_action_title">Chọn hành động</string>
@@ -71,14 +71,14 @@
   <string name="quick_settings_network_adb_disabled_label">Đã tắt</string>
   <string name="quick_settings_sync_label">Đồng bộ hóa</string>
   <string name="accessibility_quick_settings_sync_off">Tắt đồng bộ</string>
-  <string name="accessibility_quick_settings_sync_on">Bật động bộ</string>
-  <string name="accessibility_quick_settings_sync_changed_off">Đông bộ đã tắt</string>
+  <string name="accessibility_quick_settings_sync_on">Bật đồng bộ</string>
+  <string name="accessibility_quick_settings_sync_changed_off">Đồng bộ đã tắt</string>
   <string name="accessibility_quick_settings_sync_changed_on">Đồng bộ đã bật</string>
   <string name="quick_settings_expanded_desktop_label">Mở rộng màn hình</string>
-  <string name="quick_settings_expanded_desktop">Mở rộng</string>
+  <string name="quick_settings_expanded_desktop">Đã mở rộng</string>
   <string name="quick_settings_expanded_desktop_off">Bình Thường</string>
   <string name="quick_settings_reboot_label">Khởi động lại</string>
-  <string name="quick_settings_reboot_recovery_label">Recovery</string>
+  <string name="quick_settings_reboot_recovery_label">Phục hồi</string>
   <string name="accessibility_quick_settings_usb_tether_off">Tắt chia sẻ kết nối USB</string>
   <string name="accessibility_quick_settings_usb_tether_on">Mở chia sẻ kết nối USB</string>
   <string name="accessibility_quick_settings_usb_tether_changed_off">Chế độ chia sẻ kết nối USB đã tắt</string>
@@ -86,9 +86,9 @@
   <string name="quick_settings_usb_tether_label">Chia sẻ kết nối qua USB</string>
   <string name="quick_settings_music_label">Nhạc</string>
   <string name="quick_settings_music_play">Phát</string>
-  <string name="quick_settings_music_pause">Tạm ngưng</string>
+  <string name="quick_settings_music_pause">Tạm dừng</string>
   <string name="quick_settings_ime_tile_label">Phương thức nhập</string>
-  <string name="rr_qs_tile">Tùy chỉnh</string>
+  <string name="rr_qs_tile">Cấu hình</string>
   <string name="quick_settings_caffeine_label">Caffeine</string>
   <string name="accessibility_quick_settings_caffeine_off">Caffeine tắt</string>
   <string name="accessibility_quick_settings_caffeine_on">Caffeine bật</string>
@@ -102,34 +102,101 @@
   <string name="quick_settings_screenrecord">Quay màn hình</string>
   <string name="quick_settings_screenrecord_on">Đang ghi ...</string>
   <string name="quick_settings_navigation_bar">Thanh điều hướng</string>
-  <string name="quick_settings_smartbar">SmartBar</string>
-  <string name="quick_settings_smartbar_off">Tắt SmartBar</string>
+  <string name="quick_settings_smartbar">Thanh thông minh</string>
+  <string name="quick_settings_smartbar_off">Tắt thanh thông minh</string>
   <string name="quick_settings_fling">Fling</string>
   <string name="quick_settings_fling_off">Tắt Fling</string>
-  <string name="quick_settings_appcirclebar_title">AppCircleBar</string>
-  <string name="quick_settings_appcirclebar_on">Bật AppCircleBar</string>
-  <string name="quick_settings_appcirclebar_off">Tắt AppCircleBar</string>
+  <string name="quick_settings_appcirclebar_title">Thanh vòng tròn ứng dụng</string>
+  <string name="quick_settings_appcirclebar_on">Bật thanh vòng tròn ứng dụng</string>
+  <string name="quick_settings_appcirclebar_off">Tắt thanh vòng tròn ứng dụng</string>
   <string name="quick_settings_gesture_anywhere_label">Cử chỉ bất cứ đâu</string>
   <string name="quick_settings_gesture_anywhere_on">Bật cử chỉ</string>
   <string name="quick_settings_gesture_anywhere_off">Tắt cử chỉ</string>
-  <string name="quick_settings_appsidebar_title">AppSideBar</string>
-  <string name="quick_settings_appsidebar_on">Bật AppSideBar</string>
-  <string name="quick_settings_appsidebar_off">Tắt AppSideBar</string>
-  <string name="quick_settings_pulse_enabled">Đã bật Pulse</string>
-  <string name="quick_settings_pulse_disabled">Không có Trình trực quan nào</string>
-  <string name="quick_settings_pulse_label">Visualizer trên thanh điều hướng</string>
-  <string name="quick_settings_pie">Pie</string>
+  <string name="quick_settings_appsidebar_title">Thanh bên ứng dụng</string>
+  <string name="quick_settings_appsidebar_on">Bật thanh bên ứng dụng</string>
+  <string name="quick_settings_appsidebar_off">Tắt thanh bên ứng dụng</string>
+  <!-- Pulse Tile -->
+  <string name="quick_settings_pulse_enabled">Pulse đã bật</string>
+  <string name="quick_settings_pulse_disabled">Không có trình trực quan</string>
+  <string name="quick_settings_pulse_label">Pulse</string>
+  <string name="accessibility_quick_settings_pulse_off">Tắt Pulse</string>
+  <string name="accessibility_quick_settings_pulse_on">Bật Pulse</string>
+  <string name="accessibility_quick_settings_pulse_changed_off">Pulse đã tắt</string>
+  <string name="accessibility_quick_settings_pulse_changed_on">Pulse đã bật</string>
+  <string name="quick_settings_pulse_label">Trình trực quan thanh điều hướng</string>
   <string name="quick_settings_ambient_display_label">Hiển thị tương tác</string>
-  <string name="accessibility_quick_settings_ambient_display_off">Hiển thị tương tác tắt.</string>
-  <string name="accessibility_quick_settings_ambient_display_on">Hiển thị tương tác bật.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_off">Hiển thị tương tác đã tắt.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_on">Hiển thị tương tác đã bật.</string>
+  <string name="accessibility_quick_settings_ambient_display_off">Hiển thị tương tác tắt.</string>
+  <string name="accessibility_quick_settings_ambient_display_on">Bật hiển thị tương tác</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_off">Hiển thị tương tác đã tắt</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_on">Hiển thịtương tác đã bật</string>
   <string name="quick_settings_heads_up_label">Thông báo nổi</string>
-  <string name="accessibility_quick_settings_heads_up_off">Tắt thông báo nổi phía trên màn hình.</string>
-  <string name="accessibility_quick_settings_heads_up_on">Bật thông báo nổi phía trên màn hình.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_off">Thông báo nổi phía trên màn hình đã tắt.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_on">Thông báo nổi phía trên màn hình đã bật.</string>
-  <!-- PA Pie controls -->
+  <string name="accessibility_quick_settings_heads_up_off">Tắt thông báo nổi</string>
+  <string name="accessibility_quick_settings_heads_up_on">Bật thông báo nổi</string>
+  <string name="accessibility_quick_settings_heads_up_changed_off">Thông báo nổi đã tắt</string>
+  <string name="accessibility_quick_settings_heads_up_changed_on">Thông báo nổi đã bật</string>
+  <!-- Location Tile -->
+  <string name="accessibility_quick_settings_location_battery_saving">Báo cáo vị trí: chế độ tiết kiệm pin.</string>
+  <string name="accessibility_quick_settings_location_gps_only">Báo cáo vị trí: chế độ chỉ các cảm biến.</string>
+  <string name="accessibility_quick_settings_location_high_accuracy">Báo cáo vị trí: chế độ chính xác cao.</string>
+  <string name="accessibility_quick_settings_location_changed_battery_saving">Báo cáo vị trí đã thay đổi thành chế độ tiết kiệm pin.</string>
+  <string name="accessibility_quick_settings_location_changed_gps_only">Báo cáo vị trí đã thay đổi thành chế độ chỉ cảm biến.</string>
+  <string name="accessibility_quick_settings_location_changed_high_accuracy">Báo cáo vị trí đã thay đổi thành chế độ chính xác cao.</string>
+  <string name="quick_settings_location_detail_title">Chế độ vị trí</string>
+  <string name="quick_settings_location_battery_saving_label">Tiết kiệm pin</string>
+  <string name="quick_settings_location_gps_only_label">Chỉ thiết bị</string>
+  <string name="quick_settings_location_high_accuracy_label">Chính xác cao</string>
+  <string name="quick_settings_location_off_label">Tắt vị trí</string>
+  <string name="quick_settings_location_off_custom_label">Vị trí</string>
+  <!-- Language\Locale Tile -->
+  <string name="quick_settings_locale_label">Ngôn ngữ</string>
+  <string name="quick_settings_locale_more_locales_toast">Vui lòng thiết lập nhiều ngôn ngữ để kích hoạt chức năng chuyển đổi</string>
+  <!-- Suspend Actions Tile -->
+  <string name="accessibility_quick_settings_suspend_actions_on">Đình chỉ hoạt động được kích hoạt</string>
+  <string name="accessibility_quick_settings_suspend_actions_off">Đình chỉ hoạt động đã bị tắt</string>
+  <string name="quick_settings_suspend_actions_label">Đình chỉ hoạt động</string>
+  <!-- Perf Profile Tile -->
+  <string name="qs_tile_performance">Chế độ pin</string>
+  <!-- Content description of the battery mode tile in quick settings when on, power save mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_pwrsv">Chế độ pin: chế độ tiết kiệm điện năng.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, balanced mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bal">Chế độ pin: chế độ cân bằng.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, performance mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_perf">Chế độ pin: chế độ hiệu suất.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, efficiency mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_power">Chế độ pin: chế độ hiệu năng.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, quick mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_perf">Chế độ pin: chế độ nhanh.</string>
+  <!-- Announcement made when the battery mode tile changes to power save (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_pwrsv">Chế độ pin đã thay đổi thành chế độ tiết kiệm điện năng.</string>
+  <!-- Announcement made when the battery mode tile changes to balanced (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bal">Chế độ pin đã thay đổi thành chế độ cân bằng.</string>
+  <!-- Announcement made when the battery mode tile changes to performance (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_perf">Chế độ pin đã thay đổi thành chế độ hiệu suất.</string>
+  <!-- Announcement made when the battery mode tile changes to efficiency (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_power">Chế độ pin đã thay đổi thành chế độ hiệu năng.</string>
+  <!-- Announcement made when the battery mode tile changes to quick (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_perf">Chế độ pin đã thay đổi thành chế độ nhanh.</string>
+  <string name="quick_settings_performance_profile_detail_title">Chế độ pin</string>
+  <!-- Compass QS Tile -->
+  <string name="quick_settings_compass_label">La bàn</string>
+  <string name="quick_settings_compass_value"><xliff:g id="degrees">%1$.0f</xliff:g>\u00b0 <xliff:g id="direction">%2$s</xliff:g></string>
+  <string name="quick_settings_compass_init">Đang khởi tạo\u2026</string>
+  <string name="accessibility_quick_settings_compass_off">Tắt la bàn.</string>
+  <string name="accessibility_quick_settings_compass_on">Mở la bàn.</string>
+  <string name="accessibility_quick_settings_compass_changed_off">La bàn đã tắt.</string>
+  <string name="accessibility_quick_settings_compass_changed_on">La bàn đã bật.</string>
+  <string name="quick_settings_compass_N">B</string>
+  <string name="quick_settings_compass_NE">ĐB</string>
+  <string name="quick_settings_compass_E">Đ</string>
+  <string name="quick_settings_compass_SE">ĐN</string>
+  <string name="quick_settings_compass_S">N</string>
+  <string name="quick_settings_compass_SW">TN</string>
+  <string name="quick_settings_compass_W">T</string>
+  <string name="quick_settings_compass_NW">TB</string>
+  <!-- HW Keys Tile -->
+  <string name="accessibility_quick_settings_hwkeys_on">Phím cứng bật</string>
+  <string name="accessibility_quick_settings_hwkeys_off">Phím cứng tắt</string>
+  <string name="quick_settings_hwkeys_label">Phím cứng</string>
   <!-- Kill app toast -->
   <string name="app_killed_message">Ứng dụng đã tắt</string>
   <!-- Heads up snooze toast -->
@@ -147,14 +214,70 @@
   <string name="pref_action_color_summary">Chọn màu yêu thích cho các nút hành động</string>
   <string name="pref_category_main">Cài đặt chính</string>
   <string name="pref_category_user">Cài đặt người dùng</string>
-  <string name="pref_crop_behavior_title">Hành vi cắt xén</string>
-  <string name="pref_crop_behavior_summary">Sử dụng các hình ảnh được cắt xén ngay cả khi bản gốc không thực sự được cắt xén bằng hành động cắt xén</string>
-  <string name="action_ok">OK</string>
+  <string name="pref_crop_behavior_title">Trạng thái cắt xén</string>
+  <string name="pref_crop_behavior_summary">Sử dụng các hình ảnh được cắt xén ngay cả khi bản gốc không thực sự được xén bằng hành động cắt xén</string>
+  <string name="action_ok">Đồng ý</string>
   <string name="action_delete_success">Đã xóa</string>
   <string name="action_delete_fault">Xóa không thành công</string>
   <string name="action_save_success">Đã lưu</string>
   <string name="action_save_fault">Lưu không thành công</string>
-  <string name="action_edit">Chỉnh sửa</string>
+  <string name="action_edit">Sửa</string>
   <string name="recents_custom_android_n">XÓA TẤT CẢ</string>
+  <string name="recents_free_ram">RAM trống: %1$d MB</string>
   <!-- Path data for Solid battery -->
+  <!-- Task Manager -->
+  <string name="task_manager_title">Trình quản lý tác vụ</string>
+  <string name="message_switch_fail">Không thể chuyển sang tác vụ này, bởi vì nó không có giao diện.</string>
+  <string name="tasklist_killall">Đóng tất cả</string>
+  <string name="tasklist_memory_usage">"Trống • Tổng bộ nhớ : <xliff:g id="number">%s</xliff:g> • <xliff:g id="name">%s</xliff:g>"</string>
+  <string name="message_keep_one_launcher">Nên giữ ít nhất một hoạt động trang chủ!</string>
+  <string name="tm_clear_task">XÓA</string>
+  <!-- Slim Recents -->
+  <string name="recents_multiwin_warning">Một phiên đa cửa sổ được kích hoạt.\n Chỉ chạm một ứng dụng nếu bạn muốn thu nhỏ nó ngay bây giờ.</string>
+  <string name="recents_multiwin_nolastapp">Bạn đã xóa tất cả các ứng dụng gần đây, vui lòng chọn một ứng dụng từ trình khởi chạy hoặc ngăn kéo ứng dụng.</string>
+  <string name="slim_recent_keyguard">Mở khóa điện thoại của bạn để xem danh sách gần đây</string>
+  <string name="slim_recent_pinned">Bỏ ghim vào màn hình để xem các mục gần đây</string>
+  <!-- Slim recents app sidebar queue app toast -->
+  <string name="toast_recents_queue_app">Mở %s sau khi đóng các mục gần đây</string>
+  <string name="toast_recents_cancel_queued_app">Đã hủy mở ứng dụng</string>
+  <!-- Kill button in notification guts -->
+  <string name="force_stop_dlg_title">Buộc dừng?</string>
+  <string name="force_stop_dlg_text">Nếu bạn buộc dừng một ứng dụng, ứng dụng đó có thể hoạt động sai.</string>
+  <string name="dlg_ok">Đồng ý</string>
+  <string name="dlg_cancel">Hủy bỏ</string>
+  <string name="kill">Tắt ứng dụng</string>
+  <!-- OmniJAWS -->
+  <string name="omnijaws_service_error">Lỗi</string>
+  <string name="omnijaws_service_unkown">Không có dữ liệu thời tiết</string>
+  <string name="omnijaws_detail_header">Thời tiết</string>
+  <string name="omnijaws_label_default">Thời tiết</string>
+  <string name="omnijaws_current_text">Hiện tại</string>
+  <string name="omnijaws_package_not_available">OmniJaws không có sẵn</string>
+  <string name="omnijaws_service_error_long">Lỗi khi tải dữ liệu thời tiết</string>
+  <string name="omnijaws_service_disabled">Dịch vụ bị vô hiệu hóa</string>
+  <!-- Weather string format in expanded statusbar header -->
+  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> - <xliff:g id="condition">%2$s</xliff:g></string>
+  <!-- volte icon switch -->
+  <string name="status_bar_volte">VOLTE</string>
+  <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
+  <string name="keyguard_indication_dash_charging_time">Đang sạc nhanh (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> cho đến khi đầy)</string>
+  <string name="keyguard_plugged_in_dash_charging">Sạc nhanh</string>
+  <!-- vpn icon switch -->
+  <string name="status_bar_vpn">VPN</string>
+  <!-- data saver icon switch -->
+  <string name="status_bar_datasaver">Trình tiết kiệm dữ liệu</string>
+  <!-- No navigation warning notification -->
+  <string name="no_navigation_warning_title">Tất cả các phương pháp chuyển hướng bị vô hiệu</string>
+  <string name="no_navigation_warning_text">Nhấn để bật</string>
+  <!-- Pie controls -->
+  <string name="pie_date_format">EEEE, dd MMMM yyyy</string>
+  <string name="pie_hour_format_12">giờ:phút</string>
+  <string name="pie_hour_format_24">Giờ:phút</string>
+  <string name="pie_am_pm">am</string>
+  <string name="pie_state_name">Điều khiển Bánh</string>
+  <string name="pie_state_summary">Sử dụng điều khiển bánh trong khi ở chế độ im lặng</string>
+  <string name="pie_battery_level">"MỨC PIN "</string>
+  <string name="quick_settings_pie">Pie</string>
+  <string name="accessibility_data_sim">Dữ liệu Sim hiện tại</string>
+  <string name="data_switch_started">Đang chuyển dữ liệu SIM, quá trình này có thể mất tới một phút...</string>
 </resources>

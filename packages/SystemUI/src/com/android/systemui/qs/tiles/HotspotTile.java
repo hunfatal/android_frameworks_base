@@ -17,6 +17,7 @@
 package com.android.systemui.qs.tiles;
 
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -105,7 +106,8 @@ public class HotspotTile extends QSTile<QSTile.AirplaneBooleanState> {
 
     @Override
     public Intent getLongClickIntent() {
-        return new Intent(Settings.ACTION_WIRELESS_SETTINGS);
+        return new Intent().setComponent(new ComponentName(
+            "com.android.settings", "com.android.settings.Settings$TetherSettingsActivity"));
     }
 
     @Override
@@ -152,7 +154,6 @@ public class HotspotTile extends QSTile<QSTile.AirplaneBooleanState> {
             state.label = mContext.getResources().getQuantityString(
                     R.plurals.wifi_hotspot_connected_clients_label, mNumConnectedClients,
                     mNumConnectedClients);
-            mNumConnectedClients = 0;
         } else {
             state.label = mContext.getString(R.string.quick_settings_hotspot_label);
         }

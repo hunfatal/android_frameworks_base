@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The Dirty Unicorns Project
+ * Copyright (C) 2017 Resurrection Remix
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,8 +94,8 @@ public class PieTile extends QSTile<QSTile.BooleanState> {
 
 
     protected void toggleState() {
-         Settings.System.putInt(mContext.getContentResolver(),
-                        Settings.System.PA_PIE_STATE, !isPieEnabled() ? 1 : 0);
+         Settings.Secure.putInt(mContext.getContentResolver(),
+                        Settings.Secure.PIE_STATE, !isPieEnabled() ? 1 : 0);
     }
 
     @Override
@@ -111,8 +111,8 @@ public class PieTile extends QSTile<QSTile.BooleanState> {
     }
 
     private boolean isPieEnabled() {
-        return Settings.System.getIntForUser(mContext.getContentResolver(),
-                Settings.System.PA_PIE_STATE, 0,
+        return Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                Settings.Secure.PIE_STATE, 0,
                 UserHandle.USER_CURRENT) == 1;
     }
 
@@ -139,7 +139,7 @@ public class PieTile extends QSTile<QSTile.BooleanState> {
 
         public void startObserving() {
             mContext.getContentResolver().registerContentObserver(
-                    Settings.System.getUriFor(Settings.System.PA_PIE_STATE),
+                    Settings.Secure.getUriFor(Settings.Secure.PIE_STATE),
                     false, this, UserHandle.USER_ALL);
         }
 
@@ -148,3 +148,4 @@ public class PieTile extends QSTile<QSTile.BooleanState> {
         }
     }
 }
+

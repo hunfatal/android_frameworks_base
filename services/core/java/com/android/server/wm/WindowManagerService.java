@@ -202,8 +202,10 @@ import static android.view.WindowManager.LayoutParams.TYPE_DREAM;
 import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD;
 import static android.view.WindowManager.LayoutParams.TYPE_INPUT_METHOD_DIALOG;
 import static android.view.WindowManager.LayoutParams.TYPE_NAVIGATION_BAR;
+import static android.view.WindowManager.LayoutParams.TYPE_PHONE;
 import static android.view.WindowManager.LayoutParams.TYPE_PRIVATE_PRESENTATION;
 import static android.view.WindowManager.LayoutParams.TYPE_QS_DIALOG;
+import static android.view.WindowManager.LayoutParams.TYPE_SLIM_RECENTS;
 import static android.view.WindowManager.LayoutParams.TYPE_STATUS_BAR;
 import static android.view.WindowManager.LayoutParams.TYPE_TOAST;
 import static android.view.WindowManager.LayoutParams.TYPE_VOICE_INTERACTION;
@@ -536,6 +538,7 @@ public class WindowManagerService extends IWindowManager.Stub
 
     boolean mDisplayReady;
     boolean mSafeMode;
+    boolean mDisableOverlays;
     boolean mDisplayEnabled = false;
     boolean mSystemBooted = false;
     boolean mForceDisplayEnabled = false;
@@ -1092,6 +1095,7 @@ public class WindowManagerService extends IWindowManager.Stub
         mSfHwRotation = android.os.SystemProperties.getInt("ro.sf.hwrotation",0) / 90;
 
         showEmulatorDisplayOverlayIfNeeded();
+        mUiHandler = UiThread.getHandler();
     }
 
     public InputMonitor getInputMonitor() {
@@ -1886,6 +1890,8 @@ public class WindowManagerService extends IWindowManager.Stub
             case TYPE_STATUS_BAR:
             case TYPE_NAVIGATION_BAR:
             case TYPE_INPUT_METHOD_DIALOG:
+            case TYPE_SLIM_RECENTS:
+            case TYPE_PHONE:
                 return true;
         }
         return false;
@@ -3989,7 +3995,13 @@ public class WindowManagerService extends IWindowManager.Stub
                 Slog.w(TAG_WM, "Attempted to set orientation of non-existing app token: " + token);
                 return;
             }
-
+            if(requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                  || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                  || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                  || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE) {
+                Slog.i(TAG, "setAppOrientation token: "+token+" requestedOrientation: "+requestedOrientation);
+                Settings.Global.putString(mContext.getContentResolver(), Settings.Global.SINGLE_HAND_MODE, "");
+            }
             atoken.requestedOrientation = requestedOrientation;
         }
     }
@@ -4038,6 +4050,16 @@ public class WindowManagerService extends IWindowManager.Stub
             }
 
             final boolean changed = mFocusedApp != newFocus;
+            if (changed && newFocus != null) {
+                int requestedOrientation = newFocus.requestedOrientation;
+                if(requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                         || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                         || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
+                         || requestedOrientation == ActivityInfo.SCREEN_ORIENTATION_USER_LANDSCAPE) {
+                    Slog.i(TAG, "setFocusedApp token: "+token+" requestedOrientation: "+requestedOrientation);
+                    Settings.Global.putString(mContext.getContentResolver(), Settings.Global.SINGLE_HAND_MODE, "");
+                }
+            }
             if (changed) {
                 mFocusedApp = newFocus;
                 mInputMonitor.setFocusedAppLw(newFocus);
@@ -8208,6 +8230,36 @@ public class WindowManagerService extends IWindowManager.Stub
         return mSafeMode;
     }
 
+    public boolean ShouldDisableAllOverlays() {
+      return Settings.Secure.getInt(mContext.getContentResolver(),
+            Settings.Secure.VOL_UP_DISABLE_OVERLAYS, 0) == 1;
+    }
+
+    public boolean detectDisableOverlays() {
+        if (!mInputMonitor.waitForInputDevicesReady(
+                INPUT_DEVICES_READY_FOR_SAFE_MODE_DETECTION_TIMEOUT_MILLIS)) {
+            Slog.w(TAG_WM, "Devices still not ready after waiting "
+                   + INPUT_DEVICES_READY_FOR_SAFE_MODE_DETECTION_TIMEOUT_MILLIS
+                   + " milliseconds before attempting to detect safe mode.");
+        }
+
+        int volumeUpState = mInputManager.getKeyCodeState(-1, InputDevice.SOURCE_ANY,
+                KeyEvent.KEYCODE_VOLUME_UP);
+        if (ShouldDisableAllOverlays()) {
+            mDisableOverlays = volumeUpState > 0;
+        } else {
+            mDisableOverlays = false;
+        }
+
+        if (mDisableOverlays) {
+            Log.i(TAG_WM, "All enabled theme overlays will now be disabled.");
+        } else {
+            Log.i(TAG_WM, "System will boot with enabled overlays intact.");
+        }
+
+        return mDisableOverlays;
+    }
+
     public void displayReady() {
         for (Display display : mDisplays) {
             displayReady(display.getDisplayId());
@@ -8253,6 +8305,11 @@ public class WindowManagerService extends IWindowManager.Stub
 
     public void systemReady() {
         mPolicy.systemReady();
+        mSingleHandSwitch = judgeSingleHandSwitchBySize() ? 1 : 0;
+        if (mSingleHandSwitch > 0) {
+            mSingleHandAdapter = new SingleHandAdapter(mContext, mH, mUiHandler, this);
+            mSingleHandAdapter.registerLocked();
+        }
     }
 
     // -------------------------------------------------------------
@@ -11824,5 +11881,45 @@ public class WindowManagerService extends IWindowManager.Stub
                 return getDefaultDisplayContentLocked().getDockedDividerController().isResizing();
             }
         }
+    }
+
+    public int mSingleHandMode = 0;
+    private SingleHandAdapter mSingleHandAdapter;
+    private final Handler mUiHandler;
+
+    private static int mSingleHandSwitch;
+    public int getSingleHandMode() {
+        return mSingleHandMode;
+    }
+    public void setSingleHandMode(int singleHandMode) {
+        Slog.i(TAG, "cur: "+mSingleHandMode+" to: "+singleHandMode);
+        if(mSingleHandMode == singleHandMode) return;
+        mSingleHandMode = singleHandMode;
+    }
+
+    /**
+     * Freeze rotation changes.  (Enable "rotation lock".)
+     * not persists across reboots.
+     * @param rotation The desired rotation to freeze to, or -1 to thaw rotation
+     * changes
+     */
+    public void freezeOrThawRotation(int rotation) {
+        if (!checkCallingPermission(android.Manifest.permission.SET_ORIENTATION,
+                "freezeRotation()")) {
+            throw new SecurityException("Requires SET_ORIENTATION permission");
+        }
+        if (rotation < -1 || rotation > Surface.ROTATION_270) {
+            throw new IllegalArgumentException("Rotation argument must be -1 or a valid "
+                    + "rotation constant.");
+        }
+
+        Slog.i(TAG, "freezeRotationTemporarily: mRotation=" + mRotation);
+
+        mPolicy.freezeOrThawRotation(rotation);
+        updateRotationUnchecked(false, false);
+    }
+
+    private boolean judgeSingleHandSwitchBySize() {
+        return mContext.getResources().getBoolean(com.android.internal.R.bool.single_hand_mode);
     }
 }

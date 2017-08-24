@@ -68,6 +68,7 @@ import static com.android.server.am.ActivityManagerService.ANIMATE;
 import static com.android.server.am.ActivityRecord.APPLICATION_ACTIVITY_TYPE;
 import static com.android.server.am.ActivityRecord.HOME_ACTIVITY_TYPE;
 import static com.android.server.am.ActivityRecord.RECENTS_ACTIVITY_TYPE;
+import static com.android.server.am.ActivityStack.ActivityState.INITIALIZING;
 import static com.android.server.am.ActivityStack.ActivityState.RESUMED;
 import static com.android.server.am.ActivityStack.STACK_INVISIBLE;
 import static com.android.server.am.ActivityStackSupervisor.CREATE_IF_NEEDED;
@@ -377,11 +378,11 @@ class ActivityStarter {
                     intent.putExtra("com.android.settings.PROTECTED_APPS_USER_ID", userId);
                     msg.obj = intent;
                     mService.mHandler.sendMessage(msg);
-                    err = ActivityManager.START_NOT_CURRENT_USER_ACTIVITY;
+                    err = ActivityManager.START_PROTECTED_APP;
                 }
             } catch (RemoteException e) {
                 Slog.w(TAG, "Failure checking protected apps status", e);
-                err = ActivityManager.START_NOT_CURRENT_USER_ACTIVITY;
+                err = ActivityManager.START_PROTECTED_APP;
             }
         }
 
@@ -439,7 +440,8 @@ class ActivityStarter {
         // If permissions need a review before any of the app components can run, we
         // launch the review activity and pass a pending intent to start the activity
         // we are to launching now after the review is completed.
-        if (Build.PERMISSIONS_REVIEW_REQUIRED && aInfo != null) {
+        if ((mService.mPermissionReviewRequired
+                || Build.PERMISSIONS_REVIEW_REQUIRED) && aInfo != null) {
             if (mService.getPackageManagerInternalLocked().isPermissionsReviewRequired(
                     aInfo.packageName, userId)) {
                 IIntentSender target = mService.getIntentSenderLocked(
@@ -808,7 +810,7 @@ class ActivityStarter {
                     intent.putExtra("com.android.settings.PROTECTED_APPS_USER_ID", userId);
                     msg.obj = intent;
                     mService.mHandler.sendMessage(msg);
-                    return ActivityManager.START_NOT_CURRENT_USER_ACTIVITY;
+                    return ActivityManager.START_PROTECTED_APP;
                 }
             } catch (RemoteException e) {
                 e.printStackTrace();
@@ -1074,6 +1076,30 @@ class ActivityStarter {
         setInitialState(r, options, inTask, doResume, startFlags, sourceRecord, voiceSession,
                 voiceInteractor);
 
+        try {
+            final Intent intent = r.intent;
+            //TODO: This needs to be a flushed out API in the future.
+            boolean isProtected = intent.getComponent() != null
+                    && AppGlobals.getPackageManager()
+                    .isComponentProtected(sourceRecord == null ? "android" :
+                                    sourceRecord.launchedFromPackage, r.launchedFromUid,
+                            intent.getComponent(), r.userId) &&
+                    (intent.getFlags()&Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0;
+
+            if (isProtected && r.state == INITIALIZING) {
+                Message msg = mService.mHandler.obtainMessage(
+                        ActivityManagerService.POST_COMPONENT_PROTECTED_MSG);
+                //Store start flags, userid
+                intent.setFlags(startFlags);
+                intent.putExtra("com.android.settings.PROTECTED_APPS_USER_ID", r.userId);
+                msg.obj = intent;
+                mService.mHandler.sendMessage(msg);
+                return ActivityManager.START_PROTECTED_APP;
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
         computeLaunchingTaskFlags();
 
         computeSourceStack();
@@ -1123,6 +1149,10 @@ class ActivityStarter {
                         top.task.setIntent(mStartActivity);
                     }
                     ActivityStack.logStartActivity(AM_NEW_INTENT, mStartActivity, top.task);
+
+                    if (shouldActivityBeBroughtToFront(mReusedActivity)) {
+                        mStartActivity.intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+                    }
                     top.deliverNewIntentLocked(mCallingUid, mStartActivity.intent,
                             mStartActivity.launchedFromPackage);
                 }
@@ -1514,6 +1544,9 @@ class ActivityStarter {
         }
         mSourceRecord = null;
         mSourceStack = null;
+        if (mStartActivity != null) {
+            mStartActivity.resultTo = null;
+        }
     }
 
     /**
@@ -1555,6 +1588,16 @@ class ActivityStarter {
         return intentActivity;
     }
 
+    private boolean shouldActivityBeBroughtToFront(ActivityRecord intentActivity) {
+        final ActivityStack focusStack = mSupervisor.getFocusedStack();
+        ActivityRecord curTop = (focusStack == null)
+            ? null : focusStack.topRunningNonDelayedActivityLocked(mNotTop);
+
+        return curTop != null
+            && (curTop.task != intentActivity.task || curTop.task != focusStack.topTask())
+            && !mAvoidMoveToFront;
+    }
+
     private ActivityRecord setTargetStackAndMoveToFrontIfNeeded(ActivityRecord intentActivity) {
         mTargetStack = intentActivity.task.stack;
         mTargetStack.mLastPausedActivity = null;
@@ -1563,13 +1606,8 @@ class ActivityStarter {
         // the same behavior as if a new instance was being started, which means not bringing it
         // to the front if the caller is not itself in the front.
         final ActivityStack focusStack = mSupervisor.getFocusedStack();
-        ActivityRecord curTop = (focusStack == null)
-                ? null : focusStack.topRunningNonDelayedActivityLocked(mNotTop);
 
-        if (curTop != null
-                && (curTop.task != intentActivity.task || curTop.task != focusStack.topTask())
-                && !mAvoidMoveToFront) {
-            mStartActivity.intent.addFlags(Intent.FLAG_ACTIVITY_BROUGHT_TO_FRONT);
+        if (shouldActivityBeBroughtToFront(intentActivity)) {
             if (mSourceRecord == null || (mSourceStack.topActivity() != null &&
                     mSourceStack.topActivity().task == mSourceRecord.task)) {
                 // We really do want to push this one into the user's face, right now.

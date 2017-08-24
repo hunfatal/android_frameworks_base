@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2014-2015 ParanoidAndroid Project
+ * Copyright 2014-2017 ParanoidAndroid Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -17,28 +17,38 @@
 package com.android.systemui.statusbar.pie;
 
 import android.app.ActivityManager;
+import android.app.KeyguardManager;
 import android.app.StatusBarManager;
 import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.drawable.Drawable;
 import android.graphics.PixelFormat;
 import android.graphics.Point;
+import android.hardware.input.InputManager;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
+import android.os.UserHandle;
+import android.os.ServiceManager;
 import android.provider.Settings;
 import android.service.gesture.EdgeGestureManager;
 import android.view.Gravity;
-import android.view.MotionEvent;
+import android.view.InputDevice;
+import android.view.KeyCharacterMap;
+import android.view.KeyEvent;
+import android.view.SoundEffectConstants;
+import android.view.Surface;
 import android.view.View;
-import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.view.View.OnClickListener;
 import android.view.ViewGroup.LayoutParams;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
 
+import com.android.internal.statusbar.IStatusBarService;
 import com.android.internal.util.gesture.EdgeGesturePosition;
 import com.android.internal.util.gesture.EdgeServiceConstants;
-import com.android.internal.util.pa.PieConstants;
+
 import com.android.systemui.R;
 import com.android.systemui.statusbar.BaseStatusBar;
 
@@ -47,85 +57,99 @@ import com.android.systemui.statusbar.BaseStatusBar;
  * Sets and controls the pie menu and associated pie items
  * Singleton must be initialized.
  */
-public class PieController extends EdgeGestureManager.EdgeGestureActivationListener implements OnTouchListener, OnClickListener{
+public class PieController extends EdgeGestureManager.EdgeGestureActivationListener {
 
-    private static PieController mInstance;
-    private static PieHelper mPieHelper;
+    static final String BACK_BUTTON = "back";
+    static final String HOME_BUTTON = "home";
+    static final String RECENT_BUTTON = "recent";
 
+    /* Analogous to NAVBAR_ALWAYS_AT_RIGHT */
+    static final boolean PIE_ALWAYS_AT_RIGHT = true;
+
+    private static PieController sInstance;
+
+    private AudioManager mAudioManager;
     private BaseStatusBar mBar;
     private Context mContext;
+    private EdgeGestureManager mEdgeGestureManager;
     private Handler mHandler;
-
-    private WindowManager mWindowManager;
-    private EdgeGestureManager mPieManager;
-    private Point mEdgeGestureTouchPos = new Point(0, 0);;
-    private int mPiePosition;
-
-    private PieControlPanel mPanel;
-    private PieControlPanel mPieControlPanel;
-
+    private KeyguardManager mKeyguardManager;
     private PieItem mBack;
     private PieItem mHome;
-    private PieItem mMenu;
     private PieItem mRecent;
-    private PieItem mLastApp;
-    private PieItem mKillTask;
-    private PieItem mNotificatons;
-    private PieItem mSettingsPanel;
-    private PieItem mScreenshot;
+    private PieMenu mPie;
+    private Point mEdgeGestureTouchPos = new Point(0, 0);
+    private WindowManager mWindowManager;
 
-    protected PieMenu mPie;
-    protected int mItemSize;
-
-    private boolean mPieAttached;
     private boolean mForcePieCentered;
+    private boolean mPieAttached;
+    private boolean mRelocatePieOnRotation;
+
+    private int mOrientation;
+    private int mWidth;
+    private int mHeight;
+    private int mRotation;
+
+    private int mPiePosition;
+    private int mInjectKeycode;
 
     private PieController() {
         super(Looper.getMainLooper());
     }
 
+    public static PieController getInstance() {
+        if (sInstance == null) {
+            sInstance = new PieController();
+        }
+        return sInstance;
+    }
+
     /**
      * Creates a new instance of pie
+     *
      * @Param context the current Context
      * @Param wm the current Window Manager
-     * @Param bar the current BaseStusBar
+     * @Param bar the current BaseStatusBar
      */
     public void init(Context context, WindowManager wm, BaseStatusBar bar) {
         mContext = context;
         mHandler = new Handler();
         mWindowManager = wm;
         mBar = bar;
-        mPieHelper = PieHelper.getInstance();
-        mPieHelper.init(mContext, mBar);
-        mItemSize = (int) context.getResources().getDimension(R.dimen.pie_item_size);
 
-        mPieManager = EdgeGestureManager.getInstance();
-        mPieManager.setEdgeGestureActivationListener(this);
+        mOrientation = Gravity.BOTTOM;
+        mRelocatePieOnRotation = mContext.getResources().getBoolean(
+                R.bool.config_relocatePieOnRotation);
+        mRotation = mWindowManager.getDefaultDisplay().getRotation();
+
+        mEdgeGestureManager = EdgeGestureManager.getInstance();
+        mEdgeGestureManager.setEdgeGestureActivationListener(this);
         mForcePieCentered = mContext.getResources().getBoolean(R.bool.config_forcePieCentered);
-    }
 
-    public static PieController getInstance() {
-        if (mInstance == null) mInstance = new PieController();
-        return mInstance;
+        mAudioManager = (AudioManager) mContext.getSystemService(Context.AUDIO_SERVICE);
+        mKeyguardManager = (KeyguardManager) mContext.getSystemService(Context.KEYGUARD_SERVICE);
     }
 
     public void detachPie() {
-        if(mPieControlPanel != null) {
-            mBar.updatePieControls(!mPieAttached);
-        }
+         mBar.updatePieControls(!mPieAttached);
     }
 
     public void resetPie(boolean enabled, int gravity) {
-        if(mPieAttached) {
-            if (mPieControlPanel != null) mWindowManager.removeView(mPieControlPanel);
+        mRotation = mWindowManager.getDefaultDisplay().getRotation();
+
+        if (mPieAttached) {
+            // Remove the view
+            if (mPie != null) {
+                mWindowManager.removeView(mPie);
+            }
             mPieAttached = false;
         }
-        if(enabled) attachPie(gravity);
+        if (enabled) attachPie(gravity);
     }
 
     private boolean showPie() {
-        final boolean pieEnabled = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.PA_PIE_STATE, 0) == 1;
+        final boolean pieEnabled = Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                Settings.Secure.PIE_STATE, 0, UserHandle.USER_CURRENT) == 1;
         return pieEnabled;
     }
 
@@ -147,49 +171,65 @@ public class PieController extends EdgeGestureManager.EdgeGestureActivationListe
         }
     }
 
-    private void addPieInLocation(int gravity) {
-        if(mPieAttached) return;
+    private void initOrientation(int orientation) {
+        mOrientation = orientation;
 
-        // pie panel
-        mPieControlPanel = (PieControlPanel) View.inflate(mContext,
-                R.layout.pie_control_panel, null);
-
-        // init panel
-        mPieControlPanel.init(mHandler, mBar, gravity);
-        mPieControlPanel.setOnTouchListener(this);
-        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL,
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
-                        | WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL
-                        | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON,
-                PixelFormat.TRANSLUCENT);
-
-        // Turn on hardware acceleration for high end gfx devices.
-        if (ActivityManager.isHighEndGfx()) {
-            lp.flags |= WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED;
-            lp.privateFlags |=
-                    WindowManager.LayoutParams.PRIVATE_FLAG_FORCE_HARDWARE_ACCELERATED;
+        // Default to bottom if no pie gravity is set
+        if (mOrientation != Gravity.BOTTOM && mOrientation != Gravity.RIGHT
+                && mOrientation != Gravity.LEFT) {
+            mOrientation = Gravity.BOTTOM;
         }
-
-        lp.setTitle("PieControlPanel");
-        lp.windowAnimations = android.R.style.Animation;
-
-        // pie edge gesture
-        mPiePosition = mPieControlPanel.getOrientation();
-        setupEdgeGesture(mPiePosition);
-
-        mWindowManager.addView(mPieControlPanel, lp);
-        mPieAttached = true;
     }
 
-    private boolean activateFromListener(int touchX, int touchY, EdgeGesturePosition position) {
-        if (!mPieControlPanel.isShowing()) {
+    protected void reorient(int orientation) {
+        mOrientation = convertRelativeToAbsoluteGravity(orientation);
+        mPiePosition = getOrientation();
+        setupEdgeGesture(mPiePosition);
+        mPie.show(mPie.isShowing());
+        Settings.Secure.putInt(mContext.getContentResolver(),
+                Settings.Secure.PIE_GRAVITY, mOrientation);
+    }
+
+    protected boolean isKeyguardLocked() {
+        return mKeyguardManager.isKeyguardLocked();
+    }
+
+    private void addPieInLocation(int gravity) {
+        if (mPieAttached) return;
+
+        // pie menu
+        mPie = new PieMenu(mContext, this, mBar);
+        WindowManager.LayoutParams lp = new WindowManager.LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT,
+                WindowManager.LayoutParams.TYPE_STATUS_BAR_PANEL,
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN
+                | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+                | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                | WindowManager.LayoutParams.FLAG_HARDWARE_ACCELERATED,
+                PixelFormat.TRANSLUCENT);
+        lp.setTitle("PieMenu");
+        lp.windowAnimations = android.R.style.Animation;
+
+        // set gravity and touch
+        initOrientation(gravity);
+
+        // pie edge gesture
+        mPiePosition = getOrientation();
+        setupEdgeGesture(mPiePosition);
+
+        // add pie view to windowmanager
+        mWindowManager.addView(mPie, lp);
+        mPieAttached = true;
+
+        createItems();
+    }
+
+    private boolean activateFromListener(int touchX, int touchY) {
+        if (!mPie.isShowing()) {
             mEdgeGestureTouchPos.x = touchX;
             mEdgeGestureTouchPos.y = touchY;
-            mPieControlPanel.show();
+            mPie.show(true);
             return true;
         }
         return false;
@@ -198,88 +238,125 @@ public class PieController extends EdgeGestureManager.EdgeGestureActivationListe
     private void setupEdgeGesture(int gravity) {
         int triggerSlot = convertToEdgeGesturePosition(gravity);
 
-        int sensitivity = mContext.getResources().getInteger(R.integer.pie_gesture_sensivity);
+        int sensitivity = mContext.getResources().getInteger(R.integer.pie_gesture_sensitivity);
         if (sensitivity < EdgeServiceConstants.SENSITIVITY_LOWEST
                 || sensitivity > EdgeServiceConstants.SENSITIVITY_HIGHEST) {
-            sensitivity = EdgeServiceConstants.SENSITIVITY_DEFAULT;
+            sensitivity = EdgeServiceConstants.SENSITIVITY_HIGHEST;
         }
 
-        mPieManager.updateEdgeGestureActivationListener(this,
+        mEdgeGestureManager.updateEdgeGestureActivationListener(this,
                 sensitivity << EdgeServiceConstants.SENSITIVITY_SHIFT
-                    | triggerSlot
-                    | EdgeServiceConstants.LONG_LIVING
-                    | EdgeServiceConstants.UNRESTRICTED);
+                        | triggerSlot
+                        | EdgeServiceConstants.LONG_LIVING
+                        | EdgeServiceConstants.UNRESTRICTED);
     }
 
     private int convertToEdgeGesturePosition(int gravity) {
         switch (gravity) {
             case Gravity.LEFT:
-            default: // fall back
                 return EdgeGesturePosition.LEFT.FLAG;
             case Gravity.RIGHT:
                 return EdgeGesturePosition.RIGHT.FLAG;
             case Gravity.BOTTOM:
+            default: // fall back
                 return EdgeGesturePosition.BOTTOM.FLAG;
         }
     }
 
-    public PieControlPanel getControlPanel() {
-        return mPieControlPanel;
-    }
+    private void createItems() {
+        final Resources res = mContext.getResources();
+        mBack = makeItem(R.drawable.pie_back, res.getColor(R.color.pie_back_button),
+                BACK_BUTTON, false);
+        mHome = makeItem(R.drawable.pie_home, res.getColor(R.color.pie_home_button),
+                HOME_BUTTON, false);
+        mRecent = makeItem(R.drawable.pie_recent, res.getColor(R.color.pie_recent_button),
+                RECENT_BUTTON, false);
 
-    public void populateMenu() {
-        mBack = makeItem(R.drawable.ic_sysbar_back, 1, PieConstants.BACK_BUTTON, false);
-        mHome = makeItem(R.drawable.ic_sysbar_home, 1, PieConstants.HOME_BUTTON, false);
-        mRecent = makeItem(R.drawable.ic_sysbar_recent, 1, PieConstants.RECENT_BUTTON, false);
-        mMenu = makeItem(R.drawable.ic_sysbar_menu, 1, PieConstants.MENU_BUTTON, true);
-        mLastApp = makeItem(R.drawable.ic_sysbar_lastapp, 1, PieConstants.LAST_APP_BUTTON, true);
-        mKillTask = makeItem(R.drawable.ic_sysbar_killtask, 1, PieConstants.KILL_TASK_BUTTON, true);
-        mNotificatons = makeItem(R.drawable.ic_sysbar_notifications, 1, PieConstants.NOTIFICATIONS_BUTTON, true);
-        mSettingsPanel = makeItem(R.drawable.ic_sysbar_qs, 1, PieConstants.SETTINGS_PANEL_BUTTON, true);
-        mScreenshot = makeItem(R.drawable.ic_sysbar_screenshot, 1, PieConstants.SCREENSHOT_BUTTON, true);
-
-        mPie.addItem(mMenu);
         mPie.addItem(mRecent);
         mPie.addItem(mHome);
         mPie.addItem(mBack);
-        mPie.addItem(mKillTask);
-        mPie.addItem(mLastApp);
-        mPie.addItem(mNotificatons);
-        mPie.addItem(mSettingsPanel);
-        mPie.addItem(mScreenshot);
     }
 
     public void setNavigationIconHints(int hints) {
         if (mBack == null) return;
 
         boolean alt = (hints & StatusBarManager.NAVIGATION_HINT_BACK_ALT) != 0;
-        mBack.setIcon(alt ? R.drawable.ic_sysbar_back_ime : R.drawable.ic_sysbar_back);
+        mBack.setIcon(alt ? R.drawable.pie_back_keyboard : R.drawable.pie_back);
     }
 
-    @Override
-    public void onClick(View v) {
-        if (mPanel != null) {
-            mPanel.onNavButtonPressed((String) v.getTag());
+    private int convertAbsoluteToRelativeGravity(int gravity) {
+        // only mess around with Pie in landscape
+        if (mRelocatePieOnRotation && isLandScape()) {
+            // no questions asked if right is preferred
+            if (PIE_ALWAYS_AT_RIGHT) {
+                return Gravity.RIGHT;
+            } else {
+                // bottom is now right/left (depends on the direction of rotation)
+                return mRotation == Surface.ROTATION_90 ? Gravity.RIGHT : Gravity.LEFT;
+            }
         }
+        return gravity;
     }
 
-    protected PieItem makeItem(int image, int l, String name, boolean lesser) {
+    protected boolean isLandScape() {
+       return mRotation == Surface.ROTATION_90 || mRotation == Surface.ROTATION_270;
+    }
+
+    private int convertRelativeToAbsoluteGravity(int gravity) {
+        // only mess around with Pie in landscape
+        if (mRelocatePieOnRotation && isLandScape()) {
+            if (PIE_ALWAYS_AT_RIGHT) {
+                // no questions asked if right is preferred
+                return Gravity.RIGHT;
+            } else {
+                // just stick to the edge when possible
+                switch (gravity) {
+                    case Gravity.LEFT:
+                        return mRotation == Surface.ROTATION_90 ? Gravity.NO_GRAVITY : Gravity.BOTTOM;
+                    case Gravity.RIGHT:
+                        return mRotation == Surface.ROTATION_90 ? Gravity.BOTTOM : Gravity.NO_GRAVITY;
+                    case Gravity.BOTTOM:
+                        return mRotation == Surface.ROTATION_90 ? Gravity.LEFT : Gravity.RIGHT;
+                }
+            }
+        }
+        return gravity;
+    }
+
+    protected int getOrientation() {
+        return convertAbsoluteToRelativeGravity(mOrientation);
+    }
+
+    /**
+     * Check whether the requested relative gravity is possible.
+     *
+     * @param gravity the Gravity value to check
+     * @return whether the requested relative Gravity is possible
+     * @see #isGravityPossible(int)
+     */
+    protected boolean isGravityPossible(int gravity) {
+        if (mRelocatePieOnRotation && isLandScape() && PIE_ALWAYS_AT_RIGHT) {
+            return gravity == Gravity.RIGHT;
+        }
+
+        return convertRelativeToAbsoluteGravity(gravity) != Gravity.NO_GRAVITY;
+    }
+
+    private PieItem makeItem(int image, int color, String name, boolean lesser) {
+        int mItemSize = (int) mContext.getResources().getDimension(R.dimen.pie_item_size);
         ImageView view = new ImageView(mContext);
+        Drawable background = mContext.getDrawable(R.drawable.pie_ripple);
         view.setImageResource(image);
-        view.setMinimumWidth(mItemSize);
-        view.setMinimumHeight(mItemSize);
+        view.setBackground(background);
         view.setScaleType(ScaleType.CENTER);
+        view.setTag(name);
         LayoutParams lp = new LayoutParams(mItemSize, mItemSize);
         view.setLayoutParams(lp);
-        view.setOnClickListener(this);
-        return new PieItem(view, mContext, l, name, lesser);
+        view.setOnClickListener(mOnClickListener);
+        return new PieItem(view, color, lesser, mItemSize);
     }
 
-    public void show(boolean show) {
-        mPie.show(show);
-    }
-
-    public void setCenter(int x, int y) {
+    protected void setCenter(int x, int y) {
         if (!mForcePieCentered) {
             switch (mPiePosition) {
                 case Gravity.LEFT:
@@ -291,39 +368,52 @@ public class PieController extends EdgeGestureManager.EdgeGestureActivationListe
                     break;
             }
         }
-        mPie.setCenter(x, y);
+        mPie.setCoordinates(x, y);
     }
 
-    public void setControlPanel(PieControlPanel panel) {
-        mPanel = panel;
-        mPie = new PieMenu(mContext, mPanel);
-        LayoutParams lp = new LayoutParams(LayoutParams.MATCH_PARENT,
-                LayoutParams.MATCH_PARENT);
-        mPie.setLayoutParams(lp);
-        populateMenu();
-        mPanel.addView(mPie);
+    public void updateNotifications() {
+        if (mPie != null) {
+            mPie.updateNotifications();
+        }
     }
 
-    public interface OnNavButtonPressedListener {
-        public void onNavButtonPressed(String buttonName);
+    private void onNavButtonPressed(String buttonName) {
+            final IStatusBarService barService = IStatusBarService.Stub.asInterface(
+                    ServiceManager.getService(Context.STATUS_BAR_SERVICE));
+        switch (buttonName) {
+            case PieController.BACK_BUTTON:
+                injectKey(KeyEvent.KEYCODE_BACK);
+                break;
+            case PieController.HOME_BUTTON:
+                injectKey(KeyEvent.KEYCODE_HOME);
+                break;
+            case PieController.RECENT_BUTTON:
+                 if (isKeyguardLocked()) {
+                    return;
+                }
+                try {
+                    barService.toggleRecentApps();
+                } catch (Exception e) {
+                }
+                break;
+        }
+    }
+
+    private void injectKey(int keycode) {
+        mInjectKeycode = keycode;
+        mHandler.post(onInjectKey);
     }
 
     @Override
-    public boolean onTouch(View v, MotionEvent event) {
-        mPie.onTouchEvent(event);
-        return true;
-    }
-
-    @Override
-    public void onEdgeGestureActivation(int touchX, int touchY, EdgeGesturePosition position,
-            int flags) {
-        if (!mPieHelper.isKeyguardShowing() && mPieControlPanel != null
-                && activateFromListener(touchX, touchY, position)) {
+    public void onEdgeGestureActivation(int touchX, int touchY,
+            EdgeGesturePosition position, int flags) {
+        if (mPie != null
+                && activateFromListener(touchX, touchY)) {
             // give the main thread some time to do the bookkeeping
             mHandler.post(new Runnable() {
                 @Override
                 public void run() {
-                    if (!gainTouchFocus(mPieControlPanel.getWindowToken())) {
+                    if (!gainTouchFocus(mPie.getWindowToken())) {
                         detachPie();
                     }
                     restoreListenerState();
@@ -333,4 +423,30 @@ public class PieController extends EdgeGestureManager.EdgeGestureActivationListe
             restoreListenerState();
         }
     }
+
+    private final View.OnClickListener mOnClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            onNavButtonPressed((String) v.getTag());
+            mAudioManager.playSoundEffect(SoundEffectConstants.CLICK,
+                    ActivityManager.getCurrentUser());
+        }
+    };
+
+    private final Runnable onInjectKey = new Runnable() {
+        @Override
+        public void run() {
+            final InputManager im = InputManager.getInstance();
+            final int keyCode = mInjectKeycode;
+            long now = SystemClock.uptimeMillis();
+
+            final KeyEvent downEvent = new KeyEvent(now, now, KeyEvent.ACTION_DOWN,
+                    keyCode, 0, 0, KeyCharacterMap.VIRTUAL_KEYBOARD, 0,
+                    KeyEvent.FLAG_FROM_SYSTEM, InputDevice.SOURCE_CUSTOM);
+            final KeyEvent upEvent = KeyEvent.changeAction(downEvent, KeyEvent.ACTION_UP);
+
+            im.injectInputEvent(downEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+            im.injectInputEvent(upEvent, InputManager.INJECT_INPUT_EVENT_MODE_ASYNC);
+        }
+    };
 }

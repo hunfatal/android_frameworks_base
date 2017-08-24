@@ -2399,9 +2399,6 @@ class DatabaseHelper extends SQLiteOpenHelper {
             loadBooleanSetting(stmt, Settings.System.ACCELEROMETER_ROTATION,
                     R.bool.def_accelerometer_rotation);
 
-            loadIntegerSetting(stmt, Settings.System.ACCELEROMETER_ROTATION_ANGLES,
-                    R.integer.def_accelerometer_rotation_angles);
-
             loadDefaultHapticSettings(stmt);
 
             loadBooleanSetting(stmt, Settings.System.NOTIFICATION_LIGHT_PULSE,
@@ -2705,6 +2702,8 @@ class DatabaseHelper extends SQLiteOpenHelper {
                     R.string.def_low_battery_sound);
             loadIntegerSetting(stmt, Settings.Global.DOCK_SOUNDS_ENABLED,
                     R.integer.def_dock_sounds_enabled);
+            loadIntegerSetting(stmt, Settings.Global.DOCK_SOUNDS_ENABLED_WHEN_ACCESSIBILITY,
+                    R.integer.def_dock_sounds_enabled_when_accessibility);
             loadStringSetting(stmt, Settings.Global.DESK_DOCK_SOUND,
                     R.string.def_desk_dock_sound);
             loadStringSetting(stmt, Settings.Global.DESK_UNDOCK_SOUND,

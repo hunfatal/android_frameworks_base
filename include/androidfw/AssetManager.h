@@ -72,6 +72,12 @@ public:
     static const char* RESOURCES_FILENAME;
     static const char* IDMAP_BIN;
     static const char* OVERLAY_DIR;
+    /*
+     * If OVERLAY_THEME_DIR_PROPERTY is set, search for runtime resource overlay
+     * APKs in OVERLAY_DIR/<value of OVERLAY_THEME_DIR_PROPERTY> in addition to
+     * OVERLAY_DIR.
+     */
+    static const char* OVERLAY_THEME_DIR_PROPERTY;
     static const char* TARGET_PACKAGE_NAME;
     static const char* TARGET_APK_PATH;
     static const char* IDMAP_DIR;
@@ -238,12 +244,10 @@ public:
 private:
     struct asset_path
     {
-        asset_path() : path(""), type(kFileTypeRegular), idmap(""),
-                       isSystemOverlay(false), isSystemAsset(false) {}
+        asset_path() : path(""), type(kFileTypeRegular), idmap(""), isSystemAsset(false) {}
         String8 path;
         FileType type;
         String8 idmap;
-        bool isSystemOverlay;
         bool isSystemAsset;
     };
 
@@ -288,9 +292,6 @@ private:
 
     Asset* openIdmapLocked(const struct asset_path& ap) const;
 
-    void addSystemOverlays(const char* pathOverlaysList, const String8& targetPackagePath,
-            ResTable* sharedRes, size_t offset) const;
-
     class SharedZip : public RefBase {
     public:
         static sp<SharedZip> get(const String8& path, bool createIfNotPresent = true);
@@ -305,9 +306,6 @@ private:
         
         bool isUpToDate();
 
-        void addOverlay(const asset_path& ap);
-        bool getOverlay(size_t idx, asset_path* out) const;
-        
     protected:
         ~SharedZip();
 
@@ -321,8 +319,6 @@ private:
 
         Asset* mResourceTableAsset;
         ResTable* mResourceTable;
-
-        Vector<asset_path> mOverlays;
 
         static Mutex gLock;
         static DefaultKeyedVector<String8, wp<SharedZip> > gOpen;
@@ -357,9 +353,6 @@ private:
 
         bool isUpToDate();
 
-        void addOverlay(const String8& path, const asset_path& overlay);
-        bool getOverlay(const String8& path, size_t idx, asset_path* out) const;
-        
     private:
         void closeZip(int idx);
 

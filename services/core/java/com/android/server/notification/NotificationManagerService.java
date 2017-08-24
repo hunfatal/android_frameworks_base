@@ -96,6 +96,7 @@ import android.os.IBinder;
 import android.os.IInterface;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Parcelable;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -146,7 +147,6 @@ import com.android.server.lights.LightsManager;
 import com.android.server.notification.ManagedServices.ManagedServiceInfo;
 import com.android.server.policy.PhoneWindowManager;
 import com.android.server.statusbar.StatusBarManagerInternal;
-import com.android.server.vr.VrManagerInternal;
 import com.android.server.notification.ManagedServices.UserProfiles;
 
 import cyanogenmod.providers.CMSettings;
@@ -246,7 +246,6 @@ public class NotificationManagerService extends SystemService {
     AudioManagerInternal mAudioManagerInternal;
     @Nullable StatusBarManagerInternal mStatusBar;
     Vibrator mVibrator;
-    private VrManagerInternal mVrManagerInternal;
     private WindowManagerInternal mWindowManagerInternal;
 
     final IBinder mForegroundToken = new Binder();
@@ -980,6 +979,10 @@ public class NotificationManagerService extends SystemService {
                 mMaxPackageEnqueueRate = Settings.Global.getFloat(resolver,
                             Settings.Global.MAX_NOTIFICATION_ENQUEUE_RATE, mMaxPackageEnqueueRate);
             }
+            if (uri == null || NOTIFICATION_SOUND_URI.equals(uri)) {
+                mSystemNotificationSound = Settings.System.getString(resolver,
+                        Settings.System.NOTIFICATION_SOUND);
+            }
 
             // Notification LED brightness
             if (mAdjustableNotificationLedBrightness) {
@@ -1007,11 +1010,6 @@ public class NotificationManagerService extends SystemService {
             }
 
             updateNotificationPulse();
-
-            if (uri == null || NOTIFICATION_SOUND_URI.equals(uri)) {
-                mSystemNotificationSound = Settings.System.getString(resolver,
-                        Settings.System.NOTIFICATION_SOUND);
-            }
         }
     }
 
@@ -1299,7 +1297,6 @@ public class NotificationManagerService extends SystemService {
             // Grab our optional AudioService
             mAudioManager = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
             mAudioManagerInternal = getLocalService(AudioManagerInternal.class);
-            mVrManagerInternal = getLocalService(VrManagerInternal.class);
             mWindowManagerInternal = LocalServices.getService(WindowManagerInternal.class);
             mZenModeHelper.onSystemReady();
         } else if (phase == SystemService.PHASE_THIRD_PARTY_APPS_CAN_START) {
@@ -3558,7 +3555,11 @@ public class NotificationManagerService extends SystemService {
             event.getText().add(tickerText);
         }
 
-        manager.sendAccessibilityEvent(event);
+        try {
+            manager.sendAccessibilityEvent(event);
+        } catch (IllegalStateException e) {
+            Slog.e(TAG, "sendAccessibilityEvent failed.", e);
+        }
     }
 
     private void cancelNotificationLocked(NotificationRecord r, boolean sendDelete, int reason) {
@@ -3841,7 +3842,8 @@ public class NotificationManagerService extends SystemService {
             NotificationRecord childR = mNotificationList.get(i);
             StatusBarNotification childSbn = childR.sbn;
             if ((childSbn.isGroup() && !childSbn.getNotification().isGroupSummary()) &&
-                    childR.getGroupKey().equals(r.getGroupKey())) {
+                    childR.getGroupKey().equals(r.getGroupKey())
+                    && (childR.getFlags() & Notification.FLAG_FOREGROUND_SERVICE) == 0) {
                 EventLogTags.writeNotificationCancel(callingUid, callingPid, pkg, childSbn.getId(),
                         childSbn.getTag(), userId, 0, 0, reason, listenerName);
                 mNotificationList.remove(i);
