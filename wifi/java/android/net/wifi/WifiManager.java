@@ -19,6 +19,7 @@ package android.net.wifi;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SystemApi;
+import android.bluetooth.BluetoothAdapter;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.DhcpInfo;
@@ -88,6 +89,13 @@ public class WifiManager {
      * @hide
      */
     public static final String EXTRA_SCAN_AVAILABLE = "scan_enabled";
+
+    /**
+     *  ACTION_AUTH_PASSWORD_WRONG
+     *
+     * @ @hide
+     **/
+    public static final String  ACTION_AUTH_PASSWORD_WRONG = "Auth_password_wrong";
 
     /**
      * Broadcast intent action indicating that the credential of a Wi-Fi network
@@ -234,6 +242,14 @@ public class WifiManager {
     @SystemApi
     public static final String WIFI_AP_STATE_CHANGED_ACTION =
         "android.net.wifi.WIFI_AP_STATE_CHANGED";
+
+    /**
+     * Broadcast intent action indicating that Wi-Fi AP sub system has been restarted.
+     *
+     * @hide
+     */
+    public static final String WIFI_AP_SUB_SYSTEM_RESTART =
+        "android.net.wifi.WIFI_AP_SUB_SYSTEM_RESTART";
 
     /**
      * The lookup key for an int that indicates whether Wi-Fi AP is enabled,
@@ -577,6 +593,28 @@ public class WifiManager {
     public static final String ACTION_PICK_WIFI_NETWORK = "android.net.wifi.PICK_WIFI_NETWORK";
 
     /**
+     * Activity Action: Show UI to get user approval to enable WiFi.
+     * <p>Input: {@link android.content.Intent#EXTRA_PACKAGE_NAME} string extra with
+     *           the name of the app requesting the action.
+     * <p>Output: Nothing.
+     *
+     * @hide
+     */
+    @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
+    public static final String ACTION_REQUEST_ENABLE = "android.net.wifi.action.REQUEST_ENABLE";
+
+    /**
+     * Activity Action: Show UI to get user approval to disable WiFi.
+     * <p>Input: {@link android.content.Intent#EXTRA_PACKAGE_NAME} string extra with
+     *           the name of the app requesting the action.
+     * <p>Output: Nothing.
+     *
+     * @hide
+     */
+    @SdkConstant(SdkConstantType.ACTIVITY_INTENT_ACTION)
+    public static final String ACTION_REQUEST_DISABLE = "android.net.wifi.action.REQUEST_DISABLE";
+
+    /**
      * Internally used Wi-Fi lock mode representing the case were no locks are held.
      * @hide
      */
@@ -732,6 +770,15 @@ public class WifiManager {
     public List<WifiConfiguration> getConfiguredNetworks() {
         try {
             return mService.getConfiguredNetworks();
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /** @hide */
+    public boolean hasCarrierConfiguredNetworks() {
+        try {
+            return mService.hasCarrierConfiguredNetworks();
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
@@ -1460,7 +1507,7 @@ public class WifiManager {
      */
     public boolean setWifiEnabled(boolean enabled) {
         try {
-            return mService.setWifiEnabled(enabled);
+            return mService.setWifiEnabled(mContext.getOpPackageName(), enabled);
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
@@ -2688,6 +2735,21 @@ public class WifiManager {
             return mService.getAllowScansWithTraffic();
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * get concurrency support
+     *
+     * @return true if concurrency is allowed.
+     *
+     * @hide no intent to publish
+     */
+    public boolean getWifiStaSapConcurrency() {
+        try {
+            return mService.getWifiStaSapConcurrency();
+        } catch (RemoteException e) {
+             throw e.rethrowFromSystemServer();
         }
     }
 

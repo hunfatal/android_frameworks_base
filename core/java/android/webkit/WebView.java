@@ -24,6 +24,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Picture;
 import android.graphics.Rect;
@@ -58,6 +59,8 @@ import android.widget.AbsoluteLayout;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.Map;
 
 /**
@@ -337,6 +340,8 @@ public class WebView extends AbsoluteLayout
     // build target is JB MR2 or newer. Defaults to false, and is
     // set in the WebView constructor.
     private static volatile boolean sEnforceThreadChecking = false;
+
+    private Method mGetThemeColorMethod;
 
     /**
      *  Transportation object for returning WebView across thread boundaries.
@@ -633,6 +638,13 @@ public class WebView extends AbsoluteLayout
         checkThread();
 
         ensureProviderCreated();
+
+        try {
+            mGetThemeColorMethod = mProvider.getClass().getMethod("getThemeColor");
+        } catch (Exception e) {
+            // ignored, no theme color support
+        }
+
         mProvider.init(javaScriptInterfaces, privateBrowsing);
         // Post condition of creating a webview is the CookieSyncManager.getInstance() is allowed.
         CookieSyncManager.setGetInstanceIsAllowed();
@@ -740,9 +752,26 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
-     * Stores HTTP authentication credentials for a given host and realm. This
-     * method is intended to be used with
-     * {@link WebViewClient#onReceivedHttpAuthRequest}.
+     * Stores HTTP authentication credentials for a given host and realm to the {@link WebViewDatabase}
+     * instance.
+     * <p>
+     * To use HTTP authentication, the embedder application has to implement
+     * {@link WebViewClient#onReceivedHttpAuthRequest}, and call {@link HttpAuthHandler#proceed}
+     * with the correct username and password.
+     * <p>
+     * The embedder app can get the username and password any way it chooses, and does not have to
+     * use {@link WebViewDatabase}.
+     * <p>
+     * Notes:
+     * <li>
+     * {@link WebViewDatabase} is provided only as a convenience to store and retrieve http
+     * authentication credentials. WebView does not read from it during HTTP authentication.
+     * </li>
+     * <li>
+     * WebView does not provide a special mechanism to clear HTTP authentication credentials for
+     * implementing client logout. The client logout mechanism should be implemented by the Web site
+     * designer (such as server sending a HTTP 401 for invalidating credentials).
+     * </li>
      *
      * @param host the host to which the credentials apply
      * @param realm the realm to which the credentials apply
@@ -759,9 +788,8 @@ public class WebView extends AbsoluteLayout
     }
 
     /**
-     * Retrieves HTTP authentication credentials for a given host and realm.
-     * This method is intended to be used with
-     * {@link WebViewClient#onReceivedHttpAuthRequest}.
+     * Retrieves HTTP authentication credentials for a given host and realm from the {@link
+     * WebViewDatabase} instance.
      *
      * @param host the host to which the credentials apply
      * @param realm the realm to which the credentials apply
@@ -1469,6 +1497,37 @@ public class WebView extends AbsoluteLayout
     public int getProgress() {
         checkThread();
         return mProvider.getProgress();
+    }
+
+    /**
+     * Checks whether the WebView implementation has support for fetching
+     * the theme color set by the page.
+     *
+     * @return true if the WebView supports the getThemeColor() method
+     * @hide
+     */
+    public boolean isThemeColorSupported() {
+        return mGetThemeColorMethod != null;
+    }
+
+    /**
+     * Gets the theme color set by the page.
+     *
+     * The returned color may not be fully opaque. If the page didn't set
+     * any theme color, Color.TRANSPARENT is returned.
+     *
+     * @return theme color set by the page
+     * @hide
+     */
+    public int getThemeColor() {
+        if (mGetThemeColorMethod != null) {
+            try {
+                return (Integer) mGetThemeColorMethod.invoke(mProvider);
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                // ignored, fall back to returning transparent
+            }
+        }
+        return Color.TRANSPARENT;
     }
 
     /**

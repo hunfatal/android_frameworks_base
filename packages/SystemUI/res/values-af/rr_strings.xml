@@ -28,10 +28,38 @@
   <!-- Sound QS Tile -->
   <!-- Volume QS Tile -->
   <!-- Quick Settings tiles -->
-  <!-- PA Pie controls -->
+  <!-- Pulse Tile -->
+  <!-- Location Tile -->
+  <!-- Language\Locale Tile -->
+  <!-- Suspend Actions Tile -->
+  <!-- Perf Profile Tile -->
+  <!-- Content description of the battery mode tile in quick settings when on, power save mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Content description of the battery mode tile in quick settings when on, balanced mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Content description of the battery mode tile in quick settings when on, performance mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Content description of the battery mode tile in quick settings when on, efficiency mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Content description of the battery mode tile in quick settings when on, quick mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Announcement made when the battery mode tile changes to power save (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Announcement made when the battery mode tile changes to balanced (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Announcement made when the battery mode tile changes to performance (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Announcement made when the battery mode tile changes to efficiency (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Announcement made when the battery mode tile changes to quick (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <!-- Compass QS Tile -->
+  <!-- HW Keys Tile -->
   <!-- Kill app toast -->
   <!-- Heads up snooze toast -->
   <!-- Screenshot action -->
   <!-- Screenshot Crop & Share -->
   <!-- Path data for Solid battery -->
+  <!-- Task Manager -->
+  <!-- Slim Recents -->
+  <!-- Slim recents app sidebar queue app toast -->
+  <!-- Kill button in notification guts -->
+  <!-- OmniJAWS -->
+  <!-- Weather string format in expanded statusbar header -->
+  <!-- volte icon switch -->
+  <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
+  <!-- vpn icon switch -->
+  <!-- data saver icon switch -->
+  <!-- No navigation warning notification -->
+  <!-- Pie controls -->
 </resources>

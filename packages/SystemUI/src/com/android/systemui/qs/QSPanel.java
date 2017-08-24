@@ -41,6 +41,7 @@ import android.view.animation.LinearInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import com.android.internal.logging.MetricsLogger;
@@ -121,7 +122,8 @@ public class QSPanel extends LinearLayout implements Tunable, Callback {
 
         mBrightnessController = new BrightnessController(getContext(),
                 mBrightnessIcon,
-                (ToggleSlider) findViewById(R.id.brightness_slider));
+                (ToggleSlider) findViewById(R.id.brightness_slider),
+                (CheckBox) findViewById(R.id.brightness_auto));
 
     }
 
@@ -130,6 +132,9 @@ public class QSPanel extends LinearLayout implements Tunable, Callback {
                 R.layout.qs_paged_tile_layout, this, false);
         mTileLayout.setListening(mListening);
         addView((View) mTileLayout);
+        if (getResources().getBoolean(R.bool.config_show_auto_brightness)) {
+            ((CheckBox) findViewById(R.id.brightness_auto)).setVisibility(View.VISIBLE);
+        }
     }
 
     public boolean isShowingCustomize() {
@@ -148,6 +153,10 @@ public class QSPanel extends LinearLayout implements Tunable, Callback {
     public boolean isVibrationEnabled() {
         return (Settings.Secure.getIntForUser(mContext.getContentResolver(),
                 Settings.Secure.QUICK_SETTINGS_TILES_VIBRATE, 0, UserHandle.USER_CURRENT) == 1);
+    }
+
+    public void setenabled() {
+      mCustomizePanel.setenabled();
     }
 
     public void vibrateTile(int duration) {
@@ -442,7 +451,10 @@ public class QSPanel extends LinearLayout implements Tunable, Callback {
 
             @Override
             public void onAnnouncementRequested(CharSequence announcement) {
-                announceForAccessibility(announcement);
+                if (announcement != null) {
+                    mHandler.obtainMessage(H.ANNOUNCE_FOR_ACCESSIBILITY, announcement)
+                            .sendToTarget();
+                }
             }
         };
         r.tile.addCallback(callback);
@@ -612,13 +624,20 @@ public class QSPanel extends LinearLayout implements Tunable, Callback {
         return mFooter;
     }
 
+    public void showDeviceMonitoringDialog() {
+        mFooter.showDeviceMonitoringDialog();
+    }
+
     private class H extends Handler {
         private static final int SHOW_DETAIL = 1;
         private static final int SET_TILE_VISIBILITY = 2;
+        private static final int ANNOUNCE_FOR_ACCESSIBILITY = 3;
         @Override
         public void handleMessage(Message msg) {
             if (msg.what == SHOW_DETAIL) {
                 handleShowDetail((Record)msg.obj, msg.arg1 != 0);
+            } else if (msg.what == ANNOUNCE_FOR_ACCESSIBILITY) {
+                announceForAccessibility((CharSequence)msg.obj);
             }
         }
     }
@@ -658,6 +677,9 @@ public class QSPanel extends LinearLayout implements Tunable, Callback {
         }
         if (mCustomizePanel != null) {
             mCustomizePanel.updateSettings();
+        }
+        if (mFooter != null) {
+            mFooter.updateSettings();
         }
     }
 }

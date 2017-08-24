@@ -25,7 +25,6 @@ import com.android.systemui.statusbar.policy.BatteryController;
 import com.android.systemui.statusbar.policy.NetworkControllerImpl;
 import com.android.systemui.statusbar.policy.NextAlarmController;
 import com.android.systemui.statusbar.policy.UserInfoController;
-import com.android.systemui.statusbar.policy.WeatherController;
 
 public abstract class BaseStatusBarHeader extends RelativeLayout implements
         NetworkControllerImpl.EmergencyListener {
@@ -47,6 +46,10 @@ public abstract class BaseStatusBarHeader extends RelativeLayout implements
     public abstract void setNextAlarmController(NextAlarmController nextAlarmController);
     public abstract void setUserInfoController(UserInfoController userInfoController);
     public abstract void setCallback(Callback qsPanelCallback);
-    public abstract void setWeatherController(WeatherController weatherController);
+    public abstract void setTaskManagerEnabled(boolean show);
     public abstract void updateSettings();
+    public abstract void updateVisibilities();
+    public abstract void queryAndUpdateWeather();
+    public abstract void killvisibilities();
+    public abstract void starttmactivity();
 }

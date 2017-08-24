@@ -239,7 +239,6 @@ import com.android.internal.content.PackageHelper;
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.os.IParcelFileDescriptorFactory;
 import com.android.internal.os.InstallerConnection.InstallerException;
-import com.android.internal.os.RegionalizationEnvironment;
 import com.android.internal.os.SomeArgs;
 import com.android.internal.os.Zygote;
 import com.android.internal.telephony.CarrierAppUtils;
@@ -311,6 +310,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Keep track of all those APKs everywhere.
@@ -399,17 +399,16 @@ public class PackageManagerService extends IPackageManager.Stub {
     static final int SCAN_UPDATE_TIME = 1<<6;
     static final int SCAN_DEFER_DEX = 1<<7;
     static final int SCAN_BOOTING = 1<<8;
-    static final int SCAN_TRUSTED_OVERLAY = 1<<9;
-    static final int SCAN_DELETE_DATA_ON_FAILURES = 1<<10;
-    static final int SCAN_REPLACING = 1<<11;
-    static final int SCAN_REQUIRE_KNOWN = 1<<12;
-    static final int SCAN_MOVE = 1<<13;
-    static final int SCAN_INITIAL = 1<<14;
-    static final int SCAN_CHECK_ONLY = 1<<15;
-    static final int SCAN_DONT_KILL_APP = 1<<17;
-    static final int SCAN_IGNORE_FROZEN = 1<<18;
+    static final int SCAN_DELETE_DATA_ON_FAILURES = 1<<9;
+    static final int SCAN_REPLACING = 1<<10;
+    static final int SCAN_REQUIRE_KNOWN = 1<<11;
+    static final int SCAN_MOVE = 1<<12;
+    static final int SCAN_INITIAL = 1<<13;
+    static final int SCAN_CHECK_ONLY = 1<<14;
+    static final int SCAN_DONT_KILL_APP = 1<<15;
+    static final int SCAN_IGNORE_FROZEN = 1<<16;
 
-    static final int REMOVE_CHATTY = 1<<16;
+    static final int REMOVE_CHATTY = 1<<17;
 
     private static final int[] EMPTY_INT_ARRAY = new int[0];
 
@@ -471,6 +470,12 @@ public class PackageManagerService extends IPackageManager.Stub {
     private static final String PACKAGE_SCHEME = "package";
 
     private static final String VENDOR_OVERLAY_DIR = "/vendor/overlay";
+    /**
+     * If VENDOR_OVERLAY_THEME_PROPERTY is set, search for runtime resource overlay APKs also in
+     * VENDOR_OVERLAY_DIR/<value of VENDOR_OVERLAY_THEME_PROPERTY> in addition to
+     * VENDOR_OVERLAY_DIR.
+     */
+    private static final String VENDOR_OVERLAY_THEME_PROPERTY = "ro.boot.vendor.overlay.theme";
 
     private static int DEFAULT_EPHEMERAL_HASH_PREFIX_MASK = 0xFFFFF000;
     private static int DEFAULT_EPHEMERAL_HASH_PREFIX_COUNT = 5;
@@ -550,8 +555,8 @@ public class PackageManagerService extends IPackageManager.Stub {
     final String[] mSeparateProcesses;
     final boolean mIsUpgrade;
     final boolean mIsPreNUpgrade;
-    final boolean mIsPreNMR1Upgrade;
     final boolean mIsAlarmBoot;
+    final boolean mIsPreNMR1Upgrade;
 
     @GuardedBy("mPackages")
     private boolean mDexOptDialogShown;
@@ -578,9 +583,6 @@ public class PackageManagerService extends IPackageManager.Stub {
     // apps.
     final File mDrmAppPrivateInstallDir;
 
-    // Directory containing the regionalization 3rd apps.
-    final File mRegionalizationAppInstallDir;
-
     // ----------------------------------------------------------------
 
     // Lock for state used when installing and doing other long running
@@ -599,10 +601,6 @@ public class PackageManagerService extends IPackageManager.Stub {
 
     final ArrayMap<String, Set<String>> mKnownCodebase =
             new ArrayMap<String, Set<String>>();
-
-    // Tracks available target package names -> overlay package paths.
-    final ArrayMap<String, ArrayMap<String, PackageParser.Package>> mOverlays =
-        new ArrayMap<String, ArrayMap<String, PackageParser.Package>>();
 
     /**
      * Tracks new system packages [received in an OTA] that we expect to
@@ -769,6 +767,9 @@ public class PackageManagerService extends IPackageManager.Stub {
     private List<String> mKeepUninstalledPackages;
 
     private UserManagerInternal mUserManagerInternal;
+
+    private static final ComponentName FALLBACK_HOME_COMPONENT = new ComponentName(
+            "com.android.settings", "com.android.settings.FallbackHome");
 
     private static class IFVerificationParams {
         PackageParser.Package pkg;
@@ -1154,6 +1155,8 @@ public class PackageManagerService extends IPackageManager.Stub {
     final @Nullable String mStorageManagerPackage;
     final @NonNull String mServicesSystemSharedLibraryPackageName;
     final @NonNull String mSharedSystemSharedLibraryPackageName;
+
+    final boolean mPermissionReviewRequired;
 
     private final PackageUsage mPackageUsage = new PackageUsage();
     private final CompilerStats mCompilerStats = new CompilerStats();
@@ -1719,6 +1722,7 @@ public class PackageManagerService extends IPackageManager.Stub {
 
                 // Send added for users that don't see the package for the first time
                 if (update) {
+                    extras = new Bundle(extras);
                     extras.putBoolean(Intent.EXTRA_REPLACING, true);
                 }
                 sendPackageBroadcast(Intent.ACTION_PACKAGE_ADDED, packageName,
@@ -1855,8 +1859,18 @@ public class PackageManagerService extends IPackageManager.Stub {
         @Override
         public void onVolumeStateChanged(VolumeInfo vol, int oldState, int newState) {
             if (vol.type == VolumeInfo.TYPE_PRIVATE) {
-                if (vol.state == VolumeInfo.STATE_MOUNTED) {
-                    final String volumeUuid = vol.getFsUuid();
+                final String volumeUuid = vol.getFsUuid();
+                boolean volCurStateMounted = false;
+                // To handle a case where the onVolumeStateChanged callback is called with
+                // volume state MOUNTED, but the current state of volume is changed to
+                // UNMOUNTED/EJECTED state due to asynchronous behaviour of vold.
+                if(volumeUuid != null) {
+                    StorageManager storage = mContext.getSystemService(StorageManager.class);
+                    VolumeInfo currentVol = storage.findVolumeByUuid(volumeUuid);
+                    if(currentVol != null && currentVol.state == VolumeInfo.STATE_MOUNTED)
+                        volCurStateMounted = true;
+                }
+                if (vol.state == VolumeInfo.STATE_MOUNTED && volCurStateMounted) {
 
                     // Clean up any users or apps that were removed or recreated
                     // while this volume was missing
@@ -2097,6 +2111,10 @@ public class PackageManagerService extends IPackageManager.Stub {
         }
 
         mContext = context;
+
+        mPermissionReviewRequired = context.getResources().getBoolean(
+                R.bool.config_permissionReviewRequired);
+
         mFactoryTest = factoryTest;
         mOnlyCore = onlyCore;
         mMetrics = new DisplayMetrics();
@@ -2170,6 +2188,7 @@ public class PackageManagerService extends IPackageManager.Stub {
         mSystemPermissions = systemConfig.getSystemPermissions();
         mAvailableFeatures = systemConfig.getAvailableFeatures();
         mSignatureAllowances = systemConfig.getSignatureAllowances();
+
         mProtectedPackages = new ProtectedPackages(mContext);
 
 //        synchronized (mInstallLock) {
@@ -2190,7 +2209,6 @@ public class PackageManagerService extends IPackageManager.Stub {
             mEphemeralInstallDir = new File(dataDir, "app-ephemeral");
             mAsecInternalPath = new File(dataDir, "app-asec").getPath();
             mDrmAppPrivateInstallDir = new File(dataDir, "app-private");
-            mRegionalizationAppInstallDir = new File(dataDir, "app-regional");
 
             sUserManager = new UserManagerService(context, this, mPackages);
 
@@ -2335,15 +2353,20 @@ public class PackageManagerService extends IPackageManager.Stub {
                 }
             }
 
-            // Collect vendor overlay packages.
-            // (Do this before scanning any apps.)
+            // Collect vendor overlay packages. (Do this before scanning any apps.)
             // For security and version matching reason, only consider
-            // overlay packages if they reside in VENDOR_OVERLAY_DIR.
-            File vendorOverlayDir = new File(VENDOR_OVERLAY_DIR);
-            scanDirTracedLI(vendorOverlayDir, mDefParseFlags
+            // overlay packages if they reside in the right directory.
+            String overlayThemeDir = SystemProperties.get(VENDOR_OVERLAY_THEME_PROPERTY);
+            if (!overlayThemeDir.isEmpty()) {
+                scanDirTracedLI(new File(VENDOR_OVERLAY_DIR, overlayThemeDir), mDefParseFlags
+                        | PackageParser.PARSE_IS_SYSTEM
+                        | PackageParser.PARSE_IS_SYSTEM_DIR,
+                        scanFlags, 0);
+            }
+            scanDirTracedLI(new File(VENDOR_OVERLAY_DIR), mDefParseFlags
                     | PackageParser.PARSE_IS_SYSTEM
-                    | PackageParser.PARSE_IS_SYSTEM_DIR
-                    | PackageParser.PARSE_TRUSTED_OVERLAY, scanFlags | SCAN_TRUSTED_OVERLAY, 0);
+                    | PackageParser.PARSE_IS_SYSTEM_DIR,
+                    scanFlags, 0);
 
             // Find base frameworks (resource packages without code).
             scanDirTracedLI(frameworkDir, mDefParseFlags
@@ -2381,28 +2404,6 @@ public class PackageManagerService extends IPackageManager.Stub {
             scanDirTracedLI(oemAppDir, mDefParseFlags
                     | PackageParser.PARSE_IS_SYSTEM
                     | PackageParser.PARSE_IS_SYSTEM_DIR, scanFlags, 0);
-
-            // Collect all Regionalization packages form Carrier's res packages.
-            if (RegionalizationEnvironment.isSupported()) {
-                Log.d(TAG, "Load Regionalization vendor apks");
-                final List<File> RegionalizationDirs =
-                        RegionalizationEnvironment.getAllPackageDirectories();
-                for (File f : RegionalizationDirs) {
-                    File RegionalizationSystemDir = new File(f, "system");
-                    // Collect packages in <Package>/system/priv-app
-                    scanDirLI(new File(RegionalizationSystemDir, "priv-app"),
-                            PackageParser.PARSE_IS_SYSTEM | PackageParser.PARSE_IS_SYSTEM_DIR
-                            | PackageParser.PARSE_IS_PRIVILEGED, scanFlags, 0);
-                    // Collect packages in <Package>/system/app
-                    scanDirLI(new File(RegionalizationSystemDir, "app"),
-                            PackageParser.PARSE_IS_SYSTEM | PackageParser.PARSE_IS_SYSTEM_DIR,
-                            scanFlags, 0);
-                    // Collect overlay in <Package>/system/vendor
-                    scanDirLI(new File(RegionalizationSystemDir, "vendor/overlay"),
-                            PackageParser.PARSE_IS_SYSTEM | PackageParser.PARSE_IS_SYSTEM_DIR,
-                            scanFlags | SCAN_TRUSTED_OVERLAY, 0);
-                }
-            }
 
             // Prune any system packages that no longer exist.
             final List<String> possiblyDeletedUpdatedSystemApps = new ArrayList<String>();
@@ -2489,17 +2490,6 @@ public class PackageManagerService extends IPackageManager.Stub {
                 scanDirLI(mEphemeralInstallDir, mDefParseFlags
                         | PackageParser.PARSE_IS_EPHEMERAL,
                         scanFlags | SCAN_REQUIRE_KNOWN, 0);
-
-                // Collect all Regionalization 3rd packages.
-                if (RegionalizationEnvironment.isSupported()) {
-                    Log.d(TAG, "Load Regionalization 3rd apks from res packages.");
-                    final List<String> packages = RegionalizationEnvironment.getAllPackageNames();
-                    for (String pack : packages) {
-                        File appFolder = new File(mRegionalizationAppInstallDir, pack);
-                        Log.d(TAG, "Load Regionalization 3rd apks of path " + appFolder.getPath());
-                        scanDirLI(appFolder, 0, scanFlags | SCAN_REQUIRE_KNOWN, 0);
-                    }
-                }
 
                 /**
                  * Remove disable package settings for any updated system
@@ -2783,7 +2773,11 @@ public class PackageManagerService extends IPackageManager.Stub {
                         PackageManager.SYSTEM_SHARED_LIBRARY_SHARED);
             } else {
                 mRequiredVerifierPackage = null;
-                mRequiredInstallerPackage = null;
+                if (mOnlyPowerOffAlarm) {
+                    mRequiredInstallerPackage = getRequiredInstallerLPr();
+                } else {
+                    mRequiredInstallerPackage = null;
+                }
                 mRequiredUninstallerPackage = null;
                 mIntentFilterVerifierComponent = null;
                 mIntentFilterVerifier = null;
@@ -4173,7 +4167,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             // their permissions as always granted runtime ones since we need
             // to keep the review required permission flag per user while an
             // install permission's state is shared across all users.
-            if (Build.PERMISSIONS_REVIEW_REQUIRED
+            if ((mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED)
                     && pkg.applicationInfo.targetSdkVersion < Build.VERSION_CODES.M
                     && bp.isRuntime()) {
                 return;
@@ -4284,7 +4278,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             // their permissions as always granted runtime ones since we need
             // to keep the review required permission flag per user while an
             // install permission's state is shared across all users.
-            if (Build.PERMISSIONS_REVIEW_REQUIRED
+            if ((mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED)
                     && pkg.applicationInfo.targetSdkVersion < Build.VERSION_CODES.M
                     && bp.isRuntime()) {
                 return;
@@ -4566,7 +4560,8 @@ public class PackageManagerService extends IPackageManager.Stub {
                 if (actionName.startsWith("android.net.netmon.lingerExpired")
                         || actionName.startsWith("com.android.server.sip.SipWakeupTimer")
                         || actionName.startsWith("com.android.internal.telephony.data-reconnect")
-                        || actionName.startsWith("android.net.netmon.launchCaptivePortalApp")) {
+                        || actionName.startsWith("android.net.netmon.launchCaptivePortalApp")
+                        || actionName.startsWith("org.omnirom.omniswitch")) {
                     return true;
                 }
             }
@@ -5527,15 +5522,23 @@ public class PackageManagerService extends IPackageManager.Stub {
                             result.remove(xpResolveInfo);
                         }
                         if (result.size() == 0 && !addEphemeral) {
+                            // No result in current profile, but found candidate in parent user.
+                            // And we are not going to add emphemeral app, so we can return the
+                            // result straight away.
                             result.add(xpDomainInfo.resolveInfo);
                             return result;
                         }
+                    } else if (result.size() <= 1 && !addEphemeral) {
+                        // No result in parent user and <= 1 result in current profile, and we
+                        // are not going to add emphemeral app, so we can return the result without
+                        // further processing.
+                        return result;
                     }
-                    if (result.size() > 1 || addEphemeral) {
-                        result = filterCandidatesWithDomainPreferredActivitiesLPr(
-                                intent, flags, result, xpDomainInfo, userId);
-                        sortResult = true;
-                    }
+                    // We have more than one candidate (combining results from current and parent
+                    // profile), so we need filtering and sorting.
+                    result = filterCandidatesWithDomainPreferredActivitiesLPr(
+                            intent, flags, result, xpDomainInfo, userId);
+                    sortResult = true;
                 }
             } else {
                 final PackageParser.Package pkg = mPackages.get(pkgName);
@@ -6723,60 +6726,6 @@ public class PackageManagerService extends IPackageManager.Stub {
         return finalList;
     }
 
-    private void createIdmapsForPackageLI(PackageParser.Package pkg) {
-        ArrayMap<String, PackageParser.Package> overlays = mOverlays.get(pkg.packageName);
-        if (overlays == null) {
-            Slog.w(TAG, "Unable to create idmap for " + pkg.packageName + ": no overlay packages");
-            return;
-        }
-        for (PackageParser.Package opkg : overlays.values()) {
-            // Not much to do if idmap fails: we already logged the error
-            // and we certainly don't want to abort installation of pkg simply
-            // because an overlay didn't fit properly. For these reasons,
-            // ignore the return value of createIdmapForPackagePairLI.
-            createIdmapForPackagePairLI(pkg, opkg);
-        }
-    }
-
-    private boolean createIdmapForPackagePairLI(PackageParser.Package pkg,
-            PackageParser.Package opkg) {
-        if (!opkg.mTrustedOverlay) {
-            Slog.w(TAG, "Skipping target and overlay pair " + pkg.baseCodePath + " and " +
-                    opkg.baseCodePath + ": overlay not trusted");
-            return false;
-        }
-        ArrayMap<String, PackageParser.Package> overlaySet = mOverlays.get(pkg.packageName);
-        if (overlaySet == null) {
-            Slog.e(TAG, "was about to create idmap for " + pkg.baseCodePath + " and " +
-                    opkg.baseCodePath + " but target package has no known overlays");
-            return false;
-        }
-        final int sharedGid = UserHandle.getSharedAppGid(pkg.applicationInfo.uid);
-        // TODO: generate idmap for split APKs
-        try {
-            mInstaller.idmap(pkg.baseCodePath, opkg.baseCodePath, sharedGid);
-        } catch (InstallerException e) {
-            Slog.e(TAG, "Failed to generate idmap for " + pkg.baseCodePath + " and "
-                    + opkg.baseCodePath);
-            return false;
-        }
-        PackageParser.Package[] overlayArray =
-            overlaySet.values().toArray(new PackageParser.Package[0]);
-        Comparator<PackageParser.Package> cmp = new Comparator<PackageParser.Package>() {
-            public int compare(PackageParser.Package p1, PackageParser.Package p2) {
-                return p1.mOverlayPriority - p2.mOverlayPriority;
-            }
-        };
-        Arrays.sort(overlayArray, cmp);
-
-        pkg.applicationInfo.resourceDirs = new String[overlayArray.length];
-        int i = 0;
-        for (PackageParser.Package p : overlayArray) {
-            pkg.applicationInfo.resourceDirs[i++] = p.baseCodePath;
-        }
-        return true;
-    }
-
     private void scanDirTracedLI(File dir, final int parseFlags, int scanFlags, long currentTime) {
         Trace.traceBegin(TRACE_TAG_PACKAGE_MANAGER, "scanDir");
         try {
@@ -6812,12 +6761,6 @@ public class PackageManagerService extends IPackageManager.Stub {
                 // Ignore entries which are not packages
                 continue;
             }
-           if (RegionalizationEnvironment.isSupported()) {
-             if (RegionalizationEnvironment.isExcludedApp(file.getName())) {
-               Slog.d(TAG, "Regionalization Excluded:" + file.getName());
-               continue;
-            }
-           }
 
             final File ref_file = file;
             final int ref_parseFlags = parseFlags;
@@ -6963,10 +6906,6 @@ public class PackageManagerService extends IPackageManager.Stub {
         pp.setOnlyCoreApps(mOnlyCore);
         pp.setOnlyPowerOffAlarmApps(mOnlyPowerOffAlarm);
         pp.setDisplayMetrics(mMetrics);
-
-        if ((scanFlags & SCAN_TRUSTED_OVERLAY) != 0) {
-            parseFlags |= PackageParser.PARSE_TRUSTED_OVERLAY;
-        }
 
         Trace.traceBegin(TRACE_TAG_PACKAGE_MANAGER, "parsePackage");
         final PackageParser.Package pkg;
@@ -8200,14 +8139,9 @@ public class PackageManagerService extends IPackageManager.Stub {
             pkg.applicationInfo.privateFlags &=
                     ~ApplicationInfo.PRIVATE_FLAG_DIRECT_BOOT_AWARE;
         }
-        pkg.mTrustedOverlay = (policyFlags&PackageParser.PARSE_TRUSTED_OVERLAY) != 0;
 
         if ((policyFlags&PackageParser.PARSE_IS_PRIVILEGED) != 0) {
             pkg.applicationInfo.privateFlags |= ApplicationInfo.PRIVATE_FLAG_PRIVILEGED;
-        }
-
-        if ((policyFlags & PackageParser.PARSE_ENFORCE_CODE) != 0) {
-            enforceCodePolicy(pkg);
         }
 
         if (mCustomResolverComponentName != null &&
@@ -8795,7 +8729,6 @@ public class PackageManagerService extends IPackageManager.Stub {
         // writer
         Trace.traceBegin(TRACE_TAG_PACKAGE_MANAGER, "updateSettings");
 
-        boolean createIdmapFailed = false;
         synchronized (mPackages) {
             // We don't expect installation to fail beyond this point
 
@@ -9142,36 +9075,10 @@ public class PackageManagerService extends IPackageManager.Stub {
             }
 
             pkgSetting.setTimeStamp(scanFileTime);
-
-            // Create idmap files for pairs of (packages, overlay packages).
-            // Note: "android", ie framework-res.apk, is handled by native layers.
-            if (pkg.mOverlayTarget != null) {
-                // This is an overlay package.
-                if (pkg.mOverlayTarget != null && !pkg.mOverlayTarget.equals("android")) {
-                    if (!mOverlays.containsKey(pkg.mOverlayTarget)) {
-                        mOverlays.put(pkg.mOverlayTarget,
-                                new ArrayMap<String, PackageParser.Package>());
-                    }
-                    ArrayMap<String, PackageParser.Package> map = mOverlays.get(pkg.mOverlayTarget);
-                    map.put(pkg.packageName, pkg);
-                    PackageParser.Package orig = mPackages.get(pkg.mOverlayTarget);
-                    if (orig != null && !createIdmapForPackagePairLI(orig, pkg)) {
-                        createIdmapFailed = true;
-                    }
-                }
-            } else if (mOverlays.containsKey(pkg.packageName) &&
-                    !pkg.packageName.equals("android")) {
-                // This is a regular package, with one or more known overlay packages.
-                createIdmapsForPackageLI(pkg);
-            }
         }
 
         Trace.traceEnd(TRACE_TAG_PACKAGE_MANAGER);
 
-        if (createIdmapFailed) {
-            throw new PackageManagerException(INSTALL_FAILED_UPDATE_INCOMPATIBLE,
-                    "scanPackageLI failed to createIdmap");
-        }
         return pkg;
     }
 
@@ -10209,7 +10116,8 @@ public class PackageManagerService extends IPackageManager.Stub {
                     // their permissions as always granted runtime ones since we need
                     // to keep the review required permission flag per user while an
                     // install permission's state is shared across all users.
-                    if (!appSupportsRuntimePermissions && !Build.PERMISSIONS_REVIEW_REQUIRED) {
+                    if (!appSupportsRuntimePermissions && !mPermissionReviewRequired
+                            && !Build.PERMISSIONS_REVIEW_REQUIRED) {
                         // For legacy apps dangerous permissions are install time ones.
                         grant = GRANT_INSTALL;
                     } else if (origPermissions.hasInstallPermission(bp.name)) {
@@ -10288,14 +10196,32 @@ public class PackageManagerService extends IPackageManager.Stub {
                             int flags = permissionState != null
                                     ? permissionState.getFlags() : 0;
                             if (origPermissions.hasRuntimePermission(bp.name, userId)) {
-                                if (permissionsState.grantRuntimePermission(bp, userId) ==
-                                        PermissionsState.PERMISSION_OPERATION_FAILURE) {
-                                    // If we cannot put the permission as it was, we have to write.
+                                // Don't propagate the permission in a permission review mode if
+                                // the former was revoked, i.e. marked to not propagate on upgrade.
+                                // Note that in a permission review mode install permissions are
+                                // represented as constantly granted runtime ones since we need to
+                                // keep a per user state associated with the permission. Also the
+                                // revoke on upgrade flag is no longer applicable and is reset.
+                                final boolean revokeOnUpgrade = (flags & PackageManager
+                                        .FLAG_PERMISSION_REVOKE_ON_UPGRADE) != 0;
+                                if (revokeOnUpgrade) {
+                                    flags &= ~PackageManager.FLAG_PERMISSION_REVOKE_ON_UPGRADE;
+                                    // Since we changed the flags, we have to write.
                                     changedRuntimePermissionUserIds = ArrayUtils.appendInt(
                                             changedRuntimePermissionUserIds, userId);
                                 }
+                                if (!mPermissionReviewRequired || !revokeOnUpgrade) {
+                                    if (permissionsState.grantRuntimePermission(bp, userId) ==
+                                            PermissionsState.PERMISSION_OPERATION_FAILURE) {
+                                        // If we cannot put the permission as it was,
+                                        // we have to write.
+                                        changedRuntimePermissionUserIds = ArrayUtils.appendInt(
+                                                changedRuntimePermissionUserIds, userId);
+                                    }
+                                }
+
                                 // If the app supports runtime permissions no need for a review.
-                                if (Build.PERMISSIONS_REVIEW_REQUIRED
+                                if ((mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED)
                                         && appSupportsRuntimePermissions
                                         && (flags & PackageManager
                                                 .FLAG_PERMISSION_REVIEW_REQUIRED) != 0) {
@@ -10304,7 +10230,8 @@ public class PackageManagerService extends IPackageManager.Stub {
                                     changedRuntimePermissionUserIds = ArrayUtils.appendInt(
                                             changedRuntimePermissionUserIds, userId);
                                 }
-                            } else if (Build.PERMISSIONS_REVIEW_REQUIRED
+                            } else if ((mPermissionReviewRequired
+                                        || Build.PERMISSIONS_REVIEW_REQUIRED)
                                     && !appSupportsRuntimePermissions) {
                                 // For legacy apps that need a permission review, every new
                                 // runtime permission is granted but it is pending a review.
@@ -15379,6 +15306,20 @@ public class PackageManagerService extends IPackageManager.Stub {
                                     + perm.info.name + "; ignoring new declaration");
                             pkg.permissions.remove(i);
                         }
+                    } else if (!PLATFORM_PACKAGE_NAME.equals(pkg.packageName)) {
+                        // Prevent apps to change protection level to dangerous from any other
+                        // type as this would allow a privilege escalation where an app adds a
+                        // normal/signature permission in other app's group and later redefines
+                        // it as dangerous leading to the group auto-grant.
+                        if ((perm.info.protectionLevel & PermissionInfo.PROTECTION_MASK_BASE)
+                                == PermissionInfo.PROTECTION_DANGEROUS) {
+                            if (bp != null && !bp.isRuntime()) {
+                                Slog.w(TAG, "Package " + pkg.packageName + " trying to change a "
+                                        + "non-runtime permission " + perm.info.name
+                                        + " to runtime; keeping old protection level");
+                                perm.info.protectionLevel = bp.protectionLevel;
+                            }
+                        }
                     }
                 }
             }
@@ -16618,7 +16559,7 @@ public class PackageManagerService extends IPackageManager.Stub {
                     false /*hidden*/, false /*suspended*/, null, null, null,
                     false /*blockUninstall*/,
                     ps.readUserState(nextUserId).domainVerificationStatus, 0,
-                    null, null);
+                    null, null, null);
         }
     }
 
@@ -16922,7 +16863,7 @@ public class PackageManagerService extends IPackageManager.Stub {
             // If permission review is enabled and this is a legacy app, mark the
             // permission as requiring a review as this is the initial state.
             int flags = 0;
-            if (Build.PERMISSIONS_REVIEW_REQUIRED
+            if ((mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED)
                     && ps.pkg.applicationInfo.targetSdkVersion < Build.VERSION_CODES.M) {
                 flags |= FLAG_PERMISSION_REVIEW_REQUIRED;
             }
@@ -19842,9 +19783,12 @@ Slog.v(TAG, ":: stepped forward, applying functor at tag " + parser.getName());
         } catch (Exception e) {
             logCriticalInfo(Log.WARN, "Destroying user " + userId + " on volume " + volumeUuid
                     + " because we failed to prepare: " + e);
-            destroyUserDataLI(volumeUuid, userId,
+            if ((flags & StorageManager.FLAG_STORAGE_DE) != 0) {
+                destroyUserDataLI(volumeUuid, userId,
                     StorageManager.FLAG_STORAGE_DE | StorageManager.FLAG_STORAGE_CE);
-
+            } else {
+                destroyUserDataLI(volumeUuid, userId, flags);
+            }
             if (allowRecover) {
                 // Try one last time; if we fail again we're really in trouble
                 prepareUserDataLI(volumeUuid, userId, userSerial, flags, false);
@@ -20806,7 +20750,7 @@ Slog.v(TAG, ":: stepped forward, applying functor at tag " + parser.getName());
         // permissions to keep per user flag state whether review is needed.
         // Hence, if a new user is added we have to propagate dangerous
         // permission grants for these legacy apps.
-        if (Build.PERMISSIONS_REVIEW_REQUIRED) {
+        if (mPermissionReviewRequired || Build.PERMISSIONS_REVIEW_REQUIRED) {
             updatePermissionsLPw(null, null, UPDATE_PERMISSIONS_ALL
                     | UPDATE_PERMISSIONS_REPLACE_ALL);
         }
@@ -20937,6 +20881,13 @@ Slog.v(TAG, ":: stepped forward, applying functor at tag " + parser.getName());
                         CMSettings.Secure.PROTECTED_COMPONENT_MANAGERS, "|");
         if (protectedComponentManagers.contains(callingPackage)) {
             if (DEBUG_PROTECTED) Log.d(TAG, "Calling package is a protected manager, allow");
+            return false;
+        }
+
+        // FallbackHome is started on boot. If we block it, we will never finish booting
+        if (callingUid == Process.ROOT_UID && FALLBACK_HOME_COMPONENT.equals(componentName)) {
+            if (DEBUG_PROTECTED) Log.d(TAG, "Letting callinguid " + Process.ROOT_UID +
+                    " start " + componentName.flattenToShortString());
             return false;
         }
 
@@ -21394,7 +21345,7 @@ Slog.v(TAG, ":: stepped forward, applying functor at tag " + parser.getName());
         public boolean isPermissionsReviewRequired(String packageName, int userId) {
             synchronized (mPackages) {
                 // If we do not support permission review, done.
-                if (!Build.PERMISSIONS_REVIEW_REQUIRED) {
+                if (!mPermissionReviewRequired && !Build.PERMISSIONS_REVIEW_REQUIRED) {
                     return false;
                 }
 
@@ -21443,6 +21394,50 @@ Slog.v(TAG, ":: stepped forward, applying functor at tag " + parser.getName());
             synchronized (mPackages) {
                 return mSettings.wasPackageEverLaunchedLPr(packageName, userId);
             }
+        }
+
+        @Override
+        public List<PackageInfo> getOverlayPackages(int userId) {
+            final ArrayList<PackageInfo> overlayPackages = new ArrayList<PackageInfo>();
+            synchronized (mPackages) {
+                for (PackageParser.Package p : mPackages.values()) {
+                    if (p.mOverlayTarget != null) {
+                        PackageInfo pkg = generatePackageInfo((PackageSetting)p.mExtras, 0, userId);
+                        if (pkg != null) {
+                            overlayPackages.add(pkg);
+                        }
+                    }
+                }
+            }
+            return overlayPackages;
+        }
+
+        @Override
+        public List<String> getTargetPackageNames(int userId) {
+            List<String> targetPackages = new ArrayList<>();
+            synchronized (mPackages) {
+                for (PackageParser.Package p : mPackages.values()) {
+                    if (p.mOverlayTarget == null) {
+                        targetPackages.add(p.packageName);
+                    }
+                }
+            }
+            return targetPackages;
+        }
+
+        @Override
+        public void setResourceDirs(int userId, String packageName, String[] resourceDirs) {
+            synchronized (mPackages) {
+                final PackageSetting ps = mSettings.mPackages.get(packageName);
+                if (ps == null) {
+                    return;
+                }
+                ps.setResourceDirs(resourceDirs, userId);
+            }
+        }
+
+        public String getNameForUid(int uid) {
+            return PackageManagerService.this.getNameForUid(uid);
         }
     }
 

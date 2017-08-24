@@ -44,4 +44,17 @@
   <!-- ADB enabled, but not connected notification title -->
   <string name="adb_not_connected_notification_title">ADB neaktivní</string>
   <string name="adb_active_custom_tile_not_connected">neaktivní</string>
+  <string name="singlehandmode_slide_hint_message">Přejetím prstu přes navigační panel je možné přepínat mezi standardním a mini zobrazením</string>
+  <!-- [CHAR LIMIT=NONE] Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_resetBatteryStats">obnovení statistiky baterie</string>
+  <!-- [CHAR LIMIT=NONE] Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_resetBatteryStats">Povolí aplikaci vynulovat aktuální data o používání baterie při nízké úrovni nabití.</string>
+  <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_restartUI">restartovat systémové panely</string>
+  <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_restartUI">Restartuje službu SystemUIService tak, že si systémové panely nahrají zdroje z upravených motivů</string>
+  <!-- Pocket Lock -->
+  <string name="pocket_lock_message_long_press">Pro interakci stiskněte dlouze tlačítko napájení</string>
+  <!-- Defines the sysfs attribute path used by pocket bridge
+        to communicate pocket state to the pocket judge kernel driver. -->
 </resources>

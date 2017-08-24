@@ -18,7 +18,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="default_string">Varsayılan</string>
   <!-- Vendor mismatched fingerprint warning [CHAR LIMIT=NONE] -->
-  <string name="system_error_vendorprint">Vendor imajı sisteminiz ile eşleşmiyor. Cihazınız için <xliff:g id="string">%s</xliff:g> vendor imajını flaşlayın lütfen</string>
+  <string name="system_error_vendorprint">Üretici dosyanız sisteminiz ile eşleşmiyor. Cihazınız için lütfen <xliff:g id="string">%s</xliff:g> üretici dosyasını yükleyin</string>
   <string name="global_action_screenrecord">Ekran Kaydı</string>
   <!-- AOKP custom system animations -->
   <string name="animation_fade">Karartma</string>
@@ -28,7 +28,7 @@
   <string name="animation_slide_left_no_fade">Sola kaydır (karartma yok)</string>
   <string name="animation_slide_up">Aşağı kaydır</string>
   <string name="animation_slide_down">Yukarı kaydır</string>
-  <string name="animation_default">Sıfırla</string>
+  <string name="animation_default">Varsayılan</string>
   <string name="animation_translucent">Yarı saydam</string>
   <string name="animation_grow_shrink">Yayılan (yukarıya)</string>
   <string name="animation_grow_shrink_center">Yayılan (ortaya)</string>
@@ -38,10 +38,23 @@
   <string name="action_null">Boş</string>
   <string name="global_action_torch">El feneri</string>
   <!-- Button to soft reboot the device, within the Reboot Options dialog -->
-  <string name="reboot_systemui">Sistem Arayüzünü Yeniden Başlat</string>
+  <string name="reboot_systemui">Sistem arayüzünü yeniden başlat</string>
   <!-- On-The-Go -->
-  <string name="global_action_onthego">On-The-Go Modu</string>
+  <string name="global_action_onthego">Yürüme Modu</string>
   <!-- ADB enabled, but not connected notification title -->
   <string name="adb_not_connected_notification_title">ADB etkin değil</string>
   <string name="adb_active_custom_tile_not_connected">etkin değil</string>
+  <string name="singlehandmode_slide_hint_message">Standart ve mini ekran görünümleri arasında geçiş yapmak için parmağınızı gezinme çubuğunun üzerinde kaydırın</string>
+  <!-- [CHAR LIMIT=NONE] Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_resetBatteryStats">pil istatistiklerini sıfırla</string>
+  <!-- [CHAR LIMIT=NONE] Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_resetBatteryStats">Uygulamanın, mevcut düşük pil kullanımı verilerini sıfırlama izni verir.</string>
+  <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_restartUI">sistem çubuklarını yeniden başlat</string>
+  <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_restartUI">Tema kaynaklarının sistem çubuklarını yükleyebilmesi için Sistem Arayüzü Servisi\'ni yeniden başlatın</string>
+  <!-- Pocket Lock -->
+  <string name="pocket_lock_message_long_press">Etkileşim için güç tuşuna uzun basın</string>
+  <!-- Defines the sysfs attribute path used by pocket bridge
+        to communicate pocket state to the pocket judge kernel driver. -->
 </resources>

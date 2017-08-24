@@ -960,10 +960,21 @@ void NativeInputManager::interceptMotionBeforeQueueing(nsecs_t when, uint32_t& p
     if (interactive) {
         policyFlags |= POLICY_FLAG_INTERACTIVE;
     }
+    if (policyFlags & POLICY_FLAG_REMOVE_HANDYMODE) {
+        ALOGD("interceptMotionBeforeQueueing..");
+        JNIEnv* env = jniEnv();
+        env->CallIntMethod(mServiceObj,
+                gServiceClassInfo.interceptMotionBeforeQueueingNonInteractive,
+                when, policyFlags);
+    }
+
     if ((policyFlags & POLICY_FLAG_TRUSTED) && !(policyFlags & POLICY_FLAG_INJECTED)) {
         if (policyFlags & POLICY_FLAG_INTERACTIVE) {
             policyFlags |= POLICY_FLAG_PASS_TO_USER;
         } else {
+            if (policyFlags & POLICY_FLAG_REMOVE_HANDYMODE) {
+                policyFlags &= ~POLICY_FLAG_REMOVE_HANDYMODE;
+            }
             JNIEnv* env = jniEnv();
             jint wmActions = env->CallIntMethod(mServiceObj,
                         gServiceClassInfo.interceptMotionBeforeQueueingNonInteractive,
@@ -1520,7 +1531,11 @@ static void nativeSetCustomPointerIcon(JNIEnv* env, jclass /* clazz */,
     NativeInputManager* im = reinterpret_cast<NativeInputManager*>(ptr);
 
     PointerIcon pointerIcon;
-    android_view_PointerIcon_getLoadedIcon(env, iconObj, &pointerIcon);
+    status_t result = android_view_PointerIcon_getLoadedIcon(env, iconObj, &pointerIcon);
+    if (result) {
+        jniThrowRuntimeException(env, "Failed to load custom pointer icon.");
+        return;
+    }
 
     SpriteIcon spriteIcon;
     pointerIcon.bitmap.copyTo(&spriteIcon.bitmap, kN32_SkColorType);

@@ -77,11 +77,10 @@ public class CommandQueue extends IStatusBar.Stub {
     private static final int MSG_APP_TRANSITION_FINISHED       = 31 << MSG_SHIFT;
     private static final int MSG_DISMISS_KEYBOARD_SHORTCUTS    = 32 << MSG_SHIFT;
     private static final int MSG_SCREEN_PINNING_STATE_CHANGED  = 33 << MSG_SHIFT;
-    private static final int MSG_TOGGLE_LAST_APP               = 34 << MSG_SHIFT;
-    private static final int MSG_TOGGLE_KILL_APP               = 35 << MSG_SHIFT;
-    private static final int MSG_TOGGLE_SCREENSHOT             = 36 << MSG_SHIFT;
-    private static final int MSG_HANDLE_SYSNAV_KEY             = 37 << MSG_SHIFT;
-    private static final int MSG_SET_AUTOROTATE_STATUS         = 38 << MSG_SHIFT;
+    private static final int MSG_HANDLE_SYSNAV_KEY             = 34 << MSG_SHIFT;
+    private static final int MSG_SET_AUTOROTATE_STATUS         = 35 << MSG_SHIFT;
+    private static final int MSG_RESTART_UI                    = 36 << MSG_SHIFT;
+    private static final int MSG_LEFT_IN_LANDSCAPE_STATE_CHANGED  = 37 << MSG_SHIFT;
 
     public static final int FLAG_EXCLUDE_NONE = 0;
     public static final int FLAG_EXCLUDE_SEARCH_PANEL = 1 << 0;
@@ -119,6 +118,7 @@ public class CommandQueue extends IStatusBar.Stub {
         void dismissKeyboardShortcutsMenu();
         void toggleKeyboardShortcutsMenu(int deviceId);
         void cancelPreloadRecentApps();
+        void toggleOrientationListener(boolean enable);
         void setWindowState(int window, int state);
         void buzzBeepBlinked();
         void notificationLightOff();
@@ -137,16 +137,22 @@ public class CommandQueue extends IStatusBar.Stub {
         void remQsTile(ComponentName tile);
         void clickTile(ComponentName tile);
         void screenPinningStateChanged(boolean enabled);
-        public void toggleLastApp();
-        public void toggleKillApp();
-        public void toggleScreenshot();
-        public void toggleOrientationListener(boolean enable);
         void handleSystemNavigationKey(int arg1);
         void setAutoRotate(boolean enabled);
+        void restartUI();
+        void leftInLandscapeChanged(boolean isLeft);
     }
 
     public CommandQueue(Callbacks callbacks) {
         mCallbacks = callbacks;
+    }
+
+    public void leftInLandscapeChanged(boolean isLeft) {
+        synchronized (mLock) {
+            mHandler.removeMessages(MSG_LEFT_IN_LANDSCAPE_STATE_CHANGED);
+            mHandler.obtainMessage(MSG_LEFT_IN_LANDSCAPE_STATE_CHANGED,
+                    isLeft ? 1 : 0, 0, null).sendToTarget();
+        }
     }
 
     public void screenPinningStateChanged(boolean enabled) {
@@ -154,6 +160,13 @@ public class CommandQueue extends IStatusBar.Stub {
             mHandler.removeMessages(MSG_SCREEN_PINNING_STATE_CHANGED);
             mHandler.obtainMessage(MSG_SCREEN_PINNING_STATE_CHANGED,
                     enabled ? 1 : 0, 0, null).sendToTarget();
+        }
+    }
+
+    public void restartUI() {
+        synchronized (mLock) {
+            mHandler.removeMessages(MSG_RESTART_UI);
+            mHandler.sendEmptyMessage(MSG_RESTART_UI);
         }
     }
 
@@ -279,10 +292,6 @@ public class CommandQueue extends IStatusBar.Stub {
         }
     }
 
-    public void toggleOrientationListener(boolean enable) {
-        mCallbacks.toggleOrientationListener(enable);
-    }
-
     @Override
     public void dismissKeyboardShortcutsMenu() {
         synchronized (mLock) {
@@ -305,6 +314,10 @@ public class CommandQueue extends IStatusBar.Stub {
             mHandler.removeMessages(MSG_SHOW_TV_PICTURE_IN_PICTURE_MENU);
             mHandler.obtainMessage(MSG_SHOW_TV_PICTURE_IN_PICTURE_MENU).sendToTarget();
         }
+    }
+
+    public void toggleOrientationListener(boolean enable) {
+        mCallbacks.toggleOrientationListener(enable);
     }
 
     public void setWindowState(int window, int state) {
@@ -414,26 +427,6 @@ public class CommandQueue extends IStatusBar.Stub {
         }
     }
 
-    public void toggleLastApp() {
-        synchronized (mLock) {
-            mHandler.removeMessages(MSG_TOGGLE_LAST_APP);
-            mHandler.obtainMessage(MSG_TOGGLE_LAST_APP, 0, 0, null).sendToTarget();
-        }
-    }
-
-    public void toggleKillApp() {
-        synchronized (mLock) {
-            mHandler.removeMessages(MSG_TOGGLE_KILL_APP);
-            mHandler.obtainMessage(MSG_TOGGLE_KILL_APP, 0, 0, null).sendToTarget();
-        }
-    }
-
-    public void toggleScreenshot() {
-        synchronized (mLock) {
-            mHandler.removeMessages(MSG_TOGGLE_SCREENSHOT);
-            mHandler.obtainMessage(MSG_TOGGLE_SCREENSHOT, 0, 0, null).sendToTarget();
-        }
-    }
 
     @Override
     public void handleSystemNavigationKey(int key) {
@@ -568,19 +561,17 @@ public class CommandQueue extends IStatusBar.Stub {
                 case MSG_SCREEN_PINNING_STATE_CHANGED:
                     mCallbacks.screenPinningStateChanged(msg.arg1 != 0);
                     break;
-                case MSG_TOGGLE_LAST_APP:
-                    mCallbacks.toggleLastApp();
-                    break;
-                case MSG_TOGGLE_KILL_APP:
-                    mCallbacks.toggleKillApp();
-                    break;
-                case MSG_TOGGLE_SCREENSHOT:
-                    mCallbacks.toggleScreenshot();
                 case MSG_HANDLE_SYSNAV_KEY:
                     mCallbacks.handleSystemNavigationKey(msg.arg1);
                     break;
                 case MSG_SET_AUTOROTATE_STATUS:
                     mCallbacks.setAutoRotate(msg.arg1 != 0);
+                    break;
+                case MSG_RESTART_UI:
+                    mCallbacks.restartUI();
+                    break;
+                case MSG_LEFT_IN_LANDSCAPE_STATE_CHANGED:
+                    mCallbacks.leftInLandscapeChanged(msg.arg1 != 0);
                     break;
             }
         }

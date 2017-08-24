@@ -19,6 +19,7 @@ package android.hardware.camera2;
 import android.annotation.RequiresPermission;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.app.ActivityThread;
 import android.content.Context;
 import android.hardware.ICameraService;
 import android.hardware.ICameraServiceListener;
@@ -31,11 +32,17 @@ import android.os.Binder;
 import android.os.DeadObjectException;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.PowerManager;
+import android.os.PowerManager.WakeLock;
 import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.ServiceSpecificException;
+import android.os.SystemProperties;
+import android.text.TextUtils;
 import android.util.Log;
 import android.util.ArrayMap;
+
+import com.android.internal.R;
 
 import java.util.ArrayList;
 
@@ -68,6 +75,8 @@ public final class CameraManager {
 
     private ArrayList<String> mDeviceIdList;
 
+    private WakeLock mFlashlightWakeLock = null;
+
     private final Context mContext;
     private final Object mLock = new Object();
 
@@ -77,6 +86,39 @@ public final class CameraManager {
     public CameraManager(Context context) {
         synchronized(mLock) {
             mContext = context;
+
+            if (context.getResources().
+                    getBoolean(R.bool.config_useWakeLockForFlashlight)) {
+                Looper looper = Looper.myLooper();
+                if (looper != null) {
+                    PowerManager powerManager = (PowerManager)context.
+                            getSystemService(Context.POWER_SERVICE);
+                    mFlashlightWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, TAG);
+
+                    TorchCallback torchCallback = new CameraManager.TorchCallback() {
+                        @Override
+                        public void onTorchModeUnavailable(String cameraId) {
+                            if (mFlashlightWakeLock.isHeld()) {
+                                mFlashlightWakeLock.release();
+                            }
+                        }
+
+                        @Override
+                        public void onTorchModeChanged(String cameraId, boolean enabled) {
+                            if (enabled) {
+                                if (!mFlashlightWakeLock.isHeld()) {
+                                    mFlashlightWakeLock.acquire();
+                                }
+                            } else {
+                                if (mFlashlightWakeLock.isHeld()) {
+                                    mFlashlightWakeLock.release();
+                                }
+                            }
+                        }
+                    };
+                    registerTorchCallback(torchCallback, new Handler(looper));
+                }
+            }
         }
     }
 
@@ -689,6 +731,25 @@ public final class CameraManager {
 
             try {
                 numCameras = cameraService.getNumberOfCameras(CAMERA_TYPE_ALL);
+                /* Force exposing only two cameras
+                 * if the package name does not falls in this bucket
+                 */
+                boolean exposeAuxCamera = true;
+                String packageName = ActivityThread.currentOpPackageName();
+                String packageList = SystemProperties.get("camera.auxdisable.packagelist");
+                if (packageList.length() > 0) {
+                    TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+                    splitter.setString(packageList);
+                    for (String str : splitter) {
+                        if (packageName.equals(str)) {
+                            exposeAuxCamera = false;
+                            break;
+                        }
+                    }
+                }
+                if (exposeAuxCamera == false && (numCameras > 2)) {
+                    numCameras = 2;
+                }
             } catch(ServiceSpecificException e) {
                 throwAsPublicException(e);
             } catch (RemoteException e) {
@@ -1016,6 +1077,30 @@ public final class CameraManager {
         }
 
         private void onStatusChangedLocked(int status, String id) {
+            /* Force ignoring the last mono/aux camera status update
+             * if the package name does not falls in this bucket
+             */
+            boolean exposeMonoCamera = true;
+            String packageName = ActivityThread.currentOpPackageName();
+            String packageList = SystemProperties.get("camera.auxdisable.packagelist");
+            if (packageList.length() > 0) {
+                TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
+                splitter.setString(packageList);
+                for (String str : splitter) {
+                    if (packageName.equals(str)) {
+                        exposeMonoCamera = false;
+                        break;
+                    }
+                }
+            }
+
+            if (exposeMonoCamera == false) {
+                if (Integer.parseInt(id) >= 2) {
+                    Log.w(TAG, "[soar.cts] ignore the status update of camera: " + id);
+                    return;
+                }
+            }
+
             if (DEBUG) {
                 Log.v(TAG,
                         String.format("Camera id %s has status changed to 0x%x", id, status));

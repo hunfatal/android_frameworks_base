@@ -364,6 +364,7 @@ public class VolumeDialogController {
         updateRingerModeExternalW(mAudio.getRingerMode());
         updateZenModeW();
         updateEffectsSuppressorW(mNoMan.getEffectsSuppressor());
+        updateLinkNotificationConfigW();
         mCallbacks.onStateChanged(mState);
     }
 
@@ -419,6 +420,9 @@ public class VolumeDialogController {
     private boolean updateLinkNotificationConfigW() {
         boolean linkNotificationWithVolume = Settings.Secure.getInt(mContext.getContentResolver(),
                 Settings.Secure.VOLUME_LINK_NOTIFICATION, 1) == 1;
+        if (!Util.isVoiceCapable(mContext)) {
+            return false;
+        }
         if (mState.linkedNotification == linkNotificationWithVolume) {
             return false;
         }

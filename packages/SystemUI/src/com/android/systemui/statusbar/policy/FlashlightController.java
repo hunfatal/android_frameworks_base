@@ -94,7 +94,7 @@ public class FlashlightController {
         tryInitCamera();
     }
 
-    private void tryInitCamera() {
+    public void tryInitCamera() {
         try {
             mCameraId = getCameraId();
         } catch (Throwable e) {
@@ -114,6 +114,7 @@ public class FlashlightController {
             if (mCameraId == null) return;
             if (mFlashlightEnabled != enabled) {
                 mFlashlightEnabled = enabled;
+
                 try {
                     mCameraManager.setTorchMode(mCameraId, enabled);
                 } catch (CameraAccessException e) {

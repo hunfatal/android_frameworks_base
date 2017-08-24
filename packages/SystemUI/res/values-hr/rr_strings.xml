@@ -104,35 +104,104 @@
   <string name="quick_settings_navigation_bar">Navigacijska traka</string>
   <string name="quick_settings_smartbar">Pametna traka</string>
   <string name="quick_settings_smartbar_off">Pametna traka isključena</string>
-  <string name="quick_settings_appcirclebar_title">Okrugla traka aplikacija</string>
-  <string name="quick_settings_appcirclebar_on">Okrugla traka aplikacija uklj.</string>
-  <string name="quick_settings_appcirclebar_off">Okrugla traka aplikacija isklj.</string>
+  <string name="quick_settings_fling">Fling</string>
+  <string name="quick_settings_fling_off">Fling isključen</string>
+  <string name="quick_settings_appcirclebar_title">Kružna traka aplikacija</string>
+  <string name="quick_settings_appcirclebar_on">Kružna traka aplikacija uključena</string>
+  <string name="quick_settings_appcirclebar_off">Kružna traka aplikacija isključena</string>
   <string name="quick_settings_gesture_anywhere_label">Gesta bilo gdje</string>
   <string name="quick_settings_gesture_anywhere_on">Geste uključene</string>
   <string name="quick_settings_gesture_anywhere_off">Geste isključene</string>
   <string name="quick_settings_appsidebar_title">Bočna traka aplikacija</string>
-  <string name="quick_settings_appsidebar_on">Bočna traka aplikacija uklj.</string>
-  <string name="quick_settings_appsidebar_off">Bočna traka aplikacija isklj.</string>
+  <string name="quick_settings_appsidebar_on">Bočna traka aplikacija uključena</string>
+  <string name="quick_settings_appsidebar_off">Bočna traka aplikacija isključena</string>
+  <!-- Pulse Tile -->
   <string name="quick_settings_pulse_enabled">Puls omogućen</string>
   <string name="quick_settings_pulse_disabled">Nema vizualizatora</string>
+  <string name="quick_settings_pulse_label">Puls</string>
+  <string name="accessibility_quick_settings_pulse_off">Puls isključen</string>
+  <string name="accessibility_quick_settings_pulse_on">Puls uključen</string>
+  <string name="accessibility_quick_settings_pulse_changed_off">Puls je isključen</string>
+  <string name="accessibility_quick_settings_pulse_changed_on">Puls je uključen</string>
   <string name="quick_settings_pulse_label">Vizualizator navigacijske trake</string>
-  <string name="quick_settings_pie">Pita</string>
   <string name="quick_settings_ambient_display_label">Ambijentalni zaslon</string>
   <string name="accessibility_quick_settings_ambient_display_off">Ambijentalni zaslon isključen.</string>
-  <string name="accessibility_quick_settings_ambient_display_on">Ambijentalni zaslon uključen.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_off">Ambijentalni je zaslon isključen.</string>
-  <string name="accessibility_quick_settings_ambient_display_changed_on">Ambijentalni je zaslon uključen.</string>
+  <string name="accessibility_quick_settings_ambient_display_on">Ambijentalni zaslon uključen</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_off">Ambijentalni je zaslon je isključen</string>
+  <string name="accessibility_quick_settings_ambient_display_changed_on">Ambijentalni je zaslon uključen</string>
   <string name="quick_settings_heads_up_label">Plutajuće obavijesti</string>
-  <string name="accessibility_quick_settings_heads_up_off">Plutajuće obavijesti isklj.</string>
-  <string name="accessibility_quick_settings_heads_up_on">Plutajuće obavijesti uklj.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_off">Plutajuće su obavijesti isključene.</string>
-  <string name="accessibility_quick_settings_heads_up_changed_on">Plutajuće su obavijesti uključene.</string>
-  <!-- PA Pie controls -->
+  <string name="accessibility_quick_settings_heads_up_off">Plutajuće obavijesti isključene</string>
+  <string name="accessibility_quick_settings_heads_up_on">Plutajuće obavijesti uključene</string>
+  <string name="accessibility_quick_settings_heads_up_changed_off">Plutajuće su obavijesti isključene</string>
+  <string name="accessibility_quick_settings_heads_up_changed_on">Plutajuće su obavijesti uključene</string>
+  <!-- Location Tile -->
+  <string name="accessibility_quick_settings_location_battery_saving">Izvještavanje o lokaciji: način štednje baterije.</string>
+  <string name="accessibility_quick_settings_location_gps_only">Izvještavanje o lokaciji: način samo sa senzorima.</string>
+  <string name="accessibility_quick_settings_location_high_accuracy">Izvještavanje o lokaciji: način visoke preciznosti.</string>
+  <string name="accessibility_quick_settings_location_changed_battery_saving">Izvještavanje o lokaciji promijenjeno je na način štednje baterije.</string>
+  <string name="accessibility_quick_settings_location_changed_gps_only">Izvještavanje o lokaciji promijenjeno je na način samo sa senzorima.</string>
+  <string name="accessibility_quick_settings_location_changed_high_accuracy">Izvještavanje o lokaciji promijenjeno je na način visoke preciznosti.</string>
+  <string name="quick_settings_location_detail_title">Način rada lokacije</string>
+  <string name="quick_settings_location_battery_saving_label">Štednja baterije</string>
+  <string name="quick_settings_location_gps_only_label">Samo uređaj</string>
+  <string name="quick_settings_location_high_accuracy_label">Visoka preciznost</string>
+  <string name="quick_settings_location_off_label">Lokacija isključena</string>
+  <string name="quick_settings_location_off_custom_label">Lokacija</string>
+  <!-- Language\Locale Tile -->
+  <string name="quick_settings_locale_label">Jezik</string>
+  <string name="quick_settings_locale_more_locales_toast">Podesite više jezika da biste omogućili uključivanje/isključivanje funkcije</string>
+  <!-- Suspend Actions Tile -->
+  <string name="accessibility_quick_settings_suspend_actions_on">Obustava radnji omogućena</string>
+  <string name="accessibility_quick_settings_suspend_actions_off">Obustava radnji onemogućena</string>
+  <string name="quick_settings_suspend_actions_label">Obustava radnji</string>
+  <!-- Perf Profile Tile -->
+  <string name="qs_tile_performance">Način rada baterije</string>
+  <!-- Content description of the battery mode tile in quick settings when on, power save mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_pwrsv">Način rada baterije: način uštede energije.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, balanced mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bal">Način rada baterije: uravnotežen način rada.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, performance mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_perf">Način rada baterije: način performansi.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, efficiency mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_power">Način rada baterije: način učinkovitosti.</string>
+  <!-- Content description of the battery mode tile in quick settings when on, quick mode (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_bias_perf">Način rada baterije: brzi način.</string>
+  <!-- Announcement made when the battery mode tile changes to power save (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_pwrsv">Način rada baterije promijenjen je na način uštede energije.</string>
+  <!-- Announcement made when the battery mode tile changes to balanced (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bal">Način rada baterije promijenjen je na uravnotežen način rada.</string>
+  <!-- Announcement made when the battery mode tile changes to performance (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_perf">Način rada baterije promijenjen je na performanse.</string>
+  <!-- Announcement made when the battery mode tile changes to efficiency (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_power">Način rada baterije promijenjen je na način rada učinkovitosti.</string>
+  <!-- Announcement made when the battery mode tile changes to quick (not shown on the screen). [CHAR LIMIT=NONE] -->
+  <string name="accessibility_quick_settings_perf_profile_changed_bias_perf">Način rada baterije promijenjen je na brzi način rada.</string>
+  <string name="quick_settings_performance_profile_detail_title">Način rada baterije</string>
+  <!-- Compass QS Tile -->
+  <string name="quick_settings_compass_label">Kompas</string>
+  <string name="quick_settings_compass_value"><xliff:g id="degrees">%1$.0f</xliff:g>\u00b0 <xliff:g id="direction">%2$s</xliff:g></string>
+  <string name="quick_settings_compass_init">Pokretanje\u2026</string>
+  <string name="accessibility_quick_settings_compass_off">Kompas isključen.</string>
+  <string name="accessibility_quick_settings_compass_on">Kompas uključen.</string>
+  <string name="accessibility_quick_settings_compass_changed_off">Kompas je isključen.</string>
+  <string name="accessibility_quick_settings_compass_changed_on">Kompas je uključen.</string>
+  <string name="quick_settings_compass_N">S</string>
+  <string name="quick_settings_compass_NE">SI</string>
+  <string name="quick_settings_compass_E">I</string>
+  <string name="quick_settings_compass_SE">JI</string>
+  <string name="quick_settings_compass_S">J</string>
+  <string name="quick_settings_compass_SW">JZ</string>
+  <string name="quick_settings_compass_W">Z</string>
+  <string name="quick_settings_compass_NW">SZ</string>
+  <!-- HW Keys Tile -->
+  <string name="accessibility_quick_settings_hwkeys_on">Hardverske tipke uključene</string>
+  <string name="accessibility_quick_settings_hwkeys_off">Hardverske tipke isključene</string>
+  <string name="quick_settings_hwkeys_label">Hardverske tipke</string>
   <!-- Kill app toast -->
   <string name="app_killed_message">Aplikacija je zatvorena</string>
   <!-- Heads up snooze toast -->
-  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s</xliff:g> - obavijesti koje vire odgođene su na 1 minutu.</string>
-  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> - obavijesti koje vire odgođene su na <xliff:g id="number">%d</xliff:g> min.</string>
+  <string name="heads_up_snooze_message_one_minute"><xliff:g id="string">%s</xliff:g> • obavijesti koje vire odgođene su na 1 minutu.</string>
+  <string name="heads_up_snooze_message"><xliff:g id="string">%s</xliff:g> • obavijesti koje vire odgođene su na <xliff:g id="number">%d</xliff:g> min.</string>
   <!-- Screenshot action -->
   <string name="screenshot_abort_title">Zaslon nije snimljen</string>
   <string name="screenshot_abort_text">Radnja je prekinuta</string>
@@ -154,5 +223,58 @@
   <string name="action_save_fault">Spremanje nije uspjelo</string>
   <string name="action_edit">Uredi</string>
   <string name="recents_custom_android_n">IZBRIŠI SVE</string>
+  <string name="recents_free_ram">Slobodan RAM: %1$d MB</string>
   <!-- Path data for Solid battery -->
+  <!-- Task Manager -->
+  <string name="task_manager_title">Upravitelj zadataka</string>
+  <string name="message_switch_fail">Nije moguće prebaciti se na ovaj zadatak jer taj zadatak nema sučelje.</string>
+  <string name="tasklist_killall">Zatvori sve</string>
+  <string name="tasklist_memory_usage">"Slobodno • Ukupna memorija: <xliff:g id="number">%s</xliff:g> • <xliff:g id="name">%s</xliff:g>"</string>
+  <string name="message_keep_one_launcher">Trebate zadržati barem jednu početnu aktivnost!</string>
+  <string name="tm_clear_task">IZBRIŠI</string>
+  <!-- Slim Recents -->
+  <string name="recents_multiwin_warning">Sesija načina rada s više prozora već je aktivna.\nSamo dodirnite aplikaciju ako je sada želite spojiti.</string>
+  <string name="recents_multiwin_nolastapp">Uklonili ste sve nedavne aplikacije, odaberite aplikaciju iz pokretača ili izbornika aplikacija.</string>
+  <string name="slim_recent_keyguard">Otključajte uređaj da biste vidjeli popis nedavnih aplikacija</string>
+  <string name="slim_recent_pinned">Otkvačite zaslon za prikaz nedavnih aplikacija.</string>
+  <!-- Slim recents app sidebar queue app toast -->
+  <string name="toast_recents_queue_app">Pokretanje aplikacije %s nakon zatvaranja nedavnih aplikacija</string>
+  <string name="toast_recents_cancel_queued_app">Pokretanje aplikacije je otkazano</string>
+  <!-- Kill button in notification guts -->
+  <string name="force_stop_dlg_title">Prisilno zaustaviti?</string>
+  <string name="force_stop_dlg_text">Prisilno zaustavljanje aplikacije može rezultirati čudnim ponašanjem aplikacije.</string>
+  <string name="dlg_ok">U redu</string>
+  <string name="dlg_cancel">Odustani</string>
+  <string name="kill">Zatvori aplikaciju</string>
+  <!-- OmniJAWS -->
+  <string name="omnijaws_service_error">Greška</string>
+  <string name="omnijaws_service_unkown">Nema podataka o vremenu</string>
+  <string name="omnijaws_detail_header">Vrijeme</string>
+  <string name="omnijaws_label_default">Vrijeme</string>
+  <string name="omnijaws_current_text">Sada</string>
+  <string name="omnijaws_package_not_available">OmniJaws nije dostupan</string>
+  <string name="omnijaws_service_error_long">Greška pri učitavanju podataka o vremenu</string>
+  <string name="omnijaws_service_disabled">Usluga je onemogućena</string>
+  <!-- Weather string format in expanded statusbar header -->
+  <string name="status_bar_weather_format"><xliff:g id="temp">%1$s</xliff:g> <xliff:g id="condition">%2$s</xliff:g></string>
+  <!-- volte icon switch -->
+  <string name="status_bar_volte">VoLTE</string>
+  <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
+  <string name="keyguard_indication_dash_charging_time">Dash punjenje (<xliff:g id="charging_time_left" example="4 hours and 2 minutes">%s</xliff:g> do napunjenosti)</string>
+  <string name="keyguard_plugged_in_dash_charging">Dash punjenje</string>
+  <!-- vpn icon switch -->
+  <string name="status_bar_vpn">VPN</string>
+  <!-- data saver icon switch -->
+  <string name="status_bar_datasaver">Ušteda podataka</string>
+  <!-- No navigation warning notification -->
+  <string name="no_navigation_warning_title">Svi načini navigacije onemogućeni</string>
+  <string name="no_navigation_warning_text">Dodirnite za omogućavanje</string>
+  <!-- Pie controls -->
+  <string name="pie_date_format">EEEE, dd MMMM yyyy</string>
+  <string name="pie_state_name">Kontrola pitom</string>
+  <string name="pie_state_summary">Upotreba kontrola pitom u cjelozaslonskom načinu</string>
+  <string name="pie_battery_level">"RAZINA BATERIJE "</string>
+  <string name="quick_settings_pie">Pita</string>
+  <string name="accessibility_data_sim">Trenutna podatkovna SIM-ica</string>
+  <string name="data_switch_started">Prebacivanje podatkovne SIM-ice, ovo može potrajati minutu...</string>
 </resources>

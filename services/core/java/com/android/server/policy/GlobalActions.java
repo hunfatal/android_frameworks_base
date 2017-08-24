@@ -501,6 +501,8 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
                 if (mShowSilentToggle) {
                     mItems.add(mSilentModeAction);
                 }
+            } else if (GLOBAL_ACTION_KEY_EMERGENCY.equals(actionKey)) {
+                mItems.add(getEmergencyAction());
             } else if (GLOBAL_ACTION_KEY_USERS.equals(actionKey)) {
                 List<UserInfo> users = ((UserManager) mContext.getSystemService(
                         Context.USER_SERVICE)).getUsers();
@@ -512,10 +514,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             }
             // Add here so we don't add more than one.
             addedKeys.add(actionKey);
-        }
-
-        if (mEmergencyAffordanceManager.needsEmergencyAffordance()) {
-            mItems.add(getEmergencyAction());
         }
 
         mAdapter = new MyAdapter();
@@ -575,12 +573,19 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             return true;
         }
 
+
+        private boolean isConfirmed() {
+            return Settings.System.getInt(mContext.getContentResolver(),
+                   Settings.System.CONFIRM_SHUTDOWN_SWITCH, 1) == 1;
+        }
+
         @Override
         public void onPress() {
             // shutdown by making sure radio and power are handled accordingly.
-            mWindowManagerFuncs.shutdown(false /* confirm */);
+            mWindowManagerFuncs.shutdown(isConfirmed() /* confirm */);
         }
     }
+
 
     private final class RestartAction extends SinglePressAction implements LongPressAction {
         private RestartAction() {
@@ -693,6 +698,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
     }
 
     private class BugReportAction extends SinglePressAction implements LongPressAction {
+
         public BugReportAction() {
             super(com.android.internal.R.drawable.ic_lock_bugreport, R.string.bugreport_title);
         }
@@ -934,7 +940,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     private void startOnTheGo() {
         final ComponentName cn = new ComponentName("com.android.systemui",
-                "com.android.systemui.benzo.onthego.OnTheGoService");
+                "com.android.systemui.rr.onthego.OnTheGoService");
         final Intent startIntent = new Intent();
         startIntent.setComponent(cn);
         startIntent.setAction("start");
@@ -1832,6 +1838,6 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     private void checkSettings() {
         mScreenshotDelay = Settings.System.getInt(mContext.getContentResolver(),
-                Settings.System.SCREENSHOT_DELAY, 100);
+                Settings.System.SCREENSHOT_DELAY, 1000);
     }
 }

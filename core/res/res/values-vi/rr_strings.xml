@@ -18,7 +18,7 @@
 <resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
   <string name="default_string">Mặc định</string>
   <!-- Vendor mismatched fingerprint warning [CHAR LIMIT=NONE] -->
-  <string name="system_error_vendorprint">Vendor image không phù hợp với phiên bản hệ thống.Xin vui lòng flash <xliff:g id="string">%s</xliff:g> vendor image phù hợp</string>
+  <string name="system_error_vendorprint">Vendor image không phù hợp với phiên bản hệ thống. Xin vui lòng flash <xliff:g id="string">%s</xliff:g> vendor image phù hợp</string>
   <string name="global_action_screenrecord">Quay màn hình</string>
   <!-- AOKP custom system animations -->
   <string name="animation_fade">Mờ dần</string>
@@ -26,8 +26,8 @@
   <string name="animation_slide_left">Trượt sang trái</string>
   <string name="animation_slide_right_no_fade">Trượt sang phải (Không mờ dần)</string>
   <string name="animation_slide_left_no_fade">Trượt sang trái (Không mờ dần)</string>
-  <string name="animation_slide_up">Trượt vào phía dưới</string>
-  <string name="animation_slide_down">Trượt vào phía trên</string>
+  <string name="animation_slide_up">Trượt xuống dưới</string>
+  <string name="animation_slide_down">Trượt lên trên</string>
   <string name="animation_default">Mặc định</string>
   <string name="animation_translucent">Trong suốt</string>
   <string name="animation_grow_shrink">Lớn dần (Trên cùng)</string>
@@ -44,4 +44,17 @@
   <!-- ADB enabled, but not connected notification title -->
   <string name="adb_not_connected_notification_title">ADB không hoạt động</string>
   <string name="adb_active_custom_tile_not_connected">không hoạt động</string>
+  <string name="singlehandmode_slide_hint_message">Trượt ngón tay của bạn trên thanh điều hướng để chuyển đổi giữa các chế độ xem màn hình tiêu chuẩn và thu nhỏ</string>
+  <!-- [CHAR LIMIT=NONE] Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_resetBatteryStats">đặt lại thống kê pin</string>
+  <!-- [CHAR LIMIT=NONE] Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_resetBatteryStats">Cho phép một ứng dụng đặt lại dữ liệu sử dụng pin mức thấp hiện tại.</string>
+  <!-- Title of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permlab_restartUI">khởi động lại các thanh hệ thống</string>
+  <!-- Description of an application permission, listed so the user can choose whether they want to allow the application to do this. -->
+  <string name="permdesc_restartUI">Khởi động lại SystemUIService để các thanh hệ thống có thể nạp các tài nguyên theo chủ đề</string>
+  <!-- Pocket Lock -->
+  <string name="pocket_lock_message_long_press">Nhấn giữ nút nguồn để tương tác</string>
+  <!-- Defines the sysfs attribute path used by pocket bridge
+        to communicate pocket state to the pocket judge kernel driver. -->
 </resources>

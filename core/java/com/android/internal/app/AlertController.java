@@ -192,7 +192,7 @@ public class AlertController {
         }
     }
 
-    protected AlertController(Context context, DialogInterface di, Window window) {
+    public AlertController(Context context, DialogInterface di, Window window) {
         mContext = context;
         mDialogInterface = di;
         mWindow = window;
@@ -888,7 +888,8 @@ public class AlertController {
             final int checkedItem = mCheckedItem;
             if (checkedItem > -1) {
                 listView.setItemChecked(checkedItem, true);
-                listView.setSelection(checkedItem);
+                listView.setSelectionFromTop(checkedItem,
+                        a.getDimensionPixelSize(R.styleable.AlertDialog_selectionScrollOffset, 0));
             }
         }
     }
@@ -1111,7 +1112,24 @@ public class AlertController {
 
                 if (mCursor != null) {
                     adapter = new SimpleCursorAdapter(mContext, layout, mCursor,
-                            new String[] { mLabelColumn }, new int[] { R.id.text1 });
+                            new String[] { mLabelColumn }, new int[] { R.id.text1 }) {
+                        @Override
+                        public View getView(int position, View convertView, ViewGroup parent) {
+                            View view = super.getView(position, convertView, parent);
+                            if (view instanceof CheckedTextView) {
+                                final CheckedTextView checkedTextView = (CheckedTextView) view;
+                                if (mCheckedItem != -1) {
+                                    if (mCheckedItem != position) {
+                                        checkedTextView.setChecked(false);
+                                    }
+                                }
+
+                                return checkedTextView;
+                            } else {
+                                return view;
+                            }
+                        }
+                    };
                 } else if (mAdapter != null) {
                     adapter = mAdapter;
                 } else {

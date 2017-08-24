@@ -30,6 +30,20 @@
     >
 
     <LinearLayout
+        android:layout_width="@dimen/notification_panel_width"
+        android:layout_height="wrap_content"
+        android:clipChildren="true"
+        android:clipToPadding="true"
+        android:layout_gravity="center" >
+
+        <ImageView android:id="@+id/background_image"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scaleType="centerCrop"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="48dp"
         android:gravity="center"
@@ -65,6 +79,19 @@
             android:contentDescription="@string/accessibility_quick_settings_edit"
             android:padding="14dp" />
 
+        <com.android.systemui.statusbar.phone.TaskManagerButton
+            android:id="@+id/task_manager_button"
+            style="@android:style/Widget.Material.Button.Borderless"
+            android:layout_toStartOf="@android:id/edit"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:clipToPadding="false"
+            android:clickable="true"
+            android:focusable="true"
+            android:src="@drawable/ic_tasklist_switch_normal"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:visibility="gone"/>
+
         <com.android.systemui.statusbar.AlphaOptimizedFrameLayout
             android:id="@+id/settings_button_container"
             android:layout_width="48dp"
@@ -90,6 +117,7 @@
 
         </com.android.systemui.statusbar.AlphaOptimizedFrameLayout>
 
+
         <com.android.systemui.statusbar.phone.ExpandableIndicator
             android:id="@+id/expand_indicator"
             android:layout_width="48dp"
@@ -100,6 +128,78 @@
             android:background="@drawable/ripple_drawable"
             android:contentDescription="@string/accessibility_quick_settings_expand"
             android:padding="12dp" />
+
+    </LinearLayout>
+
+
+    <LinearLayout
+        android:id="@+id/weather_container"
+        android:orientation="vertical"
+        android:layout_marginBottom="@dimen/clock_collapsed_bottom_margin"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_height="wrap_content"
+        android:paddingTop="10dp"
+        android:layout_gravity="right"
+        android:layout_width="wrap_content">
+
+        <TextView
+            android:id="@+id/weather_line_1"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingEnd="@dimen/status_bar_weather_padding_end"
+            android:gravity="right"
+            android:textColor="@color/status_bar_temperature_text_color"
+            android:textSize="@dimen/weather_text_size"
+            android:textAppearance="@style/TextAppearance.StatusBar.Expanded.WeatherTemp"
+            android:importantForAccessibility="noHideDescendants"/>
+
+        <TextView
+            android:id="@+id/weather_line_2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingEnd="@dimen/status_bar_weather_padding_end"
+            android:gravity="right"
+            android:textColor="@color/status_bar_temperature_location_text_color"
+            android:textSize="@dimen/weather_text_size"
+            android:textAppearance="@style/TextAppearance.StatusBar.Expanded.WeatherLocation"
+            android:importantForAccessibility="noHideDescendants"/>
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_marginBottom="@dimen/clock_collapsed_bottom_margin"
+        android:layout_alignParentBottom="true"
+        android:background="@color/transparent"
+        android:layout_toLeftOf="@id/weather_container"
+        android:layout_height="wrap_content"
+        android:layout_gravity="right"
+        android:layout_width="wrap_content">
+
+        <ImageView
+            android:id="@+id/weather_image"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toLeftOf="@id/weather_container"
+            android:background="@color/transparent"
+            android:gravity="center_vertical"
+            android:adjustViewBounds="true"
+            android:scaleType="fitCenter"
+            android:paddingRight="4dp"
+            android:paddingTop="70dp"
+            android:visibility="gone"
+            android:src="@drawable/weather_off"/>
+
+        <ImageView
+            android:id="@+id/no_weather_image"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@id/weather_container"
+            android:gravity="center_vertical"
+            android:paddingEnd="10dp"
+            android:visibility="gone"
+            android:src="@drawable/weather_off"/>
 
     </LinearLayout>
 

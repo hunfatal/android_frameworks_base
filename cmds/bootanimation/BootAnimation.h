@@ -26,8 +26,6 @@
 #include <EGL/egl.h>
 #include <GLES/gl.h>
 
-#include <utils/Thread.h>
-
 class SkBitmap;
 
 namespace android {
@@ -35,17 +33,11 @@ namespace android {
 class Surface;
 class SurfaceComposerClient;
 class SurfaceControl;
-#ifdef MULTITHREAD_DECODE
-class FrameManager;
-#endif
 
 // ---------------------------------------------------------------------------
 
 class BootAnimation : public Thread, public IBinder::DeathRecipient
 {
-#ifdef MULTITHREAD_DECODE
-    friend class FrameManager;
-#endif
 public:
                 BootAnimation();
     virtual     ~BootAnimation();
@@ -82,6 +74,13 @@ private:
         GLuint  name;
     };
 
+    struct Font {
+        FileMap* map;
+        Texture texture;
+        int char_width;
+        int char_height;
+    };
+
     struct Animation {
         struct Frame {
             String8 name;
@@ -98,8 +97,12 @@ private:
         struct Part {
             int count;  // The number of times this part should repeat, 0 for infinite
             int pause;  // The number of frames to pause for at the end of this part
-            int clockPosY;  // The y position of the clock, in pixels, from the bottom of the
-                            // display (the clock is centred horizontally). -1 to disable the clock
+            int clockPosX;  // The x position of the clock, in pixels. Positive values offset from
+                            // the left of the screen, negative values offset from the right.
+            int clockPosY;  // The y position of the clock, in pixels. Positive values offset from
+                            // the bottom of the screen, negative values offset from the top.
+                            // If either of the above are INT_MIN the clock is disabled, if INT_MAX
+                            // the clock is centred on that axis.
             String8 path;
             String8 trimData;
             SortedVector<Frame> frames;
@@ -116,21 +119,17 @@ private:
         String8 audioConf;
         String8 fileName;
         ZipFileRO* zip;
+        Font clockFont;
     };
 
-    /**
-     *IMG_OEM: bootanimation file from oem/media
-     *IMG_SYS: bootanimation file from system/media
-     *IMG_ENC: encrypted bootanimation file from system/media
-     */
-    enum ImageID { IMG_OEM = 0, IMG_SYS = 1, IMG_ENC = 2 };
-    const char *getAnimationFileName(ImageID image);
     status_t initTexture(Texture* texture, AssetManager& asset, const char* name);
-    status_t initTexture(const Animation::Frame& frame);
-    status_t initTexture(SkBitmap *bitmap);
+    status_t initTexture(FileMap* map, int* width, int* height);
+    status_t initFont(Font* font, const char* fallback);
     bool android();
     bool movie();
-    void drawTime(const Texture& clockTex, const int yPos);
+    void drawText(const char* str, const Font& font, bool bold, int* x, int* y);
+    void drawClock(const Font& font, const int xPos, const int yPos);
+    bool validClock(const Animation::Part& part);
     Animation* loadAnimation(const String8&);
     bool playAnimation(const Animation&);
     void releaseAnimation(Animation*) const;
@@ -140,12 +139,9 @@ private:
 
     void checkExit();
 
-    static SkBitmap *decode(const Animation::Frame& frame);
-
     sp<SurfaceComposerClient>       mSession;
     AssetManager mAssets;
     Texture     mAndroid[2];
-    Texture     mClock;
     int         mWidth;
     int         mHeight;
     bool        mUseNpotTextures = false;
@@ -156,54 +152,12 @@ private:
     sp<Surface> mFlingerSurface;
     bool        mClockEnabled;
     bool        mTimeIsAccurate;
+    bool        mTimeFormat12Hour;
     bool        mSystemBoot;
     String8     mZipFileName;
     SortedVector<String8> mLoadedFiles;
     sp<TimeCheckThread> mTimeCheckThread;
 };
-
-#ifdef MULTITHREAD_DECODE
-class FrameManager {
-public:
-    struct DecodeWork {
-        const BootAnimation::Animation::Frame *frame;
-        SkBitmap *bitmap;
-        size_t idx;
-    };
-
-    FrameManager(int numThreads, size_t maxSize,
-            const SortedVector<BootAnimation::Animation::Frame>& frames);
-    virtual ~FrameManager();
-
-    SkBitmap* next();
-
-protected:
-    DecodeWork getWork();
-    void completeWork(DecodeWork work);
-
-private:
-
-    class DecodeThread : public Thread {
-    public:
-        DecodeThread(FrameManager* manager);
-        virtual ~DecodeThread() {}
-    private:
-        virtual bool threadLoop();
-        FrameManager *mManager;
-    };
-
-    size_t mMaxSize;
-    size_t mFrameCounter;
-    size_t mNextIdx;
-    const SortedVector<BootAnimation::Animation::Frame>& mFrames;
-    Vector<DecodeWork> mDecodedFrames;
-    pthread_mutex_t mBitmapsMutex;
-    pthread_cond_t mSpaceAvailableCondition;
-    pthread_cond_t mBitmapReadyCondition;
-    bool mExit;
-    Vector<sp<DecodeThread> > mThreads;
-};
-#endif
 
 // ---------------------------------------------------------------------------
 
