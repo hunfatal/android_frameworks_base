@@ -12284,6 +12284,12 @@ public class WindowManagerService extends IWindowManager.Stub
         }
     }
 
+    /* @hide */
+    @Override
+    public int getSystemUIVisibility() {
+        return mLastStatusBarVisibility;
+        }
+    
     void updateNonSystemOverlayWindowsVisibilityIfNeeded(WindowState win, boolean surfaceShown) {
         if (!win.hideNonSystemOverlayWindowsWhenVisible()) {
             return;
