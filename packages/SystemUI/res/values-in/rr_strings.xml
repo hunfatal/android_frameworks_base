@@ -71,7 +71,7 @@
   <string name="quick_settings_network_adb_disabled_label">Tidak non aktifkan</string>
   <string name="quick_settings_sync_label">Sinkronisasi</string>
   <string name="accessibility_quick_settings_sync_off">Sinkronisasi mati</string>
-  <string name="accessibility_quick_settings_sync_on">Sinkronisasi aktif</string>
+  <string name="accessibility_quick_settings_sync_on">Sinkronisasi aktif ho</string>
   <string name="accessibility_quick_settings_sync_changed_off">Sinkronisasi dinonaktifkan</string>
   <string name="accessibility_quick_settings_sync_changed_on">Sinkronisasi diaktifkan</string>
   <string name="quick_settings_expanded_desktop_label">Perluas desktop</string>
@@ -117,7 +117,7 @@
   <string name="quick_settings_appsidebar_off">App side bar mati</string>
   <!-- Pulse Tile -->
   <string name="quick_settings_pulse_enabled">Pulse diaktifkan</string>
-  <string name="quick_settings_pulse_disabled">Tidak ada Visualizer</string>
+  <string name="quick_settings_pulse_disabled">No visualizer</string>
   <string name="quick_settings_pulse_label">Pulse</string>
   <string name="accessibility_quick_settings_pulse_off">Pulse nonaktif</string>
   <string name="accessibility_quick_settings_pulse_on">Pulse aktif</string>
@@ -270,8 +270,14 @@
   <string name="no_navigation_warning_title">Semua metode navigasi dimatikan</string>
   <string name="no_navigation_warning_text">Ketuk untuk menghidupkan</string>
   <!-- Pie controls -->
+  <string name="pie_date_format">EEEE, dd MMMM yyyy</string>
   <string name="pie_hour_format_12">hh:mm</string>
   <string name="pie_hour_format_24">HH:mm</string>
   <string name="pie_am_pm">a</string>
+  <string name="pie_state_name">Kontrol Pie</string>
+  <string name="pie_state_summary">Gunakan kontrol pie ketika dalam mode immersive</string>
+  <string name="pie_battery_level">"TINGKAT BATERAI "</string>
   <string name="quick_settings_pie">Pie</string>
+  <string name="accessibility_data_sim">Kartu SIM saat ini</string>
+  <string name="data_switch_started">Mengganti kartu SIM, dibutuhkan beberapa saat...</string>
 </resources>

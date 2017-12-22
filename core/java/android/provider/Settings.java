@@ -9441,6 +9441,27 @@ public static final String PHONE_BLACKLIST_REGEX_ENABLED = "phone_blacklist_rege
         };
 
         /**
+         * Whether dark theme is enabled or not
+         *
+         * @hide
+         */
+        public static final String THEME_PRIMARY_COLOR = "theme_primary_color";
+
+        /**
+         * Whether accent colors for themes are enabled or not
+         *
+         * @hide
+         */
+        public static final String THEME_ACCENT_COLOR = "theme_accent_color";
+
+        /**
+         * Whether accent colors or dark mode is supposed to show first
+         *
+         * @hide
+         */
+        public static final String THEME_SETTINGS_MODE = "theme_settings_mode";
+
+        /**
          * Whether or not the automatic storage manager is enabled and should run on the device.
          *
          * @hide
@@ -12191,6 +12212,13 @@ public static final String PHONE_BLACKLIST_REGEX_ENABLED = "phone_blacklist_rege
          * @hide
          */
         public static final String WIRED_RINGTONE_FOCUS_MODE = "wired_ringtone_focus_mode";
+
+       /**
+        * Whether to ignore the representation of outgoing calls set by the network.
+         *
+         * @hide
+         */
+         public static final String CONNECTED_LINE_IDENTIFICATION = "connected_line_identification";
 
         /**
          * Settings to backup. This is here so that it's in the same place as the settings

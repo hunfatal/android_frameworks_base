@@ -47,6 +47,7 @@ import android.os.ServiceManager;
 import android.os.RemoteException;
 import android.provider.Settings;
 import android.util.AttributeSet;
+import android.util.EventLog;
 import android.util.MathUtils;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -98,6 +99,8 @@ import com.android.internal.statusbar.IStatusBarService;
 import java.util.List;
 
 import cyanogenmod.providers.CMSettings;
+import com.android.settingslib.Utils;
+
 
 public class NotificationPanelView extends PanelView implements
         ExpandableView.OnHeightChangedListener,
@@ -270,6 +273,7 @@ public class NotificationPanelView extends PanelView implements
     private static AlphaAnimation mAlphaAnimation;
     private static boolean mTranslucentQuickSettings;
     private static FrameLayout mInnerBlurredView;
+    private int mAccentColor;
     
     private static Animation.AnimationListener mAnimationListener = new Animation.AnimationListener() {
 
@@ -350,6 +354,7 @@ public class NotificationPanelView extends PanelView implements
         mAfforanceHelper = new KeyguardAffordanceHelper(this, getContext());
         mKeyguardBottomArea.setAffordanceHelper(mAfforanceHelper);
         mLastOrientation = getResources().getConfiguration().orientation;
+        mAccentColor = Utils.getColorAccent(mContext);
         mServices = (ImageButton) findViewById(R.id.tm_services);
         mClearall = (ImageButton) findViewById(R.id.tm_clear_all);
         mServices.setOnClickListener(this);
@@ -2834,6 +2839,10 @@ public class NotificationPanelView extends PanelView implements
      * @param keyguardIsShowing whether keyguard is being shown
      */
     public boolean canCameraGestureBeLaunched(boolean keyguardIsShowing) {
+        if (!mStatusBar.isCameraAllowedByAdmin()) {
+            EventLog.writeEvent(0x534e4554, "63787722", -1, "");
+            return false;
+        }
         ResolveInfo resolveInfo = mKeyguardBottomArea.resolveCameraIntent();
         String packageToLaunch = (resolveInfo == null || resolveInfo.activityInfo == null)
                 ? null : resolveInfo.activityInfo.packageName;
@@ -2960,7 +2969,7 @@ public class NotificationPanelView extends PanelView implements
             mQSStroke = Settings.System.getInt(mContext.getContentResolver(),
                         Settings.System.QS_STROKE, 0);
             mCustomStrokeColor = Settings.System.getInt(mContext.getContentResolver(),
-                        Settings.System.QS_STROKE_COLOR, mContext.getResources().getColor(R.color.system_accent_color));
+                        Settings.System.QS_STROKE_COLOR, mAccentColor);
             mCustomStrokeThickness = Settings.System.getInt(mContext.getContentResolver(),
                         Settings.System.QS_STROKE_THICKNESS, 4);
             mCustomCornerRadius = Settings.System.getInt(mContext.getContentResolver(),
@@ -3013,7 +3022,7 @@ public class NotificationPanelView extends PanelView implements
                 // Don't do anything when disabled, it fucks up themes that use drawable instead of color
             } else if (mQSStroke == 1) { // use accent color for border
                 qSGd.setColor(mContext.getResources().getColor(R.color.system_primary_color));
-                qSGd.setStroke(mCustomStrokeThickness, mContext.getResources().getColor(R.color.system_accent_color),
+                qSGd.setStroke(mCustomStrokeThickness, mAccentColor,
                         mCustomDashWidth, mCustomDashGap);
             } else if (mQSStroke == 2) { // use custom border color
                 qSGd.setColor(mContext.getResources().getColor(R.color.system_primary_color));
