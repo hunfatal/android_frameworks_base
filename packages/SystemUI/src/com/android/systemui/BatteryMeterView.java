@@ -583,7 +583,7 @@ public class BatteryMeterView extends View implements DemoMode,
             final int resId = getBatteryDrawableResourceForMode(mode);
             final Drawable batteryDrawable;
             try {
-                batteryDrawable = mContext.getDrawable(resId);
+                batteryDrawable = getContext().getDrawable(resId);
             } catch (Resources.NotFoundException e) {
                 throw new BatteryMeterDrawableException(res.getResourceName(resId) + " is an " +
                         "invalid drawable", e);
@@ -649,7 +649,7 @@ public class BatteryMeterView extends View implements DemoMode,
             mBatteryIconColor = Settings.System.getInt(mContext.getContentResolver(),Settings.System.BATTERY_ICON_COLOR, 0xFFFFFFFF);
 	     mColorSwitch =  Settings.System.getInt(mContext.getContentResolver(),Settings.System.STATUSBAR_COLOR_SWITCH, 0) == 1;
             int drawableResId = getBatteryDrawableResourceForMode(mode);
-            mBatteryDrawable = (LayerDrawable) mContext.getDrawable(drawableResId);
+            mBatteryDrawable = (LayerDrawable) getContext().getDrawable(drawableResId);
             mFrameDrawable = mBatteryDrawable.findDrawableByLayerId(R.id.battery_frame);
             mFrameDrawable.setTint(mCurrentBackgroundColor != 0
                     ? mCurrentBackgroundColor
