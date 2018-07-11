@@ -250,5 +250,12 @@
     <!-- Accessibility label for button to open running apps prefscreen [CHAR LIMIT=NONE] -->
     <string name="accessibility_quick_settings_running_services">Open Running Services screen.</string>
 
+    <!-- GPS QS Tile -->
+    <string name="quick_settings_gps_label">GPS</string>
+    <string name="quick_settings_gps_on">GPS on</string>
+    <string name="quick_settings_gps_off">GPS off</string>
+    <string name="accessibility_quick_settings_gps_changed_on">GPS turned on.</string>
+    <string name="accessibility_quick_settings_gps_changed_off">GPS turned off.</string>
+
 
 </resources>
