@@ -47,6 +47,7 @@ import com.android.systemui.qs.tiles.ExpandedDesktopTile;
 import com.android.systemui.qs.tiles.FlashlightTile;
 import com.android.systemui.qs.tiles.GamingModeTile;
 import com.android.systemui.qs.tiles.HavocTile;
+import com.android.systemui.qs.tiles.GpsTile;
 import com.android.systemui.qs.tiles.HeadsUpTile;
 import com.android.systemui.qs.tiles.HotspotTile;
 import com.android.systemui.qs.tiles.HWKeysTile;
@@ -209,6 +210,8 @@ public class QSFactoryImpl implements QSFactory {
                 return new PieTile(mHost);
             case "onehand":
                 return new OneHandTile(mHost);
+            case "gps":
+                return new GpsTile(mHost);
         }
 
         // Intent tiles.
