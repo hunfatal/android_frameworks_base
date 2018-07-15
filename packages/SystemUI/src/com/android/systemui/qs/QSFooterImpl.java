@@ -345,6 +345,7 @@ public class QSFooterImpl extends FrameLayout implements Tunable, QSFooter,
         updateAlarmVisibilities();
         mSettingsContainer.findViewById(R.id.tuner_icon).setVisibility(View.INVISIBLE);
         final boolean isDemo = UserManager.isDeviceInDemoMode(mContext);
+        final boolean hasEdit = !isEditDisabled();
 
         mServicesButtonVisible = Settings.System.getInt(
                 mContext.getContentResolver(), Settings.System.QSFOOTER_SHOW_SERVICES,
@@ -357,12 +358,16 @@ public class QSFooterImpl extends FrameLayout implements Tunable, QSFooter,
         mMultiUserSwitch.setVisibility(mExpanded && mMultiUserSwitch.hasMultipleUsers() && !isDemo
                 ? View.VISIBLE : View.INVISIBLE);
 
-        mEdit.setVisibility(isDemo || !mExpanded ? View.INVISIBLE : View.VISIBLE);
+        mEdit.setVisibility(hasEdit ? isDemo || !mExpanded ? View.INVISIBLE : View.VISIBLE : View.GONE);
 
         mRunningServicesButton.setVisibility(mServicesButtonVisible ? (!isDemo && mExpanded
                 ? View.VISIBLE : View.INVISIBLE) : View.GONE);
 
         mSettingsButton.setVisibility(mSettingsButtonVisible ? View.VISIBLE : View.GONE);
+    }
+    
+    private boolean isEditDisabled() {
+        return Settings.System.getInt(mContext.getContentResolver(), Settings.System.QSFOOTER_DISABLE_EDIT, 0) == 1;
     }
 
     private void updateListeners() {

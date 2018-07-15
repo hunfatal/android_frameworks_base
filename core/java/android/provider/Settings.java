@@ -4488,7 +4488,7 @@ public final class Settings {
          * @hide
          */
         public static final String  RECENTS_CLEAR_ALL_LOCATION = "recents_clear_all_location";
-
+        
         /**
          * Which applications to disable heads up notifications for
          *
@@ -5651,6 +5651,12 @@ public final class Settings {
          * @hide
          */
         public static final String QSFOOTER_SHOW_SERVICES = "qs_footer_show_services";
+
+        /**
+        * Whether to show or hide the edit icon
+        * @hide
+        */
+        public static final String QSFOOTER_DISABLE_EDIT = "qs_footer_disable_edit";
 
         /**
          * Change quick settings tiles animation style
