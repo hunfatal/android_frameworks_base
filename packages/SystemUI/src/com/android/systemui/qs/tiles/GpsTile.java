@@ -33,12 +33,8 @@ import com.android.systemui.statusbar.policy.GpsController.GpsSettingsChangeCall
 /** Quick settings tile: Gps **/
 public class GpsTile extends QSTile<QSTile.BooleanState> {
 
-    private final AnimationIcon mEnable =
-        new AnimationIcon(R.drawable.ic_signal_location_enable_animation,
-            R.drawable.ic_signal_location_disable);
-    private final AnimationIcon mDisable =
-        new AnimationIcon(R.drawable.ic_signal_location_disable_animation,
-            R.drawable.ic_signal_location_enable);
+    private final mEnableIcon = ResourceIcon.get(R.drawable.ic_qs_gps_on);
+    private final mDisableIcon = ResourceIcon.get(R.drawable.ic_qs_gps_off);
 
     private final GpsController mController;
     private final KeyguardMonitor mKeyguard;
@@ -107,10 +103,10 @@ public class GpsTile extends QSTile<QSTile.BooleanState> {
 
         if (gpsEnabled) {
             state.contentDescription = mContext.getString(R.string.accessibility_quick_settings_gps_on);
-            state.icon = mEnable;
+            state.icon = mEnableIcon;
         } else {
             state.contentDescription = mContext.getString(R.string.accessibility_quick_settings_gps_off);
-            state.icon = mDisable;
+            state.icon = mDisableIcon;
         }
 
         state.minimalAccessibilityClassName = state.expandedAccessibilityClassName
