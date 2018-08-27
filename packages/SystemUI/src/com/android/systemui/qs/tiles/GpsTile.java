@@ -33,8 +33,8 @@ import com.android.systemui.statusbar.policy.GpsController.GpsSettingsChangeCall
 /** Quick settings tile: Gps **/
 public class GpsTile extends QSTile<QSTile.BooleanState> {
 
-    private final mEnableIcon = ResourceIcon.get(R.drawable.ic_qs_gps_on);
-    private final mDisableIcon = ResourceIcon.get(R.drawable.ic_qs_gps_off);
+    private final Icon mEnableIcon = ResourceIcon.get(R.drawable.ic_qs_gps_on);
+    private final Icon mDisableIcon = ResourceIcon.get(R.drawable.ic_qs_gps_off);
 
     private final GpsController mController;
     private final KeyguardMonitor mKeyguard;
