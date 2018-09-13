@@ -263,7 +263,7 @@
     <!-- vpn icon switch -->
     <string name="status_bar_volume">Vibration</string>
 
-        <!-- Tuner -->
+    <!-- Tuner -->
     <string name="systemui_tuner_qs_title">UI Tuner</string>
       
     <!-- Heads up toast -->
@@ -278,13 +278,13 @@
     <string name="quick_settings_pulse_disabled">No Visualizer</string>
     <string name="quick_settings_pulse_label">Navigationbar Visualizer</string>
 
-        <!-- PA Pie controls -->
+    <!-- PA Pie controls -->
     <string name="pie_date_format" translatable="false">ccc, dd MMM yyyy</string>
     <string name="pie_hour_format_12" translatable="false">hh:mm</string>
     <string name="pie_hour_format_24" translatable="false">HH:mm</string>
     <string name="pie_am_pm" translatable="false">a</string>
 
-        <!-- Title shown in recents popup for showing app launch in floating mode -->
+    <!-- Title shown in recents popup for showing app launch in floating mode -->
     <string name="recent_float_mode_title">Float Mode</string>
 
     <!-- App circle sidebar -->
@@ -308,7 +308,7 @@
 
     <string name="recents_custom_android_n">CLEAR ALL</string>
 
-     <!-- Slim recents app sidebar queue app toast -->
+    <!-- Slim recents app sidebar queue app toast -->
     <string name="toast_recents_queue_app">Launch %s after closing recents</string>
     <string name="toast_recents_cancel_queued_app">Cancelled app launch</string>
 
@@ -333,6 +333,13 @@
 
     <!-- Zen icon in statusbar -->
     <string name="show_zen_icon_title">Zen icon</string>
+    
+    <!-- GPS Tile -->
+    <string name="quick_settings_gps_label">GPS</string>
+    <string name="quick_settings_gps_on">GPS on</string>
+    <string name="quick_settings_gps_off">GPS off</string>
+    <string name="accessibility_quick_settings_gps_changed_on">GPS turned on.</string>
+    <string name="accessibility_quick_settings_gps_changed_off">GPS turned off.</string>
 
 </resources>
 
