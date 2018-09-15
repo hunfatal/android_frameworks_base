@@ -1453,7 +1453,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
 
     private final class SilentModeTriStateAction implements Action, View.OnClickListener {
 
-        private final int[] ITEM_IDS = { R.id.option1, R.id.option2, R.id.option3, R.id.option4 };
+        private final int[] ITEM_IDS = { R.id.option1, R.id.option2, R.id.option3 };
         private final int[] ITEM_INDEX_TO_ZEN_MODE = {
                 Global.ZEN_MODE_NO_INTERRUPTIONS,
                 Global.ZEN_MODE_IMPORTANT_INTERRUPTIONS,
@@ -1470,16 +1470,15 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             mHandler = handler;
             mContext = context;
         }
+        
+        private int ringerModeToIndex(int ringerMode) {
+            // They just happen to coincide
+            return ringerMode;
+        }
 
         private int indexToRingerMode(int index) {
-            if (index == 2) {
-                if (mHasVibrator) {
-                    return AudioManager.RINGER_MODE_VIBRATE;
-                } else {
-                    return AudioManager.RINGER_MODE_NORMAL;
-                }
-            }
-            return AudioManager.RINGER_MODE_NORMAL;
+            // They just happen to coincide
+            return index;
         }
 
         @Override
@@ -1490,29 +1489,10 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
         public View create(Context context, View convertView, ViewGroup parent,
                 LayoutInflater inflater) {
             View v = inflater.inflate(R.layout.global_actions_silent_mode, parent, false);
-
-            int ringerMode = mAudioManager.getRingerModeInternal();
-            int zenMode = Global.getInt(mContext.getContentResolver(), Global.ZEN_MODE,
-                    Global.ZEN_MODE_OFF);
-            int selectedIndex = 0;
-            if (zenMode != Global.ZEN_MODE_OFF) {
-                if (zenMode == Global.ZEN_MODE_NO_INTERRUPTIONS) {
-                    selectedIndex = 0;
-                } else if (zenMode == Global.ZEN_MODE_IMPORTANT_INTERRUPTIONS) {
-                    selectedIndex = 1;
-                }
-            } else if (ringerMode == AudioManager.RINGER_MODE_VIBRATE) {
-                selectedIndex = 2;
-            } else if (ringerMode == AudioManager.RINGER_MODE_NORMAL) {
-                selectedIndex = 3;
-            }
-
-            for (int i = 0; i < ITEM_IDS.length; i++) {
+            
+            int selectedIndex = ringerModeToIndex(mAudioManager.getRingerModeInternal());
+            for (int i = 0; i < 3; i++) {
                 View itemView = v.findViewById(ITEM_IDS[i]);
-                if (!mHasVibrator && i == 2) {
-                    itemView.setVisibility(View.GONE);
-                    continue;
-                }
                 itemView.setSelected(selectedIndex == i);
                 // Set up click handler
                 itemView.setTag(i);
@@ -1543,22 +1523,7 @@ class GlobalActions implements DialogInterface.OnDismissListener, DialogInterfac
             if (!(v.getTag() instanceof Integer)) return;
 
             int index = (Integer) v.getTag();
-            int zenMode = ITEM_INDEX_TO_ZEN_MODE[index];
-            // ZenModeHelper will revert zen mode back to the previous value if we just
-            // put the value into the Settings db, so use INotificationManager instead
-            INotificationManager noMan = INotificationManager.Stub.asInterface(
-                    ServiceManager.getService(Context.NOTIFICATION_SERVICE));
-            try {
-                noMan.setZenMode(zenMode, null, TAG);
-            } catch (RemoteException e) {
-                Log.e(TAG, "Unable to set zen mode", e);
-            }
-
-            if (index == 2 || index == 3) {
-                int ringerMode = indexToRingerMode(index);
-                mAudioManager.setRingerModeInternal(ringerMode);
-            }
-            mAdapter.notifyDataSetChanged();
+            mAudioManager.setRingerModeInternal(indexToRingerMode(index));
             mHandler.sendEmptyMessageDelayed(MESSAGE_DISMISS, DIALOG_DISMISS_DELAY);
         }
     }
