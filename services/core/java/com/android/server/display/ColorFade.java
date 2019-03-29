@@ -57,7 +57,7 @@ import com.android.server.policy.WindowManagerPolicy;
  * that belongs to the {@link DisplayPowerController}.
  * </p>
  */
-final class ColorFade {
+final class ColorFade implements ScreenStateAnimator {
     private static final String TAG = "ColorFade";
 
     private static final boolean DEBUG = false;
@@ -687,7 +687,9 @@ final class ColorFade {
     }
 
     private static void logEglError(String func) {
-        Slog.e(TAG, func + " failed: error " + EGL14.eglGetError(), new Throwable());
+        if (DEBUG) {
+            Slog.e(TAG, func + " failed: error " + EGL14.eglGetError(), new Throwable());
+        }
     }
 
     private static boolean checkGlErrors(String func) {

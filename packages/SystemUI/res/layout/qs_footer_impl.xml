@@ -46,13 +46,13 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center_vertical|start"
-            android:paddingStart="16dp">
+            android:paddingStart="@dimen/qs_footer_padding_start">
 
             <include
                 layout="@layout/mobile_signal_group"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="@dimen/qs_footer_mobilegroup_margin_end"
                 android:visibility="gone" />
 
             <com.android.keyguard.CarrierText
@@ -60,7 +60,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="24dp"
+                android:layout_marginEnd="32dp"
                 android:ellipsize="marquee"
                 android:textAppearance="@style/TextAppearance.QS.TileLabel"
                 android:textColor="?android:attr/textColorPrimary"
@@ -88,8 +88,7 @@
                 android:layout_height="48dp"
                 android:layout_alignParentEnd="true"
                 android:background="@drawable/ripple_drawable"
-                android:focusable="true"
-                android:visibility="gone">
+                android:focusable="true">
 
                 <ImageView
                     android:id="@+id/multi_user_avatar"
@@ -101,7 +100,7 @@
 
             <com.android.systemui.statusbar.AlphaOptimizedImageView
                 android:id="@android:id/edit"
-                android:layout_width="46dp"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:background="?android:attr/selectableItemBackgroundBorderless"
                 android:clickable="true"
@@ -127,7 +126,7 @@
 
             <com.android.systemui.statusbar.AlphaOptimizedFrameLayout
                 android:id="@+id/settings_button_container"
-                android:layout_width="46dp"
+                android:layout_width="48dp"
                 android:layout_height="48dp"
                 android:clipChildren="false"
                 android:clipToPadding="false">
