@@ -807,6 +807,7 @@ public final class SystemServer {
         boolean isWatch = context.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_WATCH);
         boolean disablePerfService = SystemProperties.getBoolean("persist.vendor.perfservice.disable", false);
+        boolean boostEnabled = context.getResources().getBoolean(R.bool.config_enableQcCpuBoost);
 
         boolean enableVrService = context.getPackageManager().hasSystemFeature(
                 PackageManager.FEATURE_VR_MODE_HIGH_PERFORMANCE);
@@ -1061,7 +1062,7 @@ public final class SystemServer {
         mSystemServiceManager.startService(UiModeManagerService.class);
         traceEnd();
 
-        if (!disablePerfService) {
+        if (boostEnabled && !disablePerfService) {
             try {
                 Slog.i(TAG, "Perf Service");
                 perfServiceClass = Class.forName(PERF_SERVICE_CLASS);
@@ -1344,9 +1345,11 @@ public final class SystemServer {
                 traceEnd();
             }
 
-            traceBeginAndSlog("StartDockObserver");
-            mSystemServiceManager.startService(DockObserver.class);
-            traceEnd();
+            if (!context.getResources().getBoolean(R.bool.config_enableDreamlinerService)) {
+                traceBeginAndSlog("StartDockObserver");
+                mSystemServiceManager.startService(DockObserver.class);
+                traceEnd();
+            }
 
             if (isWatch) {
                 traceBeginAndSlog("StartThermalObserver");

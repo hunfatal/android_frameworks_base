@@ -5353,18 +5353,6 @@ public final class Settings {
         public static final String PULSE_APPS_BLACKLIST = "pulse_apps_blacklist";
 
         /**
-         *  Weather to use a custom color for the visualizer on the lock screen
-         * @hide
-         */
-        public static final String LOCK_SCREEN_VISUALIZER_USE_CUSTOM_COLOR = "lock_screen_visualizer_use_custom_color";
-
-        /**
-         *  Custom color of the visualizer on the lock screen
-         * @hide
-         */
-        public static final String LOCK_SCREEN_VISUALIZER_CUSTOM_COLOR = "lock_screen_visualizer_custom_color";
-
-        /**
          * Whether to launch default music player when headset plugged in
          * @hide
          */
@@ -6462,6 +6450,50 @@ public final class Settings {
         public static final String THEME_PICKER = "theme_picker";
 
         /**
+         * modify how the album art shows up on lockscreen
+         * 0 - default
+         * 1 - grayscale
+         * 2 - blurry
+         * @hide
+         */
+        public static final String LOCKSCREEN_ALBUM_ART_FILTER = "lockscreen_album_art_filter";
+
+        /**
+         * Slim recents enter/exit animation
+         * @hide
+         */
+        public static final String SLIM_RECENT_ENTER_EXIT_ANIMATION = "slim_recent_enter_exit_animation";
+
+        /** @hide */
+        private static final Validator SLIM_RECENT_ENTER_EXIT_ANIMATION_VALIDATOR = ANY_INTEGER_VALIDATOR;
+
+        /**
+         * Statusbar logo
+         * @hide
+         */
+        public static final String STATUS_BAR_LOGO = "status_bar_logo";
+
+        /**
+         * Statusbar logo color setting
+         * @hide
+         */
+        public static final String STATUS_BAR_LOGO_COLOR = "status_bar_logo_color";
+
+        /**
+         * Position of Status bar logo
+         * 0 - Left (default)
+         * 1 - Right
+         * @hide
+         */
+        public static final String STATUS_BAR_LOGO_POSITION = "status_bar_logo_position";
+
+        /**
+         * Statusbar logo custom style
+         * @hide
+         */
+        public static final String STATUS_BAR_LOGO_STYLE = "status_bar_logo_style";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *
@@ -6597,6 +6629,7 @@ public final class Settings {
             STATUS_BAR_CUSTOM_HEADER_IMAGE,
             STATUS_BAR_FILE_HEADER_IMAGE,
             DOZE_ON_CHARGE,
+            SLIM_RECENT_ENTER_EXIT_ANIMATION,
         };
 
         /**
@@ -6809,6 +6842,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(STATUS_BAR_CUSTOM_HEADER_IMAGE);
             PRIVATE_SETTINGS.add(STATUS_BAR_FILE_HEADER_IMAGE);
             PRIVATE_SETTINGS.add(DOZE_ON_CHARGE);
+            PRIVATE_SETTINGS.add(SLIM_RECENT_ENTER_EXIT_ANIMATION);
         }
 
         /**
@@ -6987,6 +7021,7 @@ public final class Settings {
             VALIDATORS.put(STATUS_BAR_FILE_HEADER_IMAGE, STATUS_BAR_FILE_HEADER_IMAGE_VALIDATOR);
             VALIDATORS.put(NOTIFICATION_LIGHT_PULSE, BOOLEAN_VALIDATOR);
             VALIDATORS.put(DOZE_ON_CHARGE, DOZE_ON_CHARGE_VALIDATOR);
+            VALIDATORS.put(SLIM_RECENT_ENTER_EXIT_ANIMATION, SLIM_RECENT_ENTER_EXIT_ANIMATION_VALIDATOR);
         }
 
         /**
@@ -11303,25 +11338,60 @@ public final class Settings {
         public static final String EDGE_GESTURES_BACK_USE_BLACK_ARROW = "edge_gestures_back_use_black_arrow";
 
         /**
-         * Select various actions for squeeze gesture
+         * Select various actions for short squeeze gesture
          *
          * @hide
          */
-        public static final String SQUEEZE_SELECTION = "squeeze_selection";
+        public static final String SHORT_SQUEEZE_SELECTION = "short_squeeze_selection";
 
         /**
-         * Launch custom application when using the squeeze feature (active edge)
+         * Select various actions for long squeeze gesture
          *
          * @hide
          */
-        public static final String SQUEEZE_CUSTOM_APP = "squeeze_custom_app";
+        public static final String LONG_SQUEEZE_SELECTION = "long_squeeze_selection";
+
+        /**
+         * Launch custom application when using the short squeeze feature
+         *
+         * @hide
+         */
+        public static final String SHORT_SQUEEZE_CUSTOM_APP = "short_squeeze_custom_app";
 
         /**
          * Display friendly name of custom application launched when
-         * using the squeeze feature (active edge)
+         * using the short queeze feature (active edge)
          * @hide
          */
-        public static final String SQUEEZE_CUSTOM_APP_FR_NAME = "squeeze_custom_app_fr_name";
+        public static final String SHORT_SQUEEZE_CUSTOM_APP_FR_NAME = "short_squeeze_custom_app_fr_name";
+
+        /**
+         * Launch custom application when using the long squeeze feature
+         *
+         * @hide
+         */
+        public static final String LONG_SQUEEZE_CUSTOM_APP = "long_squeeze_custom_app";
+
+        /**
+         * Display friendly name of custom application launched when
+         * using the long squeeze feature (active edge)
+         * @hide
+         */
+        public static final String LONG_SQUEEZE_CUSTOM_APP_FR_NAME = "long_squeeze_custom_app_fr_name";
+
+        /**
+         * Launch custom activity when using the short squeeze feature (active edge)
+         *
+         * @hide
+         */
+        public static final String SHORT_SQUEEZE_CUSTOM_ACTIVITY = "short_squeeze_custom_activity";
+
+        /**
+         * Launch custom activity when using the long squeeze feature (active edge)
+         *
+         * @hide
+         */
+        public static final String LONG_SQUEEZE_CUSTOM_ACTIVITY = "long_squeeze_custom_activity";
 
         /**
          * Whether to show or hide the keyguard multiuser switch
@@ -11329,6 +11399,24 @@ public final class Settings {
          * @hide
          */
         public static final String KEYGUARD_MULTIUSER_SWITCH = "keyguard_multiuser_switch";
+
+        /**
+         * Lockscreen lavalamp psychedelic colors
+         * @hide
+         */
+        public static final String LOCKSCREEN_LAVALAMP_ENABLED = "lockscreen_lavalamp_enabled";
+
+        /**
+         * Lockscreen lavalamp animation speed
+         * @hide
+         */
+        public static final String LOCKSCREEN_LAVALAMP_SPEED = "lockscreen_lavalamp_speed";
+
+        /**
+         * Whether to use automatic color for visualizer
+         * @hide
+         */
+        public static final String LOCKSCREEN_VISUALIZER_AUTOCOLOR = "lockscreen_visualizer_autocolor";
 
         /**
          * This are the settings to be backed up.
@@ -14502,6 +14590,30 @@ public final class Settings {
          * @hide
          */
         public static final String KEEP_PROFILE_IN_BACKGROUND = "keep_profile_in_background";
+
+        /**
+         * Whether or not to use aggressive device idle constants and ignore motion.
+         * Type: int (0 for false, 1 for true)
+         * Default: 0
+         * @hide
+         */
+        public static final String AGGRESSIVE_IDLE_ENABLED = "aggressive_idle_enabled";
+
+        /**
+         * Whether or not to use aggressive app idle constants.
+         * Type: int (0 for false, 1 for true)
+         * Default: 0
+         * @hide
+         */
+        public static final String AGGRESSIVE_STANDBY_ENABLED = "aggressive_standby_enabled";
+
+        /**
+         * Flag to automatically enable Aggressive Idle and Standby with battery saver.
+         * Type: int (0 for false, 1 for true)
+         * Default: 0
+         * @hide
+         */
+        public static final String AGGRESSIVE_BATTERY_SAVER = "aggressive_battery_saver";
 
         /**
          * Get the key that retrieves a bluetooth headset's priority.

@@ -342,4 +342,10 @@
 
   <!-- Available icon mask paths for the adaptive icon shape setting -->
   <java-symbol type="array" name="system_icon_masks" />
+
+  <!-- Dreamliner service -->
+  <java-symbol type="bool" name="config_enableDreamlinerService" />
+
+  <!-- Whether devices supports Qualcomm Boost Framework -->
+  <java-symbol type="bool" name="config_enableQcCpuBoost" />
 </resources>

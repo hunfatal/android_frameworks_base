@@ -120,6 +120,7 @@ public class ThemeAccentUtils {
         "com.accents.extendedgreen", // 54
         "com.accents.diffdaygreen", // 55
         "com.accents.jadegreen", // 56
+        "com.accents.oneplusred", // 57
     };
 
     // Themes
@@ -157,6 +158,7 @@ public class ThemeAccentUtils {
         "com.havoc.themes.darkaf", // 30
         "com.havoc.themes.almostblack", // 31
         "com.havoc.themes.black", // 32
+        "com.havoc.themes.blackpearl", // 33
     };
 
     private static final String[] QS_TILE_THEMES = {

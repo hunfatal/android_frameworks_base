@@ -220,7 +220,7 @@
     <string name="gaming_mode_tile_toast">Gaming mode enabled</string>
     <string name="gaming_mode_tile_toast_disabled">Gaming mode disabled</string>
     <string name="gaming_mode_dialog_title">Gaming Mode</string>
-    <string name="gaming_mode_dialog_message">When gaming mode is enabled, your ringer mode will change to vibrate mode, all heads-up messages will be disabled and hardware keys will be turned off. Media volume will be increased to the maximum value. All the disabled settings will be reset to default once you exit Gaming Mode.</string>
+    <string name="gaming_mode_dialog_message">When gaming mode is enabled, all heads-up messages will be disabled and hardware keys will be turned off. All the disabled settings will be reset to default once you exit Gaming Mode.</string>
     <string name="accessibility_quick_settings_gaming_mode_on">Gaming Mode</string>
     <string name="accessibility_quick_settings_gaming_mode_off">Gaming Mode</string>
 
@@ -339,4 +339,9 @@
 
     <!-- OneHand mode QS tile -->
     <string name="qs_onehand_label">One Handed mode</string>
+
+    <!-- Screen pinning dialog description. (for devices without navbar) -->
+    <string name="screen_pinning_description_no_navbar">This keeps it in view until you unpin. Touch &amp; hold Back to unpin.</string>
+     <!-- Notify use that they are in Lock-to-app (for devices without navbar)-->
+    <string name="screen_pinning_toast_no_navbar">To unpin this screen, touch &amp; hold Back button</string>
 </resources>
