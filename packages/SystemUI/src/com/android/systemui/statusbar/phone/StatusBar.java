@@ -4753,7 +4753,15 @@ public class StatusBar extends SystemUI implements DemoMode,
         boolean useGlassyTheme = false;
 
         haltTicker();
-
+        
+        final boolean deviceInCarMode = umm.getCurrentModeType() == Configuration.UI_MODE_TYPE_CAR;
+        
+        if (deviceInCarMode) {
+            mUiOffloadThread.submit(() -> {
+                umm.setNightMode(UiModeManager.MODE_NIGHT_AUTO);
+            });
+        }
+        
         if (mCurrentTheme == 0) {
             // The system wallpaper defines if QS should be light or dark.
             final WallpaperColors systemColors = mColorExtractor.getWallpaperColors(WallpaperManager.FLAG_SYSTEM);
@@ -4771,7 +4779,7 @@ public class StatusBar extends SystemUI implements DemoMode,
             useGlassyTheme = mCurrentTheme == 4;
         }
 
-        if (isUsingDarkTheme() == false && isUsingShadyTheme() == false && isUsingGlassyTheme() == false) {
+        if (isUsingDarkTheme() == false && isUsingShadyTheme() == false && isUsingGlassyTheme() == false && !deviceInCarMode) {
             mUiOffloadThread.submit(() -> {
                 umm.setNightMode(UiModeManager.MODE_NIGHT_NO);
             });
@@ -4784,7 +4792,10 @@ public class StatusBar extends SystemUI implements DemoMode,
             unfuckBlackWhiteAccent();
             mUiOffloadThread.submit(() -> {
                 ThemeAccentUtils.setLightDarkTheme(mOverlayManager, mLockscreenUserManager.getCurrentUserId(), useDark);
-                umm.setNightMode(UiModeManager.MODE_NIGHT_YES);
+                
+                if (!deviceInCarMode) {
+                    umm.setNightMode(UiModeManager.MODE_NIGHT_YES);
+                }
             });
         }
 
@@ -4795,7 +4806,9 @@ public class StatusBar extends SystemUI implements DemoMode,
             unfuckBlackWhiteAccent();
             mUiOffloadThread.submit(() -> {
                 ThemeAccentUtils.setShadyTheme(mOverlayManager, mLockscreenUserManager.getCurrentUserId(), useShady);
-                umm.setNightMode(UiModeManager.MODE_NIGHT_YES);
+                if (!deviceInCarMode) {
+                    umm.setNightMode(UiModeManager.MODE_NIGHT_YES);
+                }
             });
         }
 
@@ -4806,7 +4819,9 @@ public class StatusBar extends SystemUI implements DemoMode,
             unfuckBlackWhiteAccent();
             mUiOffloadThread.submit(() -> {
                 ThemeAccentUtils.setGlassyTheme(mOverlayManager, mLockscreenUserManager.getCurrentUserId(), useGlassy);
-                umm.setNightMode(UiModeManager.MODE_NIGHT_YES);
+                if (!deviceInCarMode) {
+                    umm.setNightMode(UiModeManager.MODE_NIGHT_YES);
+                }
             });
         }
 
