@@ -207,7 +207,7 @@ please see styles_device_defaults.xml.
 
     <style name="TextAppearance.Material.Subhead">
         <item name="textSize">@dimen/text_size_subhead_material</item>
-        <item name="fontFamily">@string/font_family_subhead_material</item>
+        <item name="fontFamily">@string/config_headlineFontFamily</item>
         <item name="textColor">?attr/textColorPrimary</item>
     </style>
 
@@ -220,7 +220,7 @@ please see styles_device_defaults.xml.
 
     <style name="TextAppearance.Material.Body2">
         <item name="textSize">@dimen/text_size_body_2_material</item>
-        <item name="fontFamily">@string/font_family_body_2_material</item>
+        <item name="fontFamily">@string/config_headlineFontFamilyMedium</item>
         <item name="textColor">?attr/textColorPrimary</item>
     </style>
 
@@ -332,7 +332,7 @@ please see styles_device_defaults.xml.
     <style name="TextAppearance.Material.Widget.PopupMenu.Large" parent="TextAppearance.Material.Menu" />
     <style name="TextAppearance.Material.Widget.PopupMenu.Small" parent="TextAppearance.Material.Menu" />
     <style name="TextAppearance.Material.Widget.PopupMenu.Header">
-        <item name="fontFamily">@string/font_family_title_material</item>
+        <item name="fontFamily">@string/config_headlineFontFamilyMedium</item>
         <item name="textSize">@dimen/text_size_menu_header_material</item>
         <item name="textColor">?attr/colorAccent</item>
     </style>
@@ -466,14 +466,17 @@ please see styles_device_defaults.xml.
     </style>
 
     <style name="TextAppearance.Material.Notification">
+        <item name="fontFamily">@string/config_headlineFontFamily</item>
         <item name="textColor">@color/notification_secondary_text_color_light</item>
         <item name="textSize">@dimen/notification_text_size</item>
     </style>
 
-    <style name="TextAppearance.Material.Notification.Reply" />
+    <style name="TextAppearance.Material.Notification.Reply">
+        <item name="fontFamily">sans-serif</item>
+    </style>
 
     <style name="TextAppearance.Material.Notification.Title">
-        <item name="fontFamily">sans-serif-medium</item>
+        <item name="fontFamily">@string/config_headlineFontFamilyMedium</item>
         <item name="textSize">@dimen/notification_title_text_size</item>
     </style>
 
@@ -482,6 +485,7 @@ please see styles_device_defaults.xml.
     </style>
 
     <style name="TextAppearance.Material.Notification.Info">
+        <item name="fontFamily">sans-serif</item>
         <item name="textSize">@dimen/notification_subtext_size</item>
     </style>
 

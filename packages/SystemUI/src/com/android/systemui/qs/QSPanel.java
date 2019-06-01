@@ -614,6 +614,7 @@ public class QSPanel extends LinearLayout implements Tunable, Callback, Brightne
             public void run() {
                 if (mCustomizePanel != null) {
                     if (!mCustomizePanel.isCustomizing()) {
+                        mCustomizePanel.updateTopMargin();
                         int[] loc = new int[2];
                         v.getLocationInWindow(loc);
                         int x = loc[0] + v.getWidth() / 2;
@@ -857,7 +858,7 @@ public class QSPanel extends LinearLayout implements Tunable, Callback, Brightne
         if (mTileLayout != null) {
             v.setHideLabel(!mTileLayout.isShowTitles());
             if (t.isDualTarget()) {
-                if (!mTileLayout.isShowTitles()) {
+                if (mTileLayout.isShowTitles()) {
                     v.setOnLongClickListener(view -> {
                         t.secondaryClick();
                         return true;

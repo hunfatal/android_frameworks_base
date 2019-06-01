@@ -79,6 +79,7 @@ import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.PointF;
@@ -111,6 +112,7 @@ import android.os.ServiceManager;
 import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.os.Trace;
+import android.os.ParcelFileDescriptor;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.os.VibrationEffect;
@@ -388,8 +390,8 @@ public class StatusBar extends SystemUI implements DemoMode,
     /** Whether to force dark theme if Configuration.UI_MODE_NIGHT_YES. */
     private static final boolean DARK_THEME_IN_NIGHT_MODE = true;
 
-    /** Whether to switch the device into night mode in battery saver. */
-    private static final boolean NIGHT_MODE_IN_BATTERY_SAVER = true;
+    /** Whether to switch the device into night mode in battery saver. (Disabled.) */
+    private static final boolean NIGHT_MODE_IN_BATTERY_SAVER = false;
 
     /**
      * Never let the alpha become zero for surfaces that draw with SRC - otherwise the RenderNode
@@ -678,12 +680,15 @@ public class StatusBar extends SystemUI implements DemoMode,
 
     private VisualizerView mVisualizerView;
     private boolean mScreenOn;
-    private boolean mKeyguardShowingMedia;
 
     // LS visualizer on Ambient Display
     private boolean mAmbientVisualizer;
 
     private boolean mWallpaperSupportsAmbientMode;
+
+    private boolean mPocketJudgeAllowFP;
+
+    private BitmapDrawable altDrawable;
 
     private BroadcastReceiver mWallpaperChangedReceiver = new BroadcastReceiver() {
         @Override
@@ -694,10 +699,18 @@ public class StatusBar extends SystemUI implements DemoMode,
                 return;
             }
             WallpaperInfo info = wallpaperManager.getWallpaperInfo();
-            mWallpaperSupportsAmbientMode = info != null && info.getSupportsAmbientMode();
+            mWallpaperSupportsAmbientMode = info != null &&
+                    (info.getSupportsAmbientMode() || "com.breel.wallpapers18".equals(info.getPackageName()));
 
             mStatusBarWindowManager.setWallpaperSupportsAmbientMode(mWallpaperSupportsAmbientMode);
             mScrimController.setWallpaperSupportsAmbientMode(mWallpaperSupportsAmbientMode);
+
+            ParcelFileDescriptor pfd = wallpaperManager.getWallpaperFile(WallpaperManager.FLAG_SYSTEM);
+            if (pfd != null) {
+                Bitmap sysWallpaper = BitmapFactory.decodeFileDescriptor(pfd.getFileDescriptor());
+                altDrawable = new BitmapDrawable(mBackdropBack.getResources(), sysWallpaper);
+            }
+
         }
     };
 
@@ -1335,16 +1348,20 @@ public class StatusBar extends SystemUI implements DemoMode,
     }
 
     protected void createNavigationBar() {
-        mNavigationBarView = NavigationBarFragment.create(mContext, (tag, fragment) -> {
-            mNavigationBar = (NavigationBarFragment) fragment;
-            if (mLightBarController != null) {
-                mNavigationBar.setLightBarController(mLightBarController);
-            }
-            if (!mNavigationBar.isUsingStockNav()) {
-                ((NavigationBarFrame)mNavigationBarView).disableDeadZone();
-            }
-            mNavigationBar.setCurrentSysuiVisibility(mSystemUiVisibility);
-        });
+        try {
+            mNavigationBarView = NavigationBarFragment.create(mContext, (tag, fragment) -> {
+                mNavigationBar = (NavigationBarFragment) fragment;
+                if (mLightBarController != null) {
+                    mNavigationBar.setLightBarController(mLightBarController);
+                }
+                if (!mNavigationBar.isUsingStockNav()) {
+                    ((NavigationBarFrame)mNavigationBarView).disableDeadZone();
+                }
+                mNavigationBar.setCurrentSysuiVisibility(mSystemUiVisibility);
+            });
+        } catch (WindowManager.BadTokenException e) {
+            Log.d(TAG, "Unable to add navbar. " + e);
+        }
     }
 
     protected void removeNavigationBar() {
@@ -1994,6 +2011,7 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
 
         Drawable artworkDrawable = null;
+
         if (mediaMetadata != null && (Settings.System.getIntForUser(mContext.getContentResolver(),
             Settings.System.LOCKSCREEN_MEDIA_METADATA, 1, UserHandle.USER_CURRENT) == 1)) {
             Bitmap artworkBitmap = mediaMetadata.getBitmap(MediaMetadata.METADATA_KEY_ART);
@@ -2011,10 +2029,10 @@ public class StatusBar extends SystemUI implements DemoMode,
                         artworkDrawable = new BitmapDrawable(ImageHelper.getColoredBitmap(aw, mContext.getResources().getColor(R.color.sammy_minutes_accent)));
                         break;
                     case 3:
-                        artworkDrawable = new BitmapDrawable(mBackdropBack.getResources(), ImageHelper.getBlurredImage(mContext, artworkBitmap, 7.0f));
+                        artworkDrawable = new BitmapDrawable(mBackdropBack.getResources(), ImageHelper.getBlurredImage(mContext, artworkBitmap, 10.0f));
                         break;
                     case 4:
-                        artworkDrawable = new BitmapDrawable(mBackdropBack.getResources(), ImageHelper.getGrayscaleBlurredImage(mContext, artworkBitmap, 7.0f));
+                        artworkDrawable = new BitmapDrawable(mBackdropBack.getResources(), ImageHelper.getGrayscaleBlurredImage(mContext, artworkBitmap, 10.0f));
                         break;
                     case 0:
                     default:
@@ -2022,14 +2040,16 @@ public class StatusBar extends SystemUI implements DemoMode,
                 }
             }
         }
-        mKeyguardShowingMedia = artworkDrawable != null;
 
         boolean allowWhenShade = false;
+        BitmapDrawable lockDrawable = null;
+
         if (ENABLE_LOCKSCREEN_WALLPAPER && artworkDrawable == null) {
             Bitmap lockWallpaper = mLockscreenWallpaper.getBitmap();
             if (lockWallpaper != null) {
                 artworkDrawable = new LockscreenWallpaper.WallpaperDrawable(
                         mBackdropBack.getResources(), lockWallpaper);
+                lockDrawable = new BitmapDrawable(mBackdropBack.getResources(), lockWallpaper);
                 // We're in the SHADE mode on the SIM screen - yet we still need to show
                 // the lockscreen wallpaper in that mode.
                 allowWhenShade = mStatusBarKeyguardViewManager != null
@@ -2047,12 +2067,12 @@ public class StatusBar extends SystemUI implements DemoMode,
         }
 
         if (mVisualizerView != null) {
-            if (mKeyguardShowingMedia && artworkDrawable instanceof BitmapDrawable) {
-                // always use current backdrop to color eq
+            if (hasArtwork && artworkDrawable instanceof BitmapDrawable) {
                 mVisualizerView.setBitmap(((BitmapDrawable)artworkDrawable).getBitmap());
-            } else {
-                // clear the color
-                mVisualizerView.setBitmap(null);
+            } else if (lockDrawable != null) {
+                mVisualizerView.setBitmap(((BitmapDrawable)lockDrawable).getBitmap());
+            } else if (altDrawable != null) {
+                mVisualizerView.setBitmap(((BitmapDrawable)altDrawable).getBitmap());
             }
         }
 
@@ -5759,6 +5779,9 @@ public class StatusBar extends SystemUI implements DemoMode,
             resolver.registerContentObserver(Settings.System.getUriFor(
                   Settings.System.LOCKSCREEN_ALBUM_ART_FILTER),
                   false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.System.getUriFor(
+                    Settings.System.POCKET_JUDGE_ALLOW_FP),
+                    false, this, UserHandle.USER_ALL);
 	    }
 
         @Override
@@ -5863,6 +5886,9 @@ public class StatusBar extends SystemUI implements DemoMode,
             } else if (uri.equals(Settings.System.getUriFor(
                     Settings.System.USE_OLD_MOBILETYPE))) {
                 updateTelephonyIcons();
+            } else if (uri.equals(Settings.System.getUriFor(
+                    Settings.System.POCKET_JUDGE_ALLOW_FP))) {
+                updatePocketJudgeFP();
             }
         }
 
@@ -5885,6 +5911,7 @@ public class StatusBar extends SystemUI implements DemoMode,
             updateKeyguardStatusBarSettings();
             updateLockscreenFilter();
             updateTelephonyIcons();
+            updatePocketJudgeFP();
         }
     }
 
@@ -6038,6 +6065,11 @@ public class StatusBar extends SystemUI implements DemoMode,
             Settings.System.USE_OLD_MOBILETYPE, 0,
             UserHandle.USER_CURRENT) != 0;
         TelephonyIcons.updateIcons(USE_OLD_MOBILETYPE);
+    }
+
+    private void updatePocketJudgeFP() {
+        mPocketJudgeAllowFP = Settings.System.getIntForUser(mContext.getContentResolver(),
+                Settings.System.POCKET_JUDGE_ALLOW_FP, 0, UserHandle.USER_CURRENT) == 1;
     }
 
     public int getWakefulnessState() {
@@ -6333,6 +6365,7 @@ public class StatusBar extends SystemUI implements DemoMode,
                         setPulsing(true);
                     }
                     setOnPulseEvent(reason, true);
+                    KeyguardUpdateMonitor.getInstance(mContext).setPulsing(true);
                 }
 
                 @Override
@@ -6340,6 +6373,7 @@ public class StatusBar extends SystemUI implements DemoMode,
                     callback.onPulseFinished();
                     setPulsing(false);
                     setOnPulseEvent(-1, false);
+                    KeyguardUpdateMonitor.getInstance(mContext).setPulsing(false);
                 }
 
                 private void setPulsing(boolean pulsing) {
@@ -6530,11 +6564,12 @@ public class StatusBar extends SystemUI implements DemoMode,
     };
 
     public boolean isDoubleTapOnMusicTicker(float eventX, float eventY) {
+        final View indication = ((AmbientIndicationContainer) mAmbientIndicationContainer).getIndication();
         if (eventX <= 0 || eventY <= 0 || mAmbientIndicationContainer == null
-                || mAmbientIndicationContainer.getVisibility() != View.VISIBLE) {
+                || mAmbientIndicationContainer.getVisibility() != View.VISIBLE
+                || indication.getVisibility() != View.VISIBLE) {
             return false;
         }
-        final View indication = ((AmbientIndicationContainer)mAmbientIndicationContainer).getIndication();
         indication.getLocationOnScreen(mTmpInt2);
         float viewX = eventX - mTmpInt2[0];
         float viewY = eventY - mTmpInt2[1];

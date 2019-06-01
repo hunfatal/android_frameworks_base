@@ -25,6 +25,7 @@ import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
 import android.app.ActivityOptions;
 import android.app.IActivityManager;
+import android.app.NotificationManager;
 import android.app.SearchManager;
 import android.app.ActivityManager.RunningAppProcessInfo;
 import android.app.usage.UsageStats;
@@ -198,7 +199,10 @@ public class ActionHandler {
         OneHandedModeRight(SYSTEMUI_TASK_ONE_HANDED_MODE_RIGHT, SYSTEMUI, "label_action_one_handed_mode_right", "ic_sysbar_one_handed_mode_right"),
         MediaArrowLeft(SYSTEMUI_TASK_MEDIA_PREVIOUS, SYSTEMUI, "label_action_media_left", "ic_skip_previous"),
         MediaArrowRight(SYSTEMUI_TASK_MEDIA_NEXT, SYSTEMUI, "label_action_media_right", "ic_skip_next"),
-        AssistantSoundSearch(SYSTEMUI_TASK_ASSISTANT_SOUND_SEARCH, SYSTEMUI, "label_action_assistant_sound_search", "ic_assistant_sound_search");
+        AssistantSoundSearch(SYSTEMUI_TASK_ASSISTANT_SOUND_SEARCH, SYSTEMUI, "label_action_assistant_sound_search", "ic_assistant_sound_search"),
+        PlayPause(SYSTEMUI_TASK_MEDIA_PLAY_PAUSE, SYSTEMUI, "label_action_play_pause", "ic_sysbar_play_pause"),
+        RingVibeSilent(SYSTEMUI_TASK_SOUNDMODE_VIB_SILENT, SYSTEMUI, "label_action_ring_vibe_silent", "ic_sysbar_ring_vibe_silent"),
+        Camera(SYSTEMUI_TASK_CAMERA, SYSTEMUI, "label_action_camera", "ic_sysbar_camera");
 
         String mAction;
         String mResPackage;
@@ -241,7 +245,9 @@ public class ActionHandler {
             SystemAction.EditingSmartbar, SystemAction.SplitScreen,
             SystemAction.RegionScreenshot, SystemAction.OneHandedModeLeft,
             SystemAction.OneHandedModeRight, SystemAction.MediaArrowLeft,
-            SystemAction.MediaArrowRight, SystemAction.AssistantSoundSearch
+            SystemAction.MediaArrowRight, SystemAction.AssistantSoundSearch,
+            SystemAction.PlayPause, SystemAction.RingVibeSilent,
+            SystemAction.Camera
     };
 
     public static class ActionIconResources {
@@ -297,9 +303,7 @@ public class ActionHandler {
                     || TextUtils.equals(action, SYSTEMUI_TASK_IME_NAVIGATION_LEFT)
                     || TextUtils.equals(action, SYSTEMUI_TASK_IME_NAVIGATION_RIGHT)
                     || TextUtils.equals(action, SYSTEMUI_TASK_IME_NAVIGATION_UP)
-                    || TextUtils.equals(action, SYSTEMUI_TASK_IME_SWITCHER)
-                    || TextUtils.equals(action, SYSTEMUI_TASK_MEDIA_PREVIOUS)
-                    || TextUtils.equals(action, SYSTEMUI_TASK_MEDIA_NEXT)) {
+                    || TextUtils.equals(action, SYSTEMUI_TASK_IME_SWITCHER)) {
                 continue;
             } else if (TextUtils.equals(action, SYSTEMUI_TASK_WIFIAP)
                     && !ActionUtils.deviceSupportsMobileData(context)) {
@@ -311,7 +315,7 @@ public class ActionHandler {
                  && !ActionUtils.deviceSupportsFlashLight(context)) {
                 continue;
             } else if (TextUtils.equals(action, SYSTEMUI_TASK_CAMERA)
-                    && context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+                    && !context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
                 continue;
             } else if (TextUtils.equals(action, SYSTEMUI_TASK_EDITING_SMARTBAR)) {
                 // don't allow smartbar editor on Fling
@@ -633,73 +637,19 @@ public class ActionHandler {
             triggerVirtualKeypress(context, KeyEvent.KEYCODE_DPAD_LEFT);
             return;
         } else if (action.equals(SYSTEMUI_TASK_MEDIA_PREVIOUS)) {
-            StatusBarHelper.sendSystemKeyToStatusBar(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
-            //dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_PREVIOUS, context);
+            //StatusBarHelper.sendSystemKeyToStatusBar(KeyEvent.KEYCODE_MEDIA_PREVIOUS);
+            dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_PREVIOUS, context);
             return;
         } else if (action.equals(SYSTEMUI_TASK_MEDIA_NEXT)) {
-            StatusBarHelper.sendSystemKeyToStatusBar(KeyEvent.KEYCODE_MEDIA_NEXT);
-            //dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_NEXT, context);
+            //StatusBarHelper.sendSystemKeyToStatusBar(KeyEvent.KEYCODE_MEDIA_NEXT);
+            dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_NEXT, context);
             return;
         } else if (action.equals(SYSTEMUI_TASK_MEDIA_PLAY_PAUSE)) {
+            //StatusBarHelper.sendSystemKeyToStatusBar(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE);
             dispatchMediaKeyWithWakeLock(KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, context);
             return;
-        } else if (action.equals(SYSTEMUI_TASK_SOUNDMODE_VIB)) {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null && ActivityManagerNative.isSystemReady()) {
-                if (am.getRingerMode() != AudioManager.RINGER_MODE_VIBRATE) {
-                    am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
-                    Vibrator vib = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-                    if (vib != null) {
-                        vib.vibrate(50);
-                    }
-                } else {
-                    am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-                    ToneGenerator tg = new ToneGenerator(
-                            AudioManager.STREAM_NOTIFICATION,
-                            (int) (ToneGenerator.MAX_VOLUME * 0.85));
-                    if (tg != null) {
-                        tg.startTone(ToneGenerator.TONE_PROP_BEEP);
-                    }
-                }
-            }
-            return;
-        } else if (action.equals(SYSTEMUI_TASK_SOUNDMODE_SILENT)) {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null && ActivityManagerNative.isSystemReady()) {
-                if (am.getRingerMode() != AudioManager.RINGER_MODE_SILENT) {
-                    am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-                } else {
-                    am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-                    ToneGenerator tg = new ToneGenerator(
-                            AudioManager.STREAM_NOTIFICATION,
-                            (int) (ToneGenerator.MAX_VOLUME * 0.85));
-                    if (tg != null) {
-                        tg.startTone(ToneGenerator.TONE_PROP_BEEP);
-                    }
-                }
-            }
-            return;
         } else if (action.equals(SYSTEMUI_TASK_SOUNDMODE_VIB_SILENT)) {
-            AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
-            if (am != null && ActivityManagerNative.isSystemReady()) {
-                if (am.getRingerMode() == AudioManager.RINGER_MODE_NORMAL) {
-                    am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
-                    Vibrator vib = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-                    if (vib != null) {
-                        vib.vibrate(50);
-                    }
-                } else if (am.getRingerMode() == AudioManager.RINGER_MODE_VIBRATE) {
-                    am.setRingerMode(AudioManager.RINGER_MODE_SILENT);
-                } else {
-                    am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
-                    ToneGenerator tg = new ToneGenerator(
-                            AudioManager.STREAM_NOTIFICATION,
-                            (int) (ToneGenerator.MAX_VOLUME * 0.85));
-                    if (tg != null) {
-                        tg.startTone(ToneGenerator.TONE_PROP_BEEP);
-                    }
-                }
-            }
+            toggleVibeSilent(context);
             return;
         } else if (action.equals(SYSTEMUI_TASK_CLEAR_NOTIFICATIONS)) {
             StatusBarHelper.clearAllNotifications();
@@ -722,6 +672,29 @@ public class ActionHandler {
         } else if (action.equals(SYSTEMUI_TASK_ASSISTANT_SOUND_SEARCH)) {
             startAssistantSoundSearch(context);
             return;
+        }
+    }
+
+    public static void toggleVibeSilent(Context context) {
+        AudioManager am = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
+        Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
+
+        switch (am.getRingerMode()) {
+            case AudioManager.RINGER_MODE_NORMAL:
+                if (vibrator.hasVibrator()) {
+                    am.setRingerMode(AudioManager.RINGER_MODE_VIBRATE);
+                }
+                break;
+            case AudioManager.RINGER_MODE_VIBRATE:
+                am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                NotificationManager notificationManager = (NotificationManager) context
+                        .getSystemService(Context.NOTIFICATION_SERVICE);
+                notificationManager.setInterruptionFilter(
+                        NotificationManager.INTERRUPTION_FILTER_PRIORITY);
+                break;
+            case AudioManager.RINGER_MODE_SILENT:
+                am.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+                break;
         }
     }
 
@@ -821,6 +794,7 @@ public class ActionHandler {
         sendCloseSystemWindows("assist");
         // launch the search activity
         Intent intent = new Intent(Intent.ACTION_SEARCH_LONG_PRESS);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         try {
             // TODO: This only stops the factory-installed search manager.
             // Need to formalize an API to handle others
@@ -884,7 +858,7 @@ public class ActionHandler {
     }
 
     private static void launchCamera(Context context) {
-        Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
+        Intent i = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE_SECURE);
         PackageManager pm = context.getPackageManager();
         final ResolveInfo mInfo = pm.resolveActivity(i, 0);
         Intent intent = new Intent().setComponent(new ComponentName(mInfo.activityInfo.packageName,

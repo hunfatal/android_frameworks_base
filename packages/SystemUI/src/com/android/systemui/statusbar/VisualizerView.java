@@ -73,6 +73,10 @@ public class VisualizerView extends View
     private boolean mLavaLampEnabled;
     private int mLavaLampSpeed;
     private boolean shouldAnimate;
+    private int mUnits = 32;
+    private float mDbFuzzFactor = 16f;
+    private int mWidth, mHeight;
+    private int mOpacity = 140;
 
     private Visualizer.OnDataCaptureListener mVisualizerListener =
             new Visualizer.OnDataCaptureListener() {
@@ -86,7 +90,7 @@ public class VisualizerView extends View
 
         @Override
         public void onFftDataCapture(Visualizer visualizer, byte[] fft, int samplingRate) {
-            for (int i = 0; i < 32; i++) {
+            for (int i = 0; i < mUnits; i++) {
                 mValueAnimators[i].cancel();
                 rfk = fft[i * 2 + 2];
                 ifk = fft[i * 2 + 3];
@@ -94,7 +98,7 @@ public class VisualizerView extends View
                 dbValue = magnitude > 0 ? (int) (10 * Math.log10(magnitude)) : 0;
 
                 mValueAnimators[i].setFloatValues(mFFTPoints[i * 4 + 1],
-                        mFFTPoints[3] - (dbValue * 16f));
+                        mFFTPoints[3] - (dbValue * mDbFuzzFactor));
                 mValueAnimators[i].start();
             }
         }
@@ -108,13 +112,15 @@ public class VisualizerView extends View
             }
 
             try {
-                mVisualizer = new Visualizer(0);
+                if (mVisualizer == null) {
+                    mVisualizer = new Visualizer(0);
+                    shouldAnimate = true;
+                }
             } catch (Exception e) {
                 Log.e(TAG, "error initializing visualizer", e);
                 return;
             }
 
-            shouldAnimate = true;
             mVisualizer.setEnabled(false);
             mVisualizer.setCaptureSize(66);
             mVisualizer.setDataCaptureListener(mVisualizerListener,Visualizer.getMaxCaptureRate(),
@@ -148,6 +154,14 @@ public class VisualizerView extends View
             }
             shouldAnimate = false;
 
+            if (!mAutoColorEnabled && !mLavaLampEnabled) {
+                if (mCurrentBitmap != null) {
+                    setBitmap(null);
+                } else {
+                    setColor(Color.TRANSPARENT);
+                }
+            }
+
             if (DEBUG) {
                 Log.w(TAG, "--- mUninkVisualizer run()");
             }
@@ -163,26 +177,12 @@ public class VisualizerView extends View
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
 
-        setColor(mColor);
-
-        mFFTPoints = new float[128];
-        mValueAnimators = new ValueAnimator[32];
+        mFFTPoints = new float[mUnits * 4];
 
         mLavaLamp = new ColorAnimator();
         mLavaLamp.setColorAnimatorListener(this);
 
-        for (int i = 0; i < 32; i++) {
-            final int j = i * 4 + 1;
-            mValueAnimators[i] = new ValueAnimator();
-            mValueAnimators[i].setDuration(128);
-            mValueAnimators[i].addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-                @Override
-                public void onAnimationUpdate(ValueAnimator animation) {
-                    mFFTPoints[j] = (float) animation.getAnimatedValue();
-                    postInvalidate();
-                }
-            });
-        }
+        loadValueAnimators();
     }
 
     public VisualizerView(Context context, AttributeSet attrs) {
@@ -220,20 +220,50 @@ public class VisualizerView extends View
         mCurrentBitmap = null;
     }
 
-    @Override
-    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        super.onSizeChanged(w, h, oldw, oldh);
+    private void loadValueAnimators() {
+        if (mValueAnimators != null) {
+            for (int i = 0; i < mValueAnimators.length; i++) {
+                mValueAnimators[i].cancel();
+            }
+        }
+        mValueAnimators = new ValueAnimator[mUnits];
+        for (int i = 0; i < mUnits; i++) {
+            final int j = i * 4 + 1;
+            mValueAnimators[i] = new ValueAnimator();
+            mValueAnimators[i].setDuration(128);
+            mValueAnimators[i].addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator animation) {
+                    mFFTPoints[j] = (float) animation.getAnimatedValue();
+                    postInvalidate();
+                }
+            });
+        }
+    }
 
-        float barUnit = w / 32f;
+    private void setPortraitPoints() {
+        float units = Float.valueOf(mUnits);
+        float barUnit = mWidth / units;
         float barWidth = barUnit * 8f / 9f;
-        barUnit = barWidth + (barUnit - barWidth) * 32f / 31f;
+        barUnit = barWidth + (barUnit - barWidth) * units / (units - 1);
         mPaint.setStrokeWidth(barWidth);
 
-        for (int i = 0; i < 32; i++) {
+        for (int i = 0; i < mUnits; i++) {
             mFFTPoints[i * 4] = mFFTPoints[i * 4 + 2] = i * barUnit + (barWidth / 2);
-            mFFTPoints[i * 4 + 1] = h;
-            mFFTPoints[i * 4 + 3] = h;
+            mFFTPoints[i * 4 + 1] = mHeight;
+            mFFTPoints[i * 4 + 3] = mHeight;
         }
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int oldw, int oldh) {
+        if (w > 0) mWidth = w;
+        if (h > 0) mHeight = h;
+
+        super.onSizeChanged(mWidth, mHeight, oldw, oldh);
+
+        loadValueAnimators();
+        setPortraitPoints();
     }
 
     @Override
@@ -262,7 +292,6 @@ public class VisualizerView extends View
 
     @Override
     public void onStopAnimation(ColorAnimator colorAnimator, int lastColor) {
-        setBitmap(null);
     }
 
     private void setVisualizerEnabled() {
@@ -291,9 +320,31 @@ public class VisualizerView extends View
                 Settings.Secure.LOCKSCREEN_VISUALIZER_AUTOCOLOR, 1, UserHandle.USER_CURRENT) == 1;
         if (mCurrentBitmap != null && mAutoColorEnabled && !mLavaLampEnabled) {
             Palette.generateAsync(mCurrentBitmap, this);
-        } else {
+        } else if (mCurrentBitmap != null) {
             setBitmap(null);
+        } else {
+            setColor(Color.TRANSPARENT);
         }
+    }
+
+    private void setSolidUnitsCount() {
+        int oldUnits = mUnits;
+        mUnits = Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                Settings.Secure.LOCKSCREEN_SOLID_UNITS_COUNT, 32, UserHandle.USER_CURRENT);
+        if (mUnits != oldUnits) {
+            mFFTPoints = new float[mUnits * 4];
+            onSizeChanged(0, 0, 0, 0);
+        }
+    }
+
+    private void setSolidFudgeFactor() {
+        mDbFuzzFactor = Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                Settings.Secure.LOCKSCREEN_SOLID_FUDGE_FACTOR, 16, UserHandle.USER_CURRENT);
+    }
+
+    private void setSolidUnitsOpacity() {
+        mOpacity = Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                Settings.Secure.LOCKSCREEN_SOLID_UNITS_OPACITY, 140, UserHandle.USER_CURRENT);
     }
 
     public void setVisible(boolean visible) {
@@ -384,7 +435,7 @@ public class VisualizerView extends View
             color = Color.WHITE;
         }
 
-        color = Color.argb(140, Color.red(color), Color.green(color), Color.blue(color));
+        color = Color.argb(mOpacity, Color.red(color), Color.green(color), Color.blue(color));
 
         if (mColor != color) {
             mColor = color;
@@ -483,6 +534,15 @@ public class VisualizerView extends View
             resolver.registerContentObserver(Settings.Secure.getUriFor(
                     Settings.Secure.LOCKSCREEN_VISUALIZER_AUTOCOLOR),
                     false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_SOLID_UNITS_COUNT),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_SOLID_FUDGE_FACTOR),
+                    false, this, UserHandle.USER_ALL);
+            resolver.registerContentObserver(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_SOLID_UNITS_OPACITY),
+                    false, this, UserHandle.USER_ALL);
             update();
         }
 
@@ -508,6 +568,15 @@ public class VisualizerView extends View
             } else if (uri.equals(Settings.Secure.getUriFor(
                     Settings.Secure.LOCKSCREEN_VISUALIZER_AUTOCOLOR))) {
                 setAutoColorEnabled();
+            } else if (uri.equals(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_SOLID_UNITS_COUNT))) {
+                setSolidUnitsCount();
+            } else if (uri.equals(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_SOLID_FUDGE_FACTOR))) {
+                setSolidFudgeFactor();
+            } else if (uri.equals(Settings.Secure.getUriFor(
+                    Settings.Secure.LOCKSCREEN_SOLID_UNITS_OPACITY))) {
+                setSolidUnitsOpacity();
             }
         }
 
@@ -517,6 +586,9 @@ public class VisualizerView extends View
             setLavaLampEnabled();
             setLavaLampSpeed();
             setAutoColorEnabled();
+            setSolidUnitsCount();
+            setSolidFudgeFactor();
+            setSolidUnitsOpacity();
             checkStateChanged();
             updateViewVisibility();
         }

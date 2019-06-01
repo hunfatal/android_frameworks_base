@@ -123,7 +123,7 @@
 
     <!-- Tiles native to System UI. Order should match "quick_settings_tiles_default" -->
     <string name="quick_settings_tiles_stock" translatable="false">
-        wifi,cell,battery,dnd,flashlight,rotation,bt,anbi,airplane,adb_network,alarm,ambient_display,aod,app_picker,caffeine,calc,calendar,call,camera,compass,cast,cpuinfo,edgegesture,expanded_desktop,gaming,gestureanywhere,havoc,heads_up,hotspot,hwkeys,inversion,locale,location,lte,music,navbar,nfc,night,nowplaying,onehand,onthego,pie,reboot,saver,screenrecord,screenshot,screenstabilization,sleepscreen,smartpixels,sound,soundsearch,suspend_action,sync,theme,usb_tether,volume_panel,work,gps
+        wifi,cell,battery,dnd,flashlight,rotation,bt,anbi,airplane,adb_network,alarm,ambient_display,aod,app_picker,caffeine,calc,calendar,call,camera,compass,cast,cpuinfo,edgegesture,expanded_desktop,gaming,gestureanywhere,havoc,heads_up,hotspot,hwkeys,inversion,livedisplay,locale,location,lte,music,navbar,nfc,night,nowplaying,onehand,onthego,pie,reading_mode,reboot,saver,screenrecord,screenshot,screenstabilization,sleepscreen,smartpixels,sound,soundsearch,suspend_action,sync,theme,usb_tether,volume_panel,work,gps
     </string>
 
     <!-- The tiles to display in QuickSettings -->
@@ -349,6 +349,7 @@
         <item>com.android.systemui.globalactions.GlobalActionsComponent</item>
         <item>com.android.systemui.ScreenDecorations</item>
         <item>com.android.systemui.fingerprint.FingerprintDialogImpl</item>
+        <item>com.android.systemui.fingerprint.FODCircleViewImpl</item>
         <item>com.android.systemui.SliceBroadcastRelayHandler</item>
     </string-array>
 
@@ -368,16 +369,30 @@
 
     <bool name="quick_settings_show_full_alarm">false</bool>
 
+    <!-- Whether or not beep sound should be when overheat -->
+    <bool name="config_alarmTemperatureBeepSound">false</bool>
+
     <!-- Whether to show a warning notification when the device reaches a certain temperature. -->
     <integer name="config_showTemperatureWarning">0</integer>
+
+    <!-- Whether to show a alarm dialog when device of usb cable reaches a certain temperature. -->
+    <integer name="config_showTemperatureAlarm">0</integer>
 
     <!-- Temp at which to show a warning notification if config_showTemperatureWarning is true.
          If < 0, uses the skin temperature sensor shutdown value from
          HardwarePropertiesManager#getDeviceTemperatures - config_warningTemperatureTolerance. -->
     <integer name="config_warningTemperature">-1</integer>
 
+    <!-- Temp at which to show a alarm dialog if config_showTemperatureAlarm is true.
+         If < 0, uses the skin temperature sensor shutdown value of index[1] from
+         HardwarePropertiesManager#getDeviceTemperatures -->
+    <integer name="config_alarmTemperature">60</integer>
+
     <!-- Fudge factor for how much below the shutdown temp to show the warning. -->
     <integer name="config_warningTemperatureTolerance">2</integer>
+
+    <!-- Fudge factor for how much below the overheat temp to dismiss alarm. -->
+    <integer name="config_alarmTemperatureTolerance">5</integer>
 
     <!-- Accessibility actions -->
     <item type="id" name="action_split_task_to_left" />

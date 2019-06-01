@@ -46,6 +46,7 @@ import android.util.AttributeSet;
 import android.util.Log;
 import android.util.Pair;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowInsets;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -126,6 +127,7 @@ public class QuickStatusBarHeader extends RelativeLayout implements
     private ImageView mRingerModeIcon;
     private TextView mRingerModeTextView;
     private BatteryMeterView mBatteryMeterView;
+    private BatteryMeterView mBatteryRemainingIcon;
     private Clock mClockView;
     private DateView mDateView;
 
@@ -133,6 +135,9 @@ public class QuickStatusBarHeader extends RelativeLayout implements
     private ZenModeController mZenController;
     /** Counts how many times the long press tooltip has been shown to the user. */
     private int mShownCount;
+
+    private boolean mBatteryInQS;
+    private boolean mShowEstimate;
 
     private boolean mLandscape;
     private boolean mHeaderImageEnabled;
@@ -215,8 +220,29 @@ public class QuickStatusBarHeader extends RelativeLayout implements
         mIconManager.setTint(fillColor);
 
         mBatteryMeterView = findViewById(R.id.battery);
-        mBatteryMeterView.setIsQuickSbHeaderOrKeyguard(true);
-        mBatteryMeterView.setOnClickListener(this);
+        mBatteryRemainingIcon = findViewById(R.id.batteryRemainingIcon);
+
+        mBatteryInQS = getResources().getBoolean(R.bool.config_batteryInQSPanel);
+
+        mShowEstimate = Settings.System.getIntForUser(getContext().getContentResolver(),
+                Settings.System.SHOW_BATTERY_ESTIMATE, 0, UserHandle.USER_CURRENT) == 1;
+
+        if (!mBatteryInQS || (mBatteryInQS && !mShowEstimate)) {
+            ((ViewGroup) mBatteryRemainingIcon.getParent()).removeView(mBatteryRemainingIcon);
+            mBatteryRemainingIcon = null;
+
+            mBatteryMeterView.isQsbHeader();
+            mBatteryMeterView.setShowEstimate();
+            mBatteryMeterView.setOnClickListener(this);
+        } else {
+            ((ViewGroup) mBatteryMeterView.getParent()).removeView(mBatteryMeterView);
+            mBatteryMeterView = null;
+
+            mBatteryRemainingIcon.isQsbHeader();
+            mBatteryRemainingIcon.setShowEstimate();
+            mBatteryRemainingIcon.setOnClickListener(this);
+        }
+
         mClockView = findViewById(R.id.clock);
         mClockView.setOnClickListener(this);
         mClockView.setQsHeader();
@@ -366,7 +392,9 @@ public class QuickStatusBarHeader extends RelativeLayout implements
     // Update color schemes in landscape to use wallpaperTextColor
     private void updateStatusbarProperties() {
         boolean shouldUseWallpaperTextColor = mLandscape && !mHeaderImageEnabled;
-        mBatteryMeterView.useWallpaperTextColor(shouldUseWallpaperTextColor);
+        if (!mBatteryInQS || (mBatteryInQS && !mShowEstimate)) {
+            mBatteryMeterView.useWallpaperTextColor(shouldUseWallpaperTextColor);
+        }
         mClockView.useWallpaperTextColor(shouldUseWallpaperTextColor);
     }
 
@@ -501,7 +529,7 @@ public class QuickStatusBarHeader extends RelativeLayout implements
         if (v == mClockView || v == mNextAlarmTextView) {
             Dependency.get(ActivityStarter.class).postStartActivityDismissingKeyguard(new Intent(
                     AlarmClock.ACTION_SHOW_ALARMS),0);
-        } else if (v == mBatteryMeterView) {
+        } else if (v == mBatteryMeterView || v == mBatteryRemainingIcon) {
             Dependency.get(ActivityStarter.class).postStartActivityDismissingKeyguard(new Intent(
                     Intent.ACTION_POWER_USAGE_SUMMARY),0);
         } else if (v == mDateView) {
@@ -663,9 +691,17 @@ public class QuickStatusBarHeader extends RelativeLayout implements
         mHeaderQsPanel.setQSPanel(mQsPanel);
         mHeaderQsPanel.setHost(host, null /* No customization in header */);
 
-        // Use SystemUI context to get battery meter colors, and let it use the default tint (white)
-        mBatteryMeterView.setColorsFromContext(mHost.getContext());
-        mBatteryMeterView.onDarkChanged(new Rect(), 0, DarkIconDispatcher.DEFAULT_ICON_TINT);
+        if (!mBatteryInQS || (mBatteryInQS && !mShowEstimate)) {
+            // Use SystemUI context to get battery meter colors, and let it use the default tint (white)
+            mBatteryMeterView.setColorsFromContext(mHost.getContext());
+            mBatteryMeterView.onDarkChanged(new Rect(), 0, DarkIconDispatcher.DEFAULT_ICON_TINT);
+        } else {
+            Rect tintArea = new Rect(0, 0, 0, 0);
+            float colorIntensity = getColorIntensity(Utils.getColorAttr(getContext(), android.R.attr.colorForeground));
+            int fillColorForIntensity = fillColorForIntensity(colorIntensity, getContext());
+            mBatteryRemainingIcon.setColorsFromContext(mHost.getContext());
+            mBatteryRemainingIcon.onDarkChanged(tintArea, colorIntensity, fillColorForIntensity);
+        }
     }
 
     public void setCallback(Callback qsPanelCallback) {

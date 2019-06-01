@@ -121,6 +121,8 @@ public class ThemeAccentUtils {
         "com.accents.diffdaygreen", // 55
         "com.accents.jadegreen", // 56
         "com.accents.oneplusred", // 57
+        "com.accents.usereight", // 58
+        "com.accents.usernine", // 59
     };
 
     // Themes

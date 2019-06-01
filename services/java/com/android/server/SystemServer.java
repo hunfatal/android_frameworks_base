@@ -101,6 +101,8 @@ import com.android.server.oemlock.OemLockService;
 import com.android.server.om.OverlayManagerService;
 import com.android.server.os.DeviceIdentifiersPolicyService;
 import com.android.server.os.SchedulingPolicyService;
+import com.android.server.pocket.PocketService;
+import com.android.server.pocket.PocketBridgeService;
 import com.android.server.pm.BackgroundDexOptService;
 import com.android.server.pm.CrossProfileAppsService;
 import com.android.server.pm.Installer;
@@ -147,6 +149,10 @@ import static android.os.IServiceManager.DUMP_FLAG_PRIORITY_HIGH;
 import static android.os.IServiceManager.DUMP_FLAG_PRIORITY_NORMAL;
 import static android.os.IServiceManager.DUMP_FLAG_PROTO;
 import static android.view.Display.DEFAULT_DISPLAY;
+
+// LiveDisplay
+import com.android.server.custom.LineageHardwareService;
+import com.android.server.custom.display.LiveDisplayService;
 
 public final class SystemServer {
     private static final String TAG = "SystemServer";
@@ -1636,6 +1642,9 @@ public final class SystemServer {
 
             traceBeginAndSlog("StartCrossProfileAppsService");
             mSystemServiceManager.startService(CrossProfileAppsService.class);
+
+            traceBeginAndSlog("StartPocketService");
+            mSystemServiceManager.startService(PocketService.class);
             traceEnd();
 
             traceBeginAndSlog("Starting ScreenStabilization Service");
@@ -1648,6 +1657,23 @@ public final class SystemServer {
                 ServiceManager.addService("edgegestureservice", edgeGestureService);
             } catch (Throwable e) {
                 Slog.e(TAG, "Failure starting EdgeGesture service", e);
+            }
+
+            // LiveDisplay
+            if (!mOnlyCore){
+                traceBeginAndSlog("StartLineageHardwareService");
+                mSystemServiceManager.startService(LineageHardwareService.class);
+                traceEnd();
+                traceBeginAndSlog("StartLiveDisplayService");
+                mSystemServiceManager.startService(LiveDisplayService.class);
+                traceEnd();
+            }
+
+            if (!context.getResources().getString(
+                    com.android.internal.R.string.config_pocketBridgeSysfsInpocket).isEmpty()) {
+                traceBeginAndSlog("StartPocketBridgeService");
+                mSystemServiceManager.startService(PocketBridgeService.class);
+                traceEnd();
             }
         }
 

@@ -39,8 +39,8 @@
     <string name="quick_settings_screenrecord_lq_label">480p</string>
     <string name="quick_settings_screenrecord_mq_label">720p</string>
     <string name="quick_settings_screenrecord_hq_label">1080p</string>
-    <string name="screenrecord_hide_hint">Ocultar sugerencia</string>
-    <string name="screenrecord_show_hint">Mostrar sugerencia</string>
+    <string name="screenrecord_hide_hint">Ocultar recordatorio</string>
+    <string name="screenrecord_show_hint">Mostrar recordatorio</string>
     <string name="status_bar_vpn">VPN</string>
     <string name="status_bar_roaming">Itinerancia (roaming)</string>
     <string name="status_bar_data_saver">Ahorro de datos</string>
@@ -55,8 +55,8 @@
     <string name="global_action_restart_advanced">Reinicio avanzado</string>
     <string name="global_action_restart_recovery">Reiniciar en modo recuperación (recovery)</string>
     <string name="global_action_restart_bootloader">Gestor de arranque (bootloader)</string>
-    <string name="global_action_restart_ui">System UI</string>
-    <string name="global_action_restart_hot">Popular</string>
+    <string name="global_action_restart_ui">IU del sistema</string>
+    <string name="global_action_restart_hot">Rápido</string>
     <string name="global_action_screenshot">Captura de pantalla</string>
     <!-- LTE QS Tile -->
     <string name="qs_lte_label">LTE</string>
@@ -64,16 +64,16 @@
     <string name="lte_off">LTE</string>
     <!-- Sound QS Tile -->
     <string name="quick_settings_sound_label">Sonido</string>
-    <string name="quick_settings_sound_ring">Anillo</string>
+    <string name="quick_settings_sound_ring">Sonar</string>
     <string name="quick_settings_sound_vibrate">Vibrar</string>
     <string name="quick_settings_sound_dnd">Modo no molestar</string>
     <!-- AOD QS tile -->
     <string name="quick_settings_aod_label">AOD</string>
     <!-- Caffeine tile -->
-    <string name="quick_settings_caffeine_label">Caffeine</string>
+    <string name="quick_settings_caffeine_label">Cafeína</string>
     <string name="quick_settings_caffeine_label_off">Desactivado</string>
-    <string name="accessibility_quick_settings_caffeine_off">Caffeine</string>
-    <string name="accessibility_quick_settings_caffeine_on">Caffeine</string>
+    <string name="accessibility_quick_settings_caffeine_off">Cafeína</string>
+    <string name="accessibility_quick_settings_caffeine_on">Cafeína</string>
     <!-- On The Go -->
     <string name="onthego_notif_ticker">On-The-Go activado</string>
     <string name="onthego_notif_title">On-The-Go está activo</string>
@@ -104,7 +104,7 @@
     <string name="screenrecord_notif_error">No se puede grabar la pantalla</string>
     <string name="notification_channel_screenrecord">Grabador de pantalla</string>
     <!-- Indication on the keyguard that is shown when the device is charging with a dash charger. Should match keyguard_plugged_in_dash_charging [CHAR LIMIT=40]-->
-    <string name="keyguard_indication_dash_charging_time"><xliff:g id="percentage">%2$s</xliff:g> • Carga rápida (<xliff:g id="charging_time_left" example="4 horas y 2 minutos">%s</xliff:g> hasta 100%)</string>
+    <string name="keyguard_indication_dash_charging_time"><xliff:g id="percentage">%2$s</xliff:g> • Carga rápida (<xliff:g id="charging_time_left" example="4 horas y 2 minutos">%s</xliff:g> hasta completar)</string>
     <string name="keyguard_plugged_in_dash_charging">Carga Rápida</string>
     <string name="camera_title_tile">Cámara</string>
     <string name="suspend_title_tile">Acciones al apagar pantalla</string>
@@ -146,16 +146,8 @@
     <string name="accessibility_quick_settings_cpuinfo_on">Información de CPU activada</string>
     <string name="accessibility_quick_settings_cpuinfo_changed_off">Información de CPU desactivada</string>
     <string name="accessibility_quick_settings_cpuinfo_changed_on">Información de CPU activada</string>
-    <!-- Advance location quick setting tile -->
-    <string name="quick_settings_secondary_location_off"></string>
-    <string name="quick_settings_location_secondary_battery_saving">Ahorro de Batería</string>
-    <string name="accessibility_quick_settings_location_battery_saving">Informes de ubicación: modo de ahorro de batería.</string>
-    <string name="quick_settings_location_secondary_gps_only">Sólo sensores</string>
-    <string name="accessibility_quick_settings_location_gps_only">Informes de ubicación: modo de sólo sensores.</string>
-    <string name="quick_settings_location_secondary_high_accuracy">Alta precisión</string>
-    <string name="accessibility_quick_settings_location_high_accuracy">Ubicación: alta precisión.</string>
     <!-- USB tethering QS tile -->
-    <string name="quick_settings_usb_tether_label">USB tethering</string>
+    <string name="quick_settings_usb_tether_label">Tethering USB</string>
     <!-- Havoc Tile -->
     <string name="quick_settings_havoc_label">Ajustes de Havoc</string>
     <string name="quick_settings_reboot_label">Reiniciar</string>
@@ -234,7 +226,7 @@
     <string name="quick_settings_sound_search">Búsqueda por sonido</string>
     <!-- QS Config -->
     <string name="qs_menu_item_columns">Columnas</string>
-    <string name="qs_menu_item_columns_landscape">Columnas (horizontal)</string>
+    <string name="qs_menu_item_columns_landscape">Columnas (apaisado)</string>
     <string name="qs_menu_item_columns_three">3</string>
     <string name="qs_menu_item_columns_four">4</string>
     <string name="qs_menu_item_columns_five">5</string>
@@ -244,7 +236,7 @@
     <string name="qs_menu_item_reset">Restablecer</string>
     <string name="qs_menu_item_titles">Mostrar etiquetas</string>
     <string name="qs_menu_item_rows">Filas</string>
-    <string name="qs_menu_item_rows_landscape">Filas (horizontal)</string>
+    <string name="qs_menu_item_rows_landscape">Filas (apaisado)</string>
     <string name="qs_menu_item_rows_one">1</string>
     <string name="qs_menu_item_rows_two">2</string>
     <string name="qs_menu_item_rows_three">3</string>
@@ -275,4 +267,32 @@
     <string name="google_camera_app_package_name">com.google.android.GoogleCamera</string>
     <!-- OneHand mode QS tile -->
     <string name="qs_onehand_label">Modo a una mano</string>
+    <!-- Screen pinning dialog description. (for devices without navbar) -->
+    <string name="screen_pinning_description_no_navbar">Esto la mantiene visible hasta que la dejes de fijar. Toca y mantén presionado Atrás para dejar de fijar.</string>
+    <!-- Notify use that they are in Lock-to-app (for devices without navbar)-->
+    <string name="screen_pinning_toast_no_navbar">Para dejar de fijar esta pantalla, toca y mantén presionado Atrás</string>
+    <!-- Location Tile -->
+    <string name="accessibility_quick_settings_location_battery_saving">Ubicación: modo de ahorro de batería.</string>
+    <string name="accessibility_quick_settings_location_gps_only">Ubicación: modo de únicamente sensores.</string>
+    <string name="accessibility_quick_settings_location_high_accuracy">Ubicación: modo de alta precisión.</string>
+    <string name="quick_settings_location_battery_saving_label">Ahorro de batería</string>
+    <string name="quick_settings_location_battery_saving_label_twoline">Ahorro de\nbatería</string>
+    <string name="quick_settings_location_gps_only_label">Solo GPS</string>
+    <string name="quick_settings_location_gps_only_label_twoline">Solo GPS</string>
+    <string name="quick_settings_location_high_accuracy_label">Alta precisión</string>
+    <string name="quick_settings_location_high_accuracy_label_twoline">Alta\nprecisión</string>
+    <string name="quick_settings_location_detail_title">Ubicación</string>
+    <string name="quick_settings_location_detail_menu_title">Seleccionar modo:</string>
+    <string name="quick_settings_location_detail_mode_high_accuracy_title">Alta precisión</string>
+    <string name="quick_settings_location_detail_mode_battery_saving_title">Ahorro de batería</string>
+    <string name="quick_settings_location_detail_mode_sensors_only_title">Solo dispositivo</string>
+    <string name="quick_settings_location_detail_mode_high_accuracy_description">Usar GPS, Wi\u2011Fi, Bluetooth, o redes móviles para determinar la ubicación </string>
+    <string name="quick_settings_location_detail_mode_battery_saving_description">Usar Wi\u2011Fi, Bluetooth, o redes móviles para determinar la ubicación</string>
+    <string name="quick_settings_location_detail_mode_sensors_only_description">Usar GPS para determinar la ubicación</string>
+    <!-- Reader mode QS tile -->
+    <string name="quick_settings_reading_mode">Modo de lectura</string>
+    <string name="accessibility_quick_settings_reading_mode_on">Modo de lectura activo.</string>
+    <string name="accessibility_quick_settings_reading_mode_off">Modo de lectura inactivo.</string>
+    <string name="accessibility_quick_settings_reading_mode_changed_on">Modo de lectura activado.</string>
+    <string name="accessibility_quick_settings_reading_mode_changed_off">Modo de lectura desactivado.</string>
 </resources>
