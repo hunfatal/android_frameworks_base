@@ -43,7 +43,6 @@ public class GpsTile extends QSTileImpl<BooleanState> {
 
     private static final Intent LOCATION_SETTINGS_INTENT =
             new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-    private static final Map<Integer, Integer> SECONDARY_LABEL_FOR_LOCATION_STATES = initSecondaryLabelForLocationStates();
 
     private final LocationController mController;
     private final KeyguardMonitor mKeyguard;
@@ -53,21 +52,6 @@ public class GpsTile extends QSTileImpl<BooleanState> {
         super(host);
         mController = Dependency.get(LocationController.class);
         mKeyguard = Dependency.get(KeyguardMonitor.class);
-    }
-    
-    private static final Map<Integer, Integer> initSecondaryLabelForLocationStates() {
-        final HashMap<Integer, Integer> secondaryLabelForLocationStates = new HashMap<Integer, Integer>();
-        
-        secondaryLabelForLocationStates.put(Settings.Secure.LOCATION_MODE_BATTERY_SAVING,
-            R.string.quick_settings_location_secondary_battery_saving);
-        secondaryLabelForLocationStates.put(Settings.Secure.LOCATION_MODE_SENSORS_ONLY,
-            R.string.quick_settings_location_secondary_gps_only);
-        secondaryLabelForLocationStates.put(Settings.Secure.LOCATION_MODE_HIGH_ACCURACY,
-            R.string.quick_settings_location_secondary_high_accuracy);
-        secondaryLabelForLocationStates.put(Settings.Secure.LOCATION_MODE_OFF,
-            R.string.quick_settings_secondary_location_off);
-        
-        return secondaryLabelForLocationStates;
     }
 
     @Override
@@ -113,11 +97,10 @@ public class GpsTile extends QSTileImpl<BooleanState> {
         }
         
         final boolean gpsEnabled = mController.isGpsEnabled();
-        final int currentMode = mController.getCurrentMode();
+        final int currentState = mController.getLocationCurrentState();
         
         state.value = gpsEnabled;
         state.label = mContext.getString(R.string.quick_settings_gps_label);
-        state.secondaryLabel = mContext.getString(SECONDARY_LABEL_FOR_LOCATION_STATES.get(currentMode));
         state.icon = mIcon;
         state.state = state.value ? Tile.STATE_ACTIVE : Tile.STATE_INACTIVE;
         state.contentDescription = state.value
