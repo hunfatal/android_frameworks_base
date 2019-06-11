@@ -225,8 +225,8 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
     public static boolean mPerfSendTapHint = false;
     public static boolean mIsPerfBoostAcquired = false;
     public static int mPerfHandle = -1;
-    public BoostFramework mPerfBoost = null;
-    public BoostFramework mUxPerf = null;
+    public BoostFramework mPerfBoost = new BoostFramework();
+    public BoostFramework mUxPerf = new BoostFramework();
     static final int HANDLE_DISPLAY_ADDED = FIRST_SUPERVISOR_STACK_MSG + 5;
     static final int HANDLE_DISPLAY_CHANGED = FIRST_SUPERVISOR_STACK_MSG + 6;
     static final int HANDLE_DISPLAY_REMOVED = FIRST_SUPERVISOR_STACK_MSG + 7;
@@ -458,9 +458,6 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
     // Whether tasks have moved and we need to rank the tasks before next OOM scoring
     private boolean mTaskLayersChanged = true;
 
-    // Boost framework
-    private boolean mIsPerfBoostEnabled;
-
     private ActivityMetricsLogger mActivityMetricsLogger;
 
     private final ArrayList<ActivityRecord> mTmpActivityList = new ArrayList<>();
@@ -636,9 +633,6 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
         mActivityMetricsLogger = new ActivityMetricsLogger(this, mService.mContext,
                 mHandler.getLooper());
         mKeyguardController = new KeyguardController(mService, this);
-        /* Is perf lock for cpu-boost enabled during App 1st launch */
-        mIsPerfBoostEnabled = mService.mContext.getResources().getBoolean(
-                   com.android.internal.R.bool.config_enableQcCpuBoost);
 
         mLaunchParamsController = new LaunchParamsController(mService);
         mLaunchParamsController.registerDefaultModifiers(this);
@@ -1209,6 +1203,16 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
 
     void reportActivityLaunchedLocked(boolean timeout, ActivityRecord r, long totalTime) {
         boolean changed = false;
+        if (totalTime > 0) {
+            if (mPerfBoost != null) {
+               if (r.app != null) {
+                   mPerfBoost.perfHint(BoostFramework.VENDOR_HINT_FIRST_DRAW, r.packageName, r.app.pid, BoostFramework.Draw.EVENT_TYPE_V1);
+               }
+            }
+            if (mUxPerf != null) {
+                mUxPerf.perfUXEngine_events(BoostFramework.UXE_EVENT_DISPLAYED_ACT, 0, r.packageName, (int)totalTime);
+            }
+        }
         for (int i = mWaitingActivityLaunched.size() - 1; i >= 0; i--) {
             WaitResult w = mWaitingActivityLaunched.remove(i);
             if (w.who == null) {
@@ -3450,9 +3454,6 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
 
     void acquireAppLaunchPerfLock(ActivityRecord r) {
        /* Acquire perf lock during new app launch */
-       if (mPerfBoost == null && mIsPerfBoostEnabled) {
-           mPerfBoost = new BoostFramework();
-       }
        if (mPerfBoost != null) {
            mPerfBoost.perfHint(BoostFramework.VENDOR_HINT_FIRST_LAUNCH_BOOST, r.packageName, -1, BoostFramework.Launch.BOOST_V1);
            mPerfSendTapHint = true;
@@ -3474,8 +3475,6 @@ public class ActivityStackSupervisor extends ConfigurationContainer implements D
     }
 
     void acquireUxPerfLock(int opcode, String packageName) {
-        if (!mIsPerfBoostEnabled) return;
-        mUxPerf = new BoostFramework();
         if (mUxPerf != null) {
             mUxPerf.perfUXEngine_events(opcode, 0, packageName, 0);
         }
