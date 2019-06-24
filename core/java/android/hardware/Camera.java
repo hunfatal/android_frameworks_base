@@ -24,6 +24,7 @@ import android.annotation.SdkConstant.SdkConstantType;
 import android.app.ActivityThread;
 import android.app.AppOpsManager;
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.ImageFormat;
 import android.graphics.Point;
 import android.graphics.Rect;
@@ -59,6 +60,7 @@ import com.android.internal.app.IAppOpsService;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 
@@ -227,7 +229,7 @@ public class Camera {
     private android.hardware.Camera.AECallback mAECallback;
     private android.hardware.Camera.OneplusCallback mOneplusCallback;
     private android.hardware.Camera.ProcessCallback mProcessCallback;
-    private boolean mIsOPService = false;
+    private static boolean mIsOPService = false;
     private android.hardware.Camera.PictureCallback mOPServiceJpegCallback = null;
     private android.hardware.Camera.CameraStateCallback mCameraStateCallback;
 
@@ -273,7 +275,8 @@ public class Camera {
     }
     
     public static Camera openOPService() {
-        return new Camera(0, -0x64);
+        if (mIsOPService) return new Camera(0, -0x64);
+        return null;
     }
 
     /**
@@ -654,6 +657,12 @@ public class Camera {
         mOneplusCallback = null;
         mProcessCallback = null;
 
+        boolean opCamHack = Resources.getSystem().getBoolean(
+                com.android.internal.R.bool.config_enableOPcamhack);
+        if (opCamHack) {
+            mIsOPService = true;
+        }
+
         Looper looper;
         if ((looper = Looper.myLooper()) != null) {
             mEventHandler = new EventHandler(this, looper);
@@ -665,21 +674,15 @@ public class Camera {
 
         String packageName = ActivityThread.currentOpPackageName();
 
-        //Force HAL1 if the package name falls in this bucket
+        // Force HAL1 if the package name is in our 'blacklist'
         String packageList = SystemProperties.get("vendor.camera.hal1.packagelist", "");
-        if (packageList.length() > 0) {
-            TextUtils.StringSplitter splitter = new TextUtils.SimpleStringSplitter(',');
-            splitter.setString(packageList);
-            for (String str : splitter) {
-                if (packageName.equals(str)) {
-                    halVersion = CAMERA_HAL_API_VERSION_1_0;
-                    break;
-                }
+        if (!packageList.isEmpty()) {
+            if (Arrays.asList(packageList.split(",")).contains(packageName)) {
+                halVersion = CAMERA_HAL_API_VERSION_1_0;
             }
-	    }
+        }
 
-        return native_setup(new WeakReference<Camera>(this), cameraId, halVersion,
-                ActivityThread.currentOpPackageName());
+        return native_setup(new WeakReference<Camera>(this), cameraId, halVersion, packageName);
     }
 
     private int cameraInitNormal(int cameraId) {
@@ -1365,7 +1368,7 @@ public class Camera {
         public void handleMessage(Message msg) {
             int msgID = msg.what;
 
-            if (mOneplusCallback != null && msgID == CAMERA_MSG_RAW_IMAGE) {
+            if (mIsOPService && mOneplusCallback != null && msgID == CAMERA_MSG_RAW_IMAGE) {
                 msgID = CAMERA_MSG_DNG_IMAGE;
             }
 
@@ -1807,7 +1810,7 @@ public class Camera {
             msgType |= CAMERA_MSG_COMPRESSED_IMAGE;
         }
         //oneplus camera mod
-        if (mOneplusCallback != null) {
+        if (mIsOPService && mOneplusCallback != null) {
             msgType |= CAMERA_MSG_DNG_META_DATA;
             msgType |= CAMERA_MSG_DNG_IMAGE;
             mMetadata = new CameraMetadataNative();

@@ -207,15 +207,6 @@
 
     <string name="tuner_cellular_title">Mobile</string>
 
-    <!-- Gaming Mode -->
-    <string name="gaming_mode_tile_title">Gaming Mode</string>
-    <string name="gaming_mode_tile_toast">Gaming mode enabled</string>
-    <string name="gaming_mode_tile_toast_disabled">Gaming mode disabled</string>
-    <string name="gaming_mode_dialog_title">Gaming Mode</string>
-    <string name="gaming_mode_dialog_message">When gaming mode is enabled, all heads-up messages will be disabled and hardware keys will be turned off. All the disabled settings will be reset to default once you exit Gaming Mode.</string>
-    <string name="accessibility_quick_settings_gaming_mode_on">Gaming Mode</string>
-    <string name="accessibility_quick_settings_gaming_mode_off">Gaming Mode</string>
-
     <!-- accessibility label for button to open running apps prefscreen [CHAR LIMIT=NONE] -->
     <string name="accessibility_quick_settings_running_services">Open Running Services screen.</string>
 
@@ -362,4 +353,7 @@
     <string name="accessibility_quick_settings_reading_mode_off">Reading mode off.</string>
     <string name="accessibility_quick_settings_reading_mode_changed_on">Reading mode turned on.</string>
     <string name="accessibility_quick_settings_reading_mode_changed_off">Reading mode turned off.</string>
+
+    <!-- Gaming mode -->
+    <string name="notification_channel_gaming">Gaming Mode</string>
 </resources>
