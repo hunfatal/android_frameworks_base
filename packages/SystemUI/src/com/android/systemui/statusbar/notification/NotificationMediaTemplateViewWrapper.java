@@ -109,7 +109,7 @@ public class NotificationMediaTemplateViewWrapper extends NotificationTemplateVi
                 mSeekBar.setMax((int) mDuration);
                 mSeekBarTotalTime.setText(millisecondsToTimeString(duration));
             }
-            if (!mTrackingTouch) {
+            if (!mTrackingTouch && mMediaController.getPlaybackState() != null) {
                 long position = mMediaController.getPlaybackState().getPosition();
                 mSeekBar.setProgress((int) position);
             }
@@ -162,9 +162,11 @@ public class NotificationMediaTemplateViewWrapper extends NotificationTemplateVi
                 if (mSeekBarTimer == null) {
                     if (canSeekMedia()) {
                         mSeekBar.getThumb().setAlpha(255);
+                        mSeekBar.setAlpha(255);
                         mSeekBar.setEnabled(true);
                     } else {
                         mSeekBar.getThumb().setAlpha(0);
+                        mSeekBar.setAlpha(190);
                         mSeekBar.setEnabled(false);
                     }
                     startTimer();
