@@ -6469,33 +6469,6 @@ public final class Settings {
         private static final Validator FORCE_FULLSCREEN_CUTOUT_APPS_VALIDATOR = ANY_STRING_VALIDATOR;
 
         /**
-         * Color temperature of the display during the day
-         */
-        public static final String DISPLAY_TEMPERATURE_DAY = "display_temperature_day";
-
-        /** @hide */
-        public static final Validator DISPLAY_TEMPERATURE_DAY_VALIDATOR =
-                new SettingsValidators.InclusiveIntegerRangeValidator(0, 100000);
-
-        /**
-         * Color temperature of the display at night
-         */
-        public static final String DISPLAY_TEMPERATURE_NIGHT = "display_temperature_night";
-
-        /** @hide */
-        public static final Validator DISPLAY_TEMPERATURE_NIGHT_VALIDATOR =
-                new SettingsValidators.InclusiveIntegerRangeValidator(0, 100000);
-
-        /**
-         * Display color temperature adjustment mode, one of DAY (default), NIGHT, or AUTO.
-         */
-        public static final String DISPLAY_TEMPERATURE_MODE = "display_temperature_mode";
-
-        /** @hide */
-        public static final Validator DISPLAY_TEMPERATURE_MODE_VALIDATOR =
-                new SettingsValidators.InclusiveIntegerRangeValidator(0, 4);
-
-        /**
          * Automatic outdoor mode
          * 0 = 0ff, 1 = on
          */
@@ -6594,16 +6567,6 @@ public final class Settings {
                 };
 
         /**
-         * Did we tell about how they can stop breaking their eyes?
-         * @hide
-         */
-        public static final String LIVE_DISPLAY_HINTED = "live_display_hinted";
-
-        /** @hide */
-        public static final Validator LIVE_DISPLAY_HINTED_VALIDATOR =
-                new SettingsValidators.InclusiveIntegerRangeValidator(-3, 1);
-
-        /**
          * Whether allowing pocket service to register sensors and dispatch informations.
          *   0 = disabled
          *   1 = enabled
@@ -6700,6 +6663,13 @@ public final class Settings {
          * @hide
          */
         public static final String GAMING_MODE_HW_KEYS_TOGGLE = "gaming_mode_hw_keys_toggle";
+
+        /**
+         * Whether to disable gestures in gaming mode
+         *
+         * @hide
+         */
+        public static final String GAMING_MODE_GESTURES_TOGGLE = "gaming_mode_gestures_toggle";
 
         /**
          * Whether to disable heads up gaming mode
@@ -7088,9 +7058,6 @@ public final class Settings {
             PRIVATE_SETTINGS.add(DOZE_ON_CHARGE);
             PRIVATE_SETTINGS.add(SLIM_RECENT_ENTER_EXIT_ANIMATION);
             PRIVATE_SETTINGS.add(FORCE_FULLSCREEN_CUTOUT_APPS);
-            PRIVATE_SETTINGS.add(DISPLAY_TEMPERATURE_DAY);
-            PRIVATE_SETTINGS.add(DISPLAY_TEMPERATURE_NIGHT);
-            PRIVATE_SETTINGS.add(DISPLAY_TEMPERATURE_MODE);
             PRIVATE_SETTINGS.add(DISPLAY_AUTO_OUTDOOR_MODE);
             PRIVATE_SETTINGS.add(DISPLAY_READING_MODE);
             PRIVATE_SETTINGS.add(DISPLAY_CABC);
@@ -7098,7 +7065,6 @@ public final class Settings {
             PRIVATE_SETTINGS.add(DISPLAY_AUTO_CONTRAST);
             PRIVATE_SETTINGS.add(DISPLAY_COLOR_ADJUSTMENT);
             PRIVATE_SETTINGS.add(DISPLAY_PICTURE_ADJUSTMENT);
-            PRIVATE_SETTINGS.add(LIVE_DISPLAY_HINTED);
             PRIVATE_SETTINGS.add(POCKET_JUDGE);
         }
 
@@ -7280,9 +7246,6 @@ public final class Settings {
             VALIDATORS.put(DOZE_ON_CHARGE, DOZE_ON_CHARGE_VALIDATOR);
             VALIDATORS.put(SLIM_RECENT_ENTER_EXIT_ANIMATION, SLIM_RECENT_ENTER_EXIT_ANIMATION_VALIDATOR);
             VALIDATORS.put(FORCE_FULLSCREEN_CUTOUT_APPS, FORCE_FULLSCREEN_CUTOUT_APPS_VALIDATOR);
-            VALIDATORS.put(DISPLAY_TEMPERATURE_DAY, DISPLAY_TEMPERATURE_DAY_VALIDATOR);
-            VALIDATORS.put(DISPLAY_TEMPERATURE_NIGHT, DISPLAY_TEMPERATURE_NIGHT_VALIDATOR);
-            VALIDATORS.put(DISPLAY_TEMPERATURE_MODE, DISPLAY_TEMPERATURE_MODE_VALIDATOR);
             VALIDATORS.put(DISPLAY_AUTO_OUTDOOR_MODE, DISPLAY_AUTO_OUTDOOR_MODE_VALIDATOR);
             VALIDATORS.put(DISPLAY_READING_MODE, DISPLAY_READING_MODE_VALIDATOR);
             VALIDATORS.put(DISPLAY_CABC, DISPLAY_CABC_VALIDATOR);
@@ -7290,7 +7253,6 @@ public final class Settings {
             VALIDATORS.put(DISPLAY_AUTO_CONTRAST, DISPLAY_AUTO_CONTRAST_VALIDATOR);
             VALIDATORS.put(DISPLAY_COLOR_ADJUSTMENT, DISPLAY_COLOR_ADJUSTMENT_VALIDATOR);
             VALIDATORS.put(DISPLAY_PICTURE_ADJUSTMENT, DISPLAY_PICTURE_ADJUSTMENT_VALIDATOR);
-            VALIDATORS.put(LIVE_DISPLAY_HINTED, LIVE_DISPLAY_HINTED_VALIDATOR);
             VALIDATORS.put(POCKET_JUDGE, POCKET_JUDGE_VALIDATOR);
         }
 
@@ -11808,6 +11770,8 @@ public final class Settings {
             VOLUME_HUSH_GESTURE,
             MANUAL_RINGER_TOGGLE_COUNT,
             HUSH_GESTURE_USED,
+            LOCK_SCREEN_ALLOW_PRIVATE_NOTIFICATIONS,
+            LOCK_SCREEN_SHOW_NOTIFICATIONS,
             STATUS_BAR_BATTERY_STYLE,
             WIFI_DISCONNECT_DELAY_DURATION,
             FP_SWIPE_TO_DISMISS_NOTIFICATIONS,
