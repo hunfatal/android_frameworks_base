@@ -262,6 +262,7 @@
     <uses-permission android:name="android.permission.MODIFY_DAY_NIGHT_MODE" />
 
     <uses-permission android:name="lineageos.permission.HARDWARE_ABSTRACTION_ACCESS" />
+    <uses-permission android:name="lineageos.permission.MANAGE_LIVEDISPLAY" />
 
     <application
         android:name=".SystemUIApplication"
@@ -305,6 +306,13 @@
 
         <!-- Called from PhoneWindowManager -->
         <receiver android:name=".screenshot.ScreenshotServiceErrorReceiver"
+            android:process=":screenshot"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.android.systemui.screenshot.SHOW_ERROR" />
+            </intent-filter>
+        </receiver>
+        <receiver android:name=".screenshot.ScreenshotServiceCaptureErrorReceiver"
             android:process=":screenshot"
             android:exported="false">
             <intent-filter>

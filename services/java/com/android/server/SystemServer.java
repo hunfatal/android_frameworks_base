@@ -154,6 +154,9 @@ import static android.view.Display.DEFAULT_DISPLAY;
 import com.android.server.custom.LineageHardwareService;
 import com.android.server.custom.display.LiveDisplayService;
 
+// Long screenshot
+import com.android.internal.custom.longshot.LongScreenshotManagerService;
+
 public final class SystemServer {
     private static final String TAG = "SystemServer";
 
@@ -997,6 +1000,10 @@ public final class SystemServer {
             traceBeginAndSlog("PinnerService");
             mSystemServiceManager.startService(PinnerService.class);
             traceEnd();
+
+            traceBeginAndSlog("LongScreenShot Manager");
+            ServiceManager.addService(Context.LONGSCREENSHOT_SERVICE, LongScreenshotManagerService.getInstance(context));
+            traceEnd();
         } catch (RuntimeException e) {
             Slog.e("System", "******************************************");
             Slog.e("System", "************ Failure starting core service", e);
@@ -1414,11 +1421,11 @@ public final class SystemServer {
             mSystemServiceManager.startService(TwilightService.class);
             traceEnd();
 
-            //if (ColorDisplayController.isAvailable(context)) {
+            if (ColorDisplayController.isAvailable(context)) {
                 traceBeginAndSlog("StartNightDisplay");
                 mSystemServiceManager.startService(ColorDisplayService.class);
                 traceEnd();
-            //}
+            }
 
             traceBeginAndSlog("StartJobScheduler");
             mSystemServiceManager.startService(JobSchedulerService.class);

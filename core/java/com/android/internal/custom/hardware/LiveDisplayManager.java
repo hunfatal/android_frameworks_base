@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2016 The CyanogenMod Project
- *               2018 The LineageOS Project
+ *               2018-2019 The LineageOS Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,15 +54,26 @@ public class LiveDisplayManager {
      */
     public static final int MODE_NIGHT = 1;
 
+    /**
+     * Enable automatic detection of appropriate mode
+     */
+    public static final int MODE_AUTO = 2;
+
+    /**
+     * Increase brightness/contrast/saturation for sunlight
+     */
+    public static final int MODE_OUTDOOR = 3;
+
+    /**
+     * Change color temperature to day mode, and allow
+     * detection of outdoor conditions
+     */
+    public static final int MODE_DAY = 4;
+
     /** @hide */
     public static final int MODE_FIRST = MODE_OFF;
     /** @hide */
-    public static final int MODE_LAST = MODE_NIGHT;
-
-    /**
-     * System supports outdoor mode
-     */
-    public static final int FEATURE_OUTDOOR_MODE = 3;
+    public static final int MODE_LAST = MODE_DAY;
 
     /**
      * Content adaptive backlight control, adjust images to
@@ -128,7 +139,7 @@ public class LiveDisplayManager {
     private static final String TAG = "LiveDisplay";
 
     private final Context mContext;
-    private final LiveDisplayConfig mConfig;
+    private LiveDisplayConfig mConfig;
 
     private static LiveDisplayManager sInstance;
     private static ILiveDisplayService sService;
@@ -149,15 +160,6 @@ public class LiveDisplayManager {
             Log.wtf(TAG, "Unable to get LiveDisplayService. The service either" +
                     " crashed, was not started, or the interface has been called to early in" +
                     " SystemServer init");
-        }
-
-        try {
-            mConfig = sService.getConfig();
-            if (mConfig == null) {
-                Log.w(TAG, "Unable to get LiveDisplay configuration!");
-            }
-        } catch (RemoteException e) {
-            throw new RuntimeException("Unable to fetch LiveDisplay configuration!", e);
         }
     }
 
@@ -203,7 +205,14 @@ public class LiveDisplayManager {
      * @return the configuration
      */
     public LiveDisplayConfig getConfig() {
-        return mConfig;
+        try {
+            if (mConfig == null) {
+                mConfig = checkService() ? sService.getConfig() : null;
+            }
+            return mConfig;
+        } catch (RemoteException e) {
+            return null;
+        }
     }
 
     /**
@@ -216,6 +225,20 @@ public class LiveDisplayManager {
             return checkService() ? sService.getMode() : MODE_OFF;
         } catch (RemoteException e) {
             return MODE_OFF;
+        }
+    }
+
+    /**
+     * Selects a new adaptive mode.
+     *
+     * @param mode
+     * @return true if the mode was selected
+     */
+    public boolean setMode(int mode) {
+        try {
+            return checkService() && sService.setMode(mode);
+        } catch (RemoteException e) {
+            return false;
         }
     }
 
@@ -295,6 +318,60 @@ public class LiveDisplayManager {
     public boolean setColorEnhancementEnabled(boolean enabled) {
         try {
             return checkService() && sService.setColorEnhancementEnabled(enabled);
+        } catch (RemoteException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the user-specified color temperature to use in the daytime.
+     *
+     * @return the day color temperature
+     */
+    public int getDayColorTemperature() {
+        try {
+            return checkService() ? sService.getDayColorTemperature() : -1;
+        } catch (RemoteException e) {
+            return -1;
+        }
+    }
+
+    /**
+     * Sets the color temperature to use in the daytime.
+     *
+     * @param temperature
+     * @return true if state was changed
+     */
+    public boolean setDayColorTemperature(int temperature) {
+        try {
+            return checkService() && sService.setDayColorTemperature(temperature);
+        } catch (RemoteException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Gets the user-specified color temperature to use at night.
+     *
+     * @return the night color temperature
+     */
+    public int getNightColorTemperature() {
+        try {
+            return checkService() ? sService.getNightColorTemperature() : -1;
+        } catch (RemoteException e) {
+            return -1;
+        }
+    }
+
+    /**
+     * Sets the color temperature to use at night.
+     *
+     * @param temperature
+     * @return true if state was changed
+     */
+    public boolean setNightColorTemperature(int temperature) {
+        try {
+            return checkService() && sService.setNightColorTemperature(temperature);
         } catch (RemoteException e) {
             return false;
         }
@@ -407,5 +484,20 @@ public class LiveDisplayManager {
         } catch (RemoteException e) {
         }
         return null;
+    }
+
+    /**
+     * Determine whether night mode is enabled (be it automatic or manual)
+     */
+    public boolean isNightModeEnabled() {
+        // This method might be called before config has been set up
+        // so a NPE would have been thrown, just report night mode is disabled instead
+        try {
+            return getMode() == MODE_NIGHT || sService.isNight();
+        } catch (NullPointerException e) {
+            Log.w(TAG, "Can\'t check whether night mode is enabled because the service isn\'t ready");
+        } catch (RemoteException ignored) {
+        }
+        return false;
     }
 }
