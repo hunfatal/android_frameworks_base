@@ -42,6 +42,7 @@ import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.widget.Button;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.util.TypedValue;
 
@@ -83,6 +84,7 @@ public class KeyguardSliceView extends LinearLayout implements View.OnClickListe
     private Uri mKeyguardSliceUri;
     @VisibleForTesting
     TextView mTitle;
+    private RelativeLayout mRowContainer;
     private Row mRow;
     private int mTextColor;
     private float mDarkAmount = 0;
@@ -135,8 +137,9 @@ public class KeyguardSliceView extends LinearLayout implements View.OnClickListe
     protected void onFinishInflate() {
         super.onFinishInflate();
         mTitle = findViewById(R.id.title);
+        mRowContainer = findViewById(R.id.row_maincenter);
         mRow = findViewById(R.id.row);
-        mTextColor = Utils.getColorAttr(mContext, R.attr.wallpaperTextColor);
+        mTextColor = Utils.getColorAttrDefaultColor(mContext, R.attr.wallpaperTextColor);
         updateSettings();
     }
 
@@ -206,12 +209,12 @@ public class KeyguardSliceView extends LinearLayout implements View.OnClickListe
         final int blendedColor = getTextColor();
         final int startIndex = mHasHeader ? 1 : 0; // First item is header; skip it
         if (mClockSelection) {
-            mRow.setPaddingRelative((int) mContext.getResources().getDimension(R.dimen.custom_clock_left_padding), 0, 0, 0);
-            mRow.setGravity(Gravity.START);
+            mRowContainer.setPaddingRelative((int) mContext.getResources().getDimension(R.dimen.custom_clock_left_padding), 0, 0, 0);
+            mRowContainer.setGravity(Gravity.START);
         }
         else {
-            mRow.setPaddingRelative(0, 0, 0, 0);
-            mRow.setGravity(Gravity.CENTER);
+            mRowContainer.setPaddingRelative(0, 0, 0, 0);
+            mRowContainer.setGravity(Gravity.CENTER);
         }
         mRow.setVisibility(subItemsCount > 0 ? ((mShowInfo || mDarkAmount == 1) ? VISIBLE : GONE)
                 : GONE);
@@ -350,6 +353,34 @@ public class KeyguardSliceView extends LinearLayout implements View.OnClickListe
                 ((Button) v).setTextSize(scale, size);
             }
         }
+    }
+
+    public void setViewsTextStyles(float textSp, boolean textAllCaps) {
+        int childCount = mRow.getChildCount();
+        for (int i = 0; i < childCount; i++) {
+            View v = mRow.getChildAt(i);
+            if (v instanceof Button) {
+                ((Button) v).setLetterSpacing(textSp);
+                ((Button) v).setAllCaps(textAllCaps);
+            }
+        }
+    }
+
+    public void setViewBackground(Drawable drawRes) {
+        setViewBackground(drawRes, 255);
+    }
+
+    public void setViewBackground(Drawable drawRes, int bgAlpha) {
+        mRow.setBackground(drawRes);
+        mRow.getBackground().setAlpha(bgAlpha);
+    }
+
+    public void setViewBackgroundResource(int drawRes) {
+        mRow.setBackgroundResource(drawRes);
+    }
+
+    public void setViewPadding(int left, int top, int right, int bottom) {
+        mRow.setPadding(left,top,right,bottom);
     }
 
     private void updateTextColors() {
@@ -508,7 +539,7 @@ public class KeyguardSliceView extends LinearLayout implements View.OnClickListe
             int childCount = getChildCount();
             for (int i = 0; i < childCount; i++) {
                 View child = getChildAt(i);
-                if (child instanceof KeyguardSliceButton) {
+                if (child instanceof KeyguardSliceButton && childCount > 3) {
                     ((KeyguardSliceButton) child).setMaxWidth(width / childCount);
                 }
             }

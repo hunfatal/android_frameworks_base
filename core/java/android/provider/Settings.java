@@ -5110,6 +5110,14 @@ public final class Settings {
         private static final Validator BOTTOM_GESTURE_SWIPE_LIMIT_VALIDATOR = ANY_INTEGER_VALIDATOR;
 
         /**
+         * @hide
+         */
+        public static final String BOTTOM_GESTURE_FEEDBACK = "bottom_gesture_feedback";
+
+        /** @hide */
+        private static final Validator BOTTOM_GESTURE_FEEDBACK_VALIDATOR = BOOLEAN_VALIDATOR;
+
+        /**
          * Whether to display the reboot option in the power menu
          *
          * @hide
@@ -5311,11 +5319,6 @@ public final class Settings {
          * @hide
          */
         public static final String STATUS_BAR_CARRIER_FONT_STYLE = "status_bar_carrier_font_style";
-
-        /**
-         * @hide
-         */
-        public static final String SCREENRECORD_QUALITY_MODE = "screenrecord_quality_mode";
 
         /**
          * @hide
@@ -5773,17 +5776,6 @@ public final class Settings {
         public static final String POWER_MENU_ANIMATIONS = "power_menu_animations";
 
         /**
-         * If Screenrecord should be displayed at the power menu.
-         *
-         * @hide
-         */
-        public static final String GLOBAL_ACTIONS_SCREENRECORD = "global_actions_screenrecord";
-
-        /** @hide */
-        private static final Validator GLOBAL_ACTIONS_SCREENRECORD_VALIDATOR =
-              BOOLEAN_VALIDATOR;
-
-        /**
           * Volume dialog timeout
           * @hide
           */
@@ -5816,13 +5808,6 @@ public final class Settings {
          */
         public static final String UI_STYLE = "ui_style";
 
-        /**
-         * Switch to Enable/Disable ScreenRecord Shortcut.
-         *
-         * @hide
-         */
-        public static final String SCREEN_RECORD_SHORTCUT_SWITCH = "screen_record_shortcut";
-        
 	    /**
          * Switch to Enable/Disable ScreenShot Shortcut.
          *
@@ -6797,6 +6782,12 @@ public final class Settings {
         private static final Validator DISPLAY_MODE_VALIDATOR = ANY_INTEGER_VALIDATOR;
 
         /**
+         * Select which lockscreen date style to display
+         * @hide
+         */
+        public static final String LOCKSCREEN_DATE_SELECTION = "lockscreen_date_selection";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *
@@ -6875,11 +6866,11 @@ public final class Settings {
             STATUS_BAR_SHOW_TICKER,
             STATUS_BAR_TICKER_ANIMATION_MODE,
             STATUS_BAR_TICKER_TICK_DURATION,
-            GLOBAL_ACTIONS_SCREENRECORD,
             VOLUME_KEYS_CONTROL_RING_TONE,
             USE_BOTTOM_GESTURE_NAVIGATION,
             BOTTOM_GESTURE_TRIGGER_TIMEOUT,
             BOTTOM_GESTURE_SWIPE_LIMIT,
+            BOTTOM_GESTURE_FEEDBACK,
             THEMING_SETTINGS_DASHBOARD_ICONS,
             FAST_BATTERY_LIGHT_COLOR,
             FAST_CHARGING_LED_ENABLED,
@@ -7060,6 +7051,7 @@ public final class Settings {
             PRIVATE_SETTINGS.add(USE_BOTTOM_GESTURE_NAVIGATION);
             PRIVATE_SETTINGS.add(BOTTOM_GESTURE_TRIGGER_TIMEOUT);
             PRIVATE_SETTINGS.add(BOTTOM_GESTURE_SWIPE_LIMIT);
+            PRIVATE_SETTINGS.add(BOTTOM_GESTURE_FEEDBACK);
             PRIVATE_SETTINGS.add(STATUS_BAR_BRIGHTNESS_CONTROL);
             PRIVATE_SETTINGS.add(SCREENSHOT_DEFAULT_MODE);
             PRIVATE_SETTINGS.add(FINGERPRINT_SUCCESS_VIB);
@@ -7089,7 +7081,6 @@ public final class Settings {
             PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_STATE);
             PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_TYPE);
             PRIVATE_SETTINGS.add(NETWORK_TRAFFIC_AUTOHIDE_THRESHOLD);
-            PRIVATE_SETTINGS.add(GLOBAL_ACTIONS_SCREENRECORD);
             PRIVATE_SETTINGS.add(VOLUME_KEYS_CONTROL_RING_TONE);
             PRIVATE_SETTINGS.add(THEMING_SETTINGS_DASHBOARD_ICONS);
             PRIVATE_SETTINGS.add(UI_STYLE);
@@ -7274,11 +7265,11 @@ public final class Settings {
             VALIDATORS.put(STATUS_BAR_SHOW_TICKER, STATUS_BAR_SHOW_TICKER_VALIDATOR);
             VALIDATORS.put(STATUS_BAR_TICKER_ANIMATION_MODE, STATUS_BAR_TICKER_ANIMATION_MODE_VALIDATOR);
             VALIDATORS.put(STATUS_BAR_TICKER_TICK_DURATION, STATUS_BAR_TICKER_TICK_DURATION_VALIDATOR);
-            VALIDATORS.put(GLOBAL_ACTIONS_SCREENRECORD,GLOBAL_ACTIONS_SCREENRECORD_VALIDATOR);
             VALIDATORS.put(VOLUME_KEYS_CONTROL_RING_TONE,VOLUME_KEYS_CONTROL_RING_TONE_VALIDATOR);
             VALIDATORS.put(USE_BOTTOM_GESTURE_NAVIGATION, USE_BOTTOM_GESTURE_NAVIGATION_VALIDATOR);
             VALIDATORS.put(BOTTOM_GESTURE_TRIGGER_TIMEOUT, BOTTOM_GESTURE_TRIGGER_TIMEOUT_VALIDATOR);
             VALIDATORS.put(BOTTOM_GESTURE_SWIPE_LIMIT, BOTTOM_GESTURE_SWIPE_LIMIT_VALIDATOR);
+            VALIDATORS.put(BOTTOM_GESTURE_FEEDBACK, BOTTOM_GESTURE_FEEDBACK_VALIDATOR);
             VALIDATORS.put(THEMING_SETTINGS_DASHBOARD_ICONS, THEMING_SETTINGS_DASHBOARD_ICONS_VALIDATOR);
             VALIDATORS.put(FAST_BATTERY_LIGHT_COLOR, FAST_BATTERY_LIGHT_COLOR_VALIDATOR);
             VALIDATORS.put(FAST_CHARGING_LED_ENABLED, FAST_CHARGING_LED_ENABLED_VALIDATOR);
