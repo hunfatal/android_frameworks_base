@@ -161,7 +161,7 @@ public class QSSecurityFooter implements OnClickListener, DialogInterface.OnClic
             if (mSecurityController.isVpnBranded()) {
                 footerIconId = R.drawable.ic_qs_branded_vpn;
             } else {
-                footerIconId = R.drawable.ic_qs_vpn;
+                footerIconId = R.drawable.ic_qs_vpn_footer;
             }
         }
         if (mFooterIconId != footerIconId) {
