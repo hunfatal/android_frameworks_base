@@ -36,6 +36,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.Rect;
 import android.os.PowerManager;
+import android.provider.Settings;
 import android.util.AttributeSet;
 import android.util.FloatProperty;
 import android.util.Log;
@@ -110,6 +111,8 @@ public class NotificationPanelView extends PanelView implements
             "lineagesystem:" + LineageSettings.System.STATUS_BAR_QUICK_QS_PULLDOWN;
     public static final String DOUBLE_TAP_SLEEP_GESTURE =
             "lineagesystem:" + LineageSettings.System.DOUBLE_TAP_SLEEP_GESTURE;
+    public static final String QS_SMART_PULLDOWN =
+            "system:" + Settings.System.QS_SMART_PULLDOWN;
 
     private static final Rect mDummyDirtyRect = new Rect(0, 0, 1, 1);
 
@@ -306,6 +309,7 @@ public class NotificationPanelView extends PanelView implements
             .setCustomInterpolator(PANEL_ALPHA.getProperty(), Interpolators.ALPHA_IN);
 
     private int mOneFingerQuickSettingsIntercept;
+    private int mQsSmartPullDown;
     private boolean mDoubleTapToSleepEnabled;
     private GestureDetector mDoubleTapGesture;
 
@@ -362,6 +366,7 @@ public class NotificationPanelView extends PanelView implements
         FragmentHostManager.get(this).addTagListener(QS.TAG, mFragmentListener);
         final TunerService tunerService = Dependency.get(TunerService.class);
         tunerService.addTunable(this, STATUS_BAR_QUICK_QS_PULLDOWN);
+        tunerService.addTunable(this, QS_SMART_PULLDOWN);
         tunerService.addTunable(this, DOUBLE_TAP_SLEEP_GESTURE);
     }
 
@@ -379,6 +384,8 @@ public class NotificationPanelView extends PanelView implements
             try {
                 mOneFingerQuickSettingsIntercept = Integer.parseInt(newValue);
             } catch (NumberFormatException ex) {}
+        } else if (QS_SMART_PULLDOWN.equals(key)) {
+            mQsSmartPullDown = newValue == null ? 0 : Integer.parseInt(newValue);
         } else if (DOUBLE_TAP_SLEEP_GESTURE.equals(key)) {
             mDoubleTapToSleepEnabled = TunerService.parseIntegerSwitch(newValue, true);
         }
@@ -1031,6 +1038,12 @@ public class NotificationPanelView extends PanelView implements
                 break;
         }
         showQsOverride &= mStatusBarState == StatusBarState.SHADE;
+
+        if (mQsSmartPullDown == 1 && !mStatusBar.hasActiveClearableNotificationsQS()
+                || mQsSmartPullDown == 2 && !mStatusBar.hasActiveOngoingNotifications()
+                || mQsSmartPullDown == 3 && !mStatusBar.hasActiveVisibleNotifications()) {
+                showQsOverride = true;
+        }
 
         return twoFingerDrag || showQsOverride || stylusButtonClickDrag || mouseButtonClickDrag;
     }
