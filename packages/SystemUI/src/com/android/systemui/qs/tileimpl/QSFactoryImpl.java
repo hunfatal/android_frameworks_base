@@ -38,6 +38,7 @@ import com.android.systemui.qs.tiles.DataSaverTile;
 import com.android.systemui.qs.tiles.DndTile;
 import com.android.systemui.qs.tiles.LteTile;
 import com.android.systemui.qs.tiles.FlashlightTile;
+import com.android.systemui.qs.tiles.GpsTile;
 import com.android.systemui.qs.tiles.RebootTile;
 import com.android.systemui.qs.tiles.HeadsUpTile;
 import com.android.systemui.qs.tiles.HotspotTile;
@@ -169,6 +170,8 @@ public class QSFactoryImpl implements QSFactory {
                 return new OnTheGoTile(mHost);
             case "vpn":
                 return new VpnTile(mHost);
+            case "gps":
+                 return new GpsTile(mHost);
         }
 
         // Intent tiles.
