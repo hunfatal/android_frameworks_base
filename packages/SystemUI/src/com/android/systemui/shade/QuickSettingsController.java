@@ -26,6 +26,7 @@ import static com.android.systemui.shade.NotificationPanelViewController.FLING_C
 import static com.android.systemui.shade.NotificationPanelViewController.FLING_EXPAND;
 import static com.android.systemui.shade.NotificationPanelViewController.FLING_HIDE;
 import static com.android.systemui.shade.NotificationPanelViewController.QS_PARALLAX_AMOUNT;
+import static com.android.systemui.statusbar.notification.stack.NotificationStackScrollLayout.ROWS_ALL;
 import static com.android.systemui.statusbar.StatusBarState.KEYGUARD;
 import static com.android.systemui.statusbar.StatusBarState.SHADE;
 
@@ -36,6 +37,7 @@ import android.app.Fragment;
 import android.content.res.Resources;
 import android.graphics.Rect;
 import android.graphics.Region;
+import android.provider.Settings;
 import android.util.Log;
 import android.util.MathUtils;
 import android.view.MotionEvent;
@@ -103,6 +105,8 @@ public class QuickSettingsController {
 
     private static final String STATUS_BAR_QUICK_QS_PULLDOWN =
             "lineagesystem:" + LineageSettings.System.STATUS_BAR_QUICK_QS_PULLDOWN;
+    private static final String QS_SMART_PULLDOWN =
+            "system:" + Settings.System.QS_SMART_PULLDOWN;
 
     private QS mQs;
     private final Lazy<NotificationPanelViewController> mPanelViewControllerLazy;
@@ -265,6 +269,7 @@ public class QuickSettingsController {
     private int mLastNotificationsClippingTopBoundNssl;
 
     private int mOneFingerQuickSettingsIntercept;
+    private boolean mQsSmartPullDown;
 
     private final Region mInterceptRegion = new Region();
     /** The end bounds of a clipping animation. */
@@ -552,6 +557,11 @@ public class QuickSettingsController {
                 showQsOverride = true;
                 break;
         }
+
+        if (mQsSmartPullDown && !mNotificationStackScrollLayoutController.hasActiveClearableNotifications(ROWS_ALL)) {
+            showQsOverride = true;
+        }
+
         showQsOverride &= mBarState == StatusBarState.SHADE;
 
         return twoFingerDrag || showQsOverride || stylusButtonClickDrag || mouseButtonClickDrag;
@@ -2003,6 +2013,7 @@ public class QuickSettingsController {
             mNotificationStackScrollLayoutController.setQsHeader((ViewGroup) mQs.getHeader());
             mQs.setScrollListener(mQsScrollListener);
             mTunerService.addTunable(this, STATUS_BAR_QUICK_QS_PULLDOWN);
+            mTunerService.addTunable(this, QS_SMART_PULLDOWN);
             updateExpansion();
         }
 
@@ -2022,6 +2033,8 @@ public class QuickSettingsController {
         public void onTuningChanged(String key, String newValue) {
             if (STATUS_BAR_QUICK_QS_PULLDOWN.equals(key)) {
                 mOneFingerQuickSettingsIntercept = TunerService.parseInteger(newValue, 0);
+            } else if (QS_SMART_PULLDOWN.equals(key)) {
+                mQsSmartPullDown = TunerService.parseIntegerSwitch(newValue, false);
             }
         }
     }
